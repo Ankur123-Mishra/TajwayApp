@@ -1,5 +1,5 @@
 /**
- * Taxi Sanchalak design tokens — matches production screenshots.
+ * Tajway design tokens — matches production screenshots.
  */
 const Colors = {
   primary: '#FBB017',

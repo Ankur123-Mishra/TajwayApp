@@ -28,7 +28,7 @@ jest.mock('../src/navigation/AppNavigator', () => {
   const {Text} = require('react-native');
   return {
     __esModule: true,
-    default: () => React.createElement(Text, null, 'TaxiConnect'),
+    default: () => React.createElement(Text, null, 'Tajway'),
   };
 });
 

@@ -1,5 +1,6 @@
-import React, {useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import {
+  FlatList,
   StyleSheet,
   Text,
   TextInput,
@@ -7,14 +8,36 @@ import {
   View,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {MyBookingCard} from '../../components/booking';
+import {FilterSlidersIcon} from '../../components/common';
+import {mockMyBookings} from '../../mockData';
+import {Colors, Spacing, Typography} from '../../theme';
 
 /**
- * My Bookings — posted/received toggle + empty state (screenshot 16).
+ * My Bookings — posted/received list with screenshot-matching cards.
  */
 const MyBookingsScreen = () => {
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState('posted');
+  const [query, setQuery] = useState('');
+
+  const bookings = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return mockMyBookings.filter(item => {
+      if (item.tab !== tab) {
+        return false;
+      }
+      if (!q) {
+        return true;
+      }
+      return (
+        String(item.id).toLowerCase().includes(q) ||
+        item.from.toLowerCase().includes(q) ||
+        item.to.toLowerCase().includes(q) ||
+        item.vehicle.toLowerCase().includes(q)
+      );
+    });
+  }, [tab, query]);
 
   return (
     <View style={[styles.container, {paddingTop: insets.top + 8}]}>
@@ -49,19 +72,45 @@ const MyBookingsScreen = () => {
         <View style={styles.searchBox}>
           <Text style={styles.searchIcon}>⌕</Text>
           <TextInput
-            placeholder="Search by booking Id..."
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search for bookings..."
             placeholderTextColor={Colors.textPlaceholder}
             style={styles.searchInput}
           />
         </View>
-        <TouchableOpacity style={styles.filterBtn}>
-          <Text style={styles.filterIcon}>☰</Text>
+        <TouchableOpacity style={styles.filterBtn} activeOpacity={0.85}>
+          <FilterSlidersIcon />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.empty}>
-        <Text style={styles.emptyText}>No Records found</Text>
-      </View>
+      <FlatList
+        data={bookings}
+        keyExtractor={item => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.list,
+          bookings.length === 0 && styles.listEmpty,
+        ]}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>No Records found</Text>
+          </View>
+        }
+        renderItem={({item}) => (
+          <MyBookingCard
+            bookingId={item.id}
+            dateTime={item.dateTime}
+            status={item.status}
+            from={item.from}
+            to={item.to}
+            vehicle={item.vehicle}
+            pricingNote={item.pricingNote}
+            amount={item.amount}
+            tripType={item.tripType}
+          />
+        )}
+      />
 
       <TouchableOpacity style={styles.fab} activeOpacity={0.9}>
         <Text style={styles.fabIcon}>🤖</Text>
@@ -117,7 +166,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 4,
     marginBottom: Spacing.md,
-    ...Dimensions.shadow.soft,
   },
   segBtn: {
     flex: 1,
@@ -150,7 +198,6 @@ const styles = StyleSheet.create({
     height: 44,
     paddingHorizontal: 12,
     marginRight: 10,
-    ...Dimensions.shadow.soft,
   },
   searchIcon: {
     fontSize: 16,
@@ -170,17 +217,20 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Dimensions.shadow.soft,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
-  filterIcon: {
-    color: Colors.filterRed,
-    fontSize: 18,
-    fontWeight: '700',
+  list: {
+    paddingBottom: 90,
+  },
+  listEmpty: {
+    flexGrow: 1,
   },
   empty: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 80,
   },
   emptyText: {
     fontSize: 15,
@@ -196,7 +246,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Dimensions.shadow.medium,
   },
   fabIcon: {
     fontSize: 28,

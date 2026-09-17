@@ -2,8 +2,60 @@
 
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
-        <!-- Customize your theme here. -->
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+
+        <item name="colorPrimary">@color/tajway_yellow</item>
+        <item name="colorPrimaryDark">@color/tajway_yellow_dark</item>
+        <item name="colorAccent">@color/tajway_yellow</item>
+        <item name="android:colorAccent">@color/tajway_yellow</item>
+        <item name="android:colorPrimary">@color/tajway_yellow</item>
+        <item name="android:colorPrimaryDark">@color/tajway_yellow_dark</item>
+        <item name="colorControlActivated">@color/tajway_yellow</item>
+        <item name="android:buttonTint">@color/tajway_yellow</item>
+
+        <!-- Date / Time picker dialogs use these themes (not AppTheme accent alone). -->
+        <item name="android:datePickerDialogTheme">@style/TajwayDatePickerDialogTheme</item>
+        <item name="android:timePickerDialogTheme">@style/TajwayTimePickerDialogTheme</item>
+        <item name="alertDialogTheme">@style/TajwayAlertDialogTheme</item>
+    </style>
+
+    <style name="TajwayAlertDialogTheme" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="colorAccent">@color/tajway_yellow</item>
+        <item name="android:colorAccent">@color/tajway_yellow</item>
+        <item name="colorPrimary">@color/tajway_yellow</item>
+        <item name="colorControlActivated">@color/tajway_yellow</item>
+    </style>
+
+    <!-- Header + selected day circle of calendar date picker -->
+    <style name="TajwayDatePickerDialogTheme" parent="Theme.AppCompat.Light.Dialog">
+        <item name="colorAccent">@color/tajway_yellow</item>
+        <item name="android:colorAccent">@color/tajway_yellow</item>
+        <item name="colorPrimary">@color/tajway_yellow</item>
+        <item name="android:colorPrimary">@color/tajway_yellow</item>
+        <item name="colorPrimaryDark">@color/tajway_yellow_dark</item>
+        <item name="android:colorPrimaryDark">@color/tajway_yellow_dark</item>
+        <item name="colorControlActivated">@color/tajway_yellow</item>
+        <item name="android:colorControlActivated">@color/tajway_yellow</item>
+        <item name="android:buttonBarPositiveButtonStyle">@style/TajwayDialogButton</item>
+        <item name="android:buttonBarNegativeButtonStyle">@style/TajwayDialogButton</item>
+        <item name="android:windowBackground">@color/tajway_white</item>
+    </style>
+
+    <!-- Clock face / time picker accent -->
+    <style name="TajwayTimePickerDialogTheme" parent="Theme.AppCompat.Light.Dialog">
+        <item name="colorAccent">@color/tajway_yellow</item>
+        <item name="android:colorAccent">@color/tajway_yellow</item>
+        <item name="colorPrimary">@color/tajway_yellow</item>
+        <item name="android:colorPrimary">@color/tajway_yellow</item>
+        <item name="colorControlActivated">@color/tajway_yellow</item>
+        <item name="android:colorControlActivated">@color/tajway_yellow</item>
+        <item name="android:buttonBarPositiveButtonStyle">@style/TajwayDialogButton</item>
+        <item name="android:buttonBarNegativeButtonStyle">@style/TajwayDialogButton</item>
+        <item name="android:windowBackground">@color/tajway_white</item>
+    </style>
+
+    <style name="TajwayDialogButton" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:textColor">@color/tajway_yellow</item>
     </style>
 
 </resources>

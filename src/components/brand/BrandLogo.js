@@ -3,7 +3,7 @@ import {StyleSheet, Text, View} from 'react-native';
 import {Colors, Typography} from '../../theme';
 
 /**
- * Taxi Sanchalak logo mark + wordmark (matches screenshot branding).
+ * Tajway logo mark + wordmark.
  */
 const BrandLogo = ({
   size = 'md',
@@ -15,8 +15,7 @@ const BrandLogo = ({
   const isSm = size === 'sm';
   const markW = isLg ? 40 : isSm ? 26 : 34;
   const markH = isLg ? 42 : isSm ? 28 : 36;
-  const taxiSize = isLg ? 20 : isSm ? 13 : 16;
-  const nameSize = isLg ? 20 : isSm ? 13 : 16;
+  const brandSize = isLg ? 20 : isSm ? 13 : 16;
 
   return (
     <View style={[styles.row, style]}>
@@ -31,13 +30,13 @@ const BrandLogo = ({
         <View style={{width: 8}} />
       )}
       <View style={stacked ? styles.stackedText : styles.inlineText}>
-        <Text style={[styles.taxi, {fontSize: taxiSize}]}>Taxi</Text>
+        <Text style={[styles.taj, {fontSize: brandSize}]}>Taj</Text>
         <Text
           style={[
-            styles.sanchalak,
-            {fontSize: nameSize, marginLeft: stacked ? 0 : 4},
+            styles.way,
+            {fontSize: brandSize},
           ]}>
-          Sanchalak
+          way
         </Text>
       </View>
     </View>
@@ -89,11 +88,11 @@ const styles = StyleSheet.create({
   stackedText: {
     flexDirection: 'column',
   },
-  taxi: {
+  taj: {
     fontWeight: Typography.fontWeights.bold,
     color: Colors.primary,
   },
-  sanchalak: {
+  way: {
     fontWeight: Typography.fontWeights.bold,
     color: Colors.textPrimary,
   },

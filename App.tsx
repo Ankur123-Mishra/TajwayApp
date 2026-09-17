@@ -1,5 +1,5 @@
 /**
- * TaxiConnect — B2B Taxi Marketplace
+ * Tajway — B2B Taxi Marketplace
  * @format
  */
 

@@ -1,9 +1,10 @@
 import React from 'react';
-import {StyleSheet, Text, TouchableOpacity} from 'react-native';
-import {Colors, Dimensions} from '../../theme';
+import {StyleSheet, TouchableOpacity} from 'react-native';
+import {Ionicons} from '@react-native-vector-icons/ionicons';
+import {Colors} from '../../theme';
 
 /**
- * Circular white back button with yellow chevron (screenshot style).
+ * Circular white back button with yellow chevron — flat (no elevation).
  */
 const BackButton = ({onPress, style}) => {
   return (
@@ -13,7 +14,7 @@ const BackButton = ({onPress, style}) => {
       activeOpacity={0.85}
       onPress={onPress}
       style={[styles.btn, style]}>
-      <Text style={styles.chevron}>‹</Text>
+      <Ionicons name="chevron-back" size={24} color={Colors.primary} />
     </TouchableOpacity>
   );
 };
@@ -26,15 +27,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Dimensions.shadow.soft,
-  },
-  chevron: {
-    fontSize: 28,
-    lineHeight: 30,
-    color: Colors.primary,
-    fontWeight: '300',
-    marginTop: -2,
-    marginLeft: -1,
+    elevation: 0,
+    shadowOpacity: 0,
   },
 });
 

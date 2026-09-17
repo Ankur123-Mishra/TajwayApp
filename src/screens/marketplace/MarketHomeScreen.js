@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Switch,
@@ -10,9 +11,14 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import BrandLogo from '../../components/brand/BrandLogo';
+import {FilterSlidersIcon} from '../../components/common';
+import FreeVehicleCard from '../../components/booking/FreeVehicleCard';
 import MarketBookingCard from '../../components/booking/MarketBookingCard';
 import {ROUTES} from '../../constants/Routes';
+import {mockFreeVehicles, mockMarketBookings} from '../../mockData';
 import {Colors, Dimensions, Spacing} from '../../theme';
+
+const AVATAR = require('../../assets/images/partner_deepesh.png');
 
 const FEATURES = [
   {id: 'insurance', label: 'Car Insurance', icon: '🛡'},
@@ -23,35 +29,38 @@ const FEATURES = [
 const SETUP_FLOWS = [
   {
     id: 'personal',
-    title: 'Personal Information',
-    subtitle: 'Provide location permission to see bookings',
-    steps: ['Click Profile', 'Personal Information', 'Set Profile Pic', 'Update'],
+    image: require('../../assets/images/PersonalInfo.png'),
     route: ROUTES.PERSONAL_INFO,
   },
   {
     id: 'vehicle',
-    title: 'Add Vehicle',
-    subtitle: null,
-    steps: ['Click Profile', 'Manage Vehicle', 'Add Button', 'Add details', 'Submit'],
+    image: require('../../assets/images/AddVehicle.png'),
     route: ROUTES.MANAGE_VEHICLES,
   },
   {
     id: 'driver',
-    title: 'Add Driver',
-    subtitle: null,
-    steps: ['Click Profile', 'Manage Driver', 'Add Button', 'Add details', 'Submit'],
+    image: require('../../assets/images/AddDriver.png'),
     route: ROUTES.MANAGE_DRIVERS,
   },
 ];
 
 /**
- * Market home — empty setup state matching screenshot 7.
+ * Market home — Bookings setup / Free Vehicles listings.
  */
 const MarketHomeScreen = ({navigation}) => {
   const insets = useSafeAreaInsets();
-  const [alerts, setAlerts] = useState(true);
+  const [alerts, setAlerts] = useState(false);
   const [tab, setTab] = useState('bookings');
   const [dismissed, setDismissed] = useState({});
+  const [showFab, setShowFab] = useState(true);
+  const isVehicles = tab === 'vehicles';
+
+  const handleAlertsChange = value => {
+    setAlerts(value);
+    if (value) {
+      navigation.navigate(ROUTES.ROUTE_ALERT_SETUP);
+    }
+  };
 
   return (
     <View style={[styles.container, {paddingTop: insets.top + 8}]}>
@@ -61,7 +70,7 @@ const MarketHomeScreen = ({navigation}) => {
           <Text style={styles.alertsLabel}>Alerts</Text>
           <Switch
             value={alerts}
-            onValueChange={setAlerts}
+            onValueChange={handleAlertsChange}
             trackColor={{false: '#D0D0D0', true: Colors.primary}}
             thumbColor="#fff"
           />
@@ -94,87 +103,102 @@ const MarketHomeScreen = ({navigation}) => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.searchRow}>
-          <View style={styles.searchBox}>
-            <Text style={styles.searchIcon}>⌕</Text>
-            <TextInput
-              placeholder="Search"
-              placeholderTextColor={Colors.textPlaceholder}
-              style={styles.searchInput}
-            />
-          </View>
-          <TouchableOpacity style={styles.filterBtn}>
-            <Text style={styles.filterIcon}>☰</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.featureRow}>
-          {FEATURES.map(f => (
-            <View key={f.id} style={styles.featureCard}>
-              <Text style={styles.featureIcon}>{f.icon}</Text>
-              <Text style={styles.featureLabel}>{f.label}</Text>
+        {isVehicles ? (
+          <>
+            <View style={styles.applyRow}>
+              <Text style={styles.applyText}>Apply Filters</Text>
+              <TouchableOpacity style={styles.filterBtn} activeOpacity={0.85}>
+                <FilterSlidersIcon />
+              </TouchableOpacity>
             </View>
-          ))}
-        </View>
 
-        <Text style={styles.instruction}>
-          Please complete your profile and add at-least one vehicle and one
-          driver in order to take a booking.
-        </Text>
+            {mockFreeVehicles.map(({id, hasAvatar, ...vehicle}) => (
+              <FreeVehicleCard
+                key={id}
+                {...vehicle}
+                avatarSource={hasAvatar ? AVATAR : undefined}
+              />
+            ))}
+          </>
+        ) : (
+          <>
+            <View style={styles.searchRow}>
+              <View style={styles.searchBox}>
+                <Text style={styles.searchIcon}>⌕</Text>
+                <TextInput
+                  placeholder="Search by booking id..."
+                  placeholderTextColor={Colors.textPlaceholder}
+                  style={styles.searchInput}
+                />
+              </View>
+              <TouchableOpacity style={styles.filterBtn}>
+                <FilterSlidersIcon />
+              </TouchableOpacity>
+            </View>
 
-        {SETUP_FLOWS.map(flow =>
-          dismissed[flow.id] ? null : (
-            <TouchableOpacity
-              key={flow.id}
-              activeOpacity={0.9}
-              style={styles.flowCard}
-              onPress={() => navigation.navigate(flow.route)}>
-              <View style={styles.flowHead}>
-                <View style={styles.flowHeadText}>
-                  <Text style={styles.flowTitle}>{flow.title}</Text>
-                  {flow.subtitle ? (
-                    <Text style={styles.flowSub}>{flow.subtitle}</Text>
-                  ) : null}
+            <View style={styles.featureRow}>
+              {FEATURES.map(f => (
+                <View key={f.id} style={styles.featureCard}>
+                  <Text style={styles.featureIcon}>{f.icon}</Text>
+                  <Text style={styles.featureLabel}>{f.label}</Text>
                 </View>
-                <TouchableOpacity
-                  onPress={() =>
-                    setDismissed(prev => ({...prev, [flow.id]: true}))
-                  }
-                  hitSlop={8}>
-                  <Text style={styles.closeX}>✕</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.stepsWrap}>
-                {flow.steps.map((step, idx) => (
-                  <View key={step} style={styles.stepItem}>
-                    <View style={styles.stepPill}>
-                      <Text style={styles.stepText}>{step}</Text>
-                    </View>
-                    {idx < flow.steps.length - 1 ? (
-                      <Text style={styles.dash}>···</Text>
-                    ) : null}
-                  </View>
-                ))}
-              </View>
-            </TouchableOpacity>
-          ),
-        )}
+              ))}
+            </View>
 
-        <MarketBookingCard />
-        <MarketBookingCard
-          tripType="One Way"
-          vehicle="INNOVA CRYSTA"
-          when="Today"
-          time="09:30 AM"
-          notes="Airport pickup, wait time included"
-          extras="All inclusive, AC, toll tax sath me"
-          reviews={128}
-        />
+            <Text style={styles.instruction}>
+              Please complete your profile and add at-least one vehicle and one
+              driver in order to take a booking.
+            </Text>
+
+            {SETUP_FLOWS.map(flow =>
+              dismissed[flow.id] ? null : (
+                <View key={flow.id} style={styles.flowImageWrap}>
+                  <TouchableOpacity
+                    activeOpacity={0.9}
+                    onPress={() => navigation.navigate(flow.route)}>
+                    <Image
+                      source={flow.image}
+                      style={styles.flowImage}
+                      resizeMode="contain"
+                    />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.flowCloseBtn}
+                    onPress={() =>
+                      setDismissed(prev => ({...prev, [flow.id]: true}))
+                    }
+                    hitSlop={8}>
+                    <Text style={styles.closeX}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              ),
+            )}
+
+            {mockMarketBookings.map(({id, hasAvatar, ...booking}) => (
+              <MarketBookingCard
+                key={id}
+                {...booking}
+                avatarSource={hasAvatar ? AVATAR : undefined}
+              />
+            ))}
+          </>
+        )}
       </ScrollView>
 
-      <TouchableOpacity style={styles.fab} activeOpacity={0.9}>
-        <Text style={styles.fabIcon}>🤖</Text>
-      </TouchableOpacity>
+      {showFab ? (
+        <View style={styles.fabWrap}>
+          <TouchableOpacity
+            style={styles.fabClose}
+            onPress={() => setShowFab(false)}
+            hitSlop={6}
+            accessibilityLabel="Dismiss chat">
+            <Text style={styles.fabCloseX}>✕</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.fab} activeOpacity={0.9}>
+            <Text style={styles.fabIcon}>🤖</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -231,7 +255,8 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 4,
     marginBottom: Spacing.md,
-    ...Dimensions.shadow.soft,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   segBtn: {
     flex: 1,
@@ -255,6 +280,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: Spacing.base,
   },
+  applyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+    marginTop: 2,
+  },
+  applyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.textNavy,
+  },
   searchBox: {
     flex: 1,
     flexDirection: 'row',
@@ -264,7 +301,8 @@ const styles = StyleSheet.create({
     height: 44,
     paddingHorizontal: 12,
     marginRight: 10,
-    ...Dimensions.shadow.soft,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   searchIcon: {
     fontSize: 16,
@@ -284,12 +322,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Dimensions.shadow.soft,
-  },
-  filterIcon: {
-    color: Colors.filterRed,
-    fontSize: 18,
-    fontWeight: '700',
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   featureRow: {
     flexDirection: 'row',
@@ -303,7 +337,8 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 8,
     alignItems: 'center',
-    ...Dimensions.shadow.soft,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   featureIcon: {
     fontSize: 26,
@@ -324,72 +359,41 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.base,
     paddingHorizontal: 8,
   },
-  flowCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    padding: 14,
+  flowImageWrap: {
     marginBottom: 12,
-    ...Dimensions.shadow.soft,
+    marginHorizontal: -8,
+    position: 'relative',
   },
-  flowHead: {
-    flexDirection: 'row',
-    marginBottom: 12,
+  flowImage: {
+    width: '100%',
+    height: 118,
   },
-  flowHeadText: {
-    flex: 1,
-  },
-  flowTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textNavy,
-  },
-  flowSub: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    marginTop: 2,
+  flowCloseBtn: {
+    position: 'absolute',
+    top: 6,
+    right: 14,
+    zIndex: 1,
   },
   closeX: {
     color: Colors.dashedRed,
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '700',
-    width: 24,
-    height: 24,
+    width: 18,
+    height: 18,
     textAlign: 'center',
-    borderWidth: 1.5,
+    borderWidth: 1.2,
     borderColor: Colors.dashedRed,
-    borderRadius: 12,
+    borderRadius: 9,
     overflow: 'hidden',
-    lineHeight: 20,
+    lineHeight: 15,
+    backgroundColor: Colors.surface,
   },
-  stepsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-  },
-  stepItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  stepPill: {
-    backgroundColor: '#EEF0F3',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  stepText: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-  },
-  dash: {
-    color: Colors.dashedRed,
-    marginHorizontal: 4,
-    fontWeight: '700',
+  fabWrap: {
+    position: 'absolute',
+    right: 16,
+    bottom: 18,
   },
   fab: {
-    position: 'absolute',
-    right: 18,
-    bottom: 18,
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -397,6 +401,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...Dimensions.shadow.medium,
+  },
+  fabClose: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    zIndex: 2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: Colors.dashedRed,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fabCloseX: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '800',
+    lineHeight: 12,
+    marginTop: -1,
   },
   fabIcon: {
     fontSize: 28,

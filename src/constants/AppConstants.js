@@ -1,4 +1,4 @@
-export const APP_NAME = 'Taxi Sanchalak';
+export const APP_NAME = 'Tajway';
 export const APP_TAGLINE = "India's Biggest B2B Taxi Marketplace";
 export const APP_TAGLINE_HI = 'Bharat Ki Apni Taxi Community';
 export const APP_VERSION = 'Version 5.7.6 (prod)';

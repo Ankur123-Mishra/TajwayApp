@@ -9,7 +9,7 @@ import {
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
 
 /**
- * Taxi Sanchalak primary CTA — yellow, rounded, white label by default.
+ * Tajway primary CTA — yellow, rounded, white label by default.
  */
 const PrimaryButton = ({
   title,

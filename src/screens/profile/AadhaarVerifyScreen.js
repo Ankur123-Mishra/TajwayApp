@@ -4,7 +4,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import BackButton from '../../components/brand/BackButton';
 import PrimaryButton from '../../components/brand/PrimaryButton';
 import {ROUTES} from '../../constants/Routes';
-import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {Colors, Spacing, Typography} from '../../theme';
 
 /**
  * Verify with Aadhaar (screenshots 10 / 12).
@@ -93,7 +93,6 @@ const styles = StyleSheet.create({
     height: 56,
     justifyContent: 'center',
     paddingHorizontal: 16,
-    ...Dimensions.shadow.soft,
   },
   input: {
     fontSize: 16,

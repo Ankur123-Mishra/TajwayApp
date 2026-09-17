@@ -149,10 +149,11 @@ const styles = StyleSheet.create({
     marginTop: Spacing.base,
     backgroundColor: Colors.surface,
     borderRadius: Dimensions.borderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
     height: 54,
     justifyContent: 'center',
     paddingHorizontal: Spacing.base,
-    ...Dimensions.shadow.soft,
   },
   otpInput: {
     fontSize: 15,

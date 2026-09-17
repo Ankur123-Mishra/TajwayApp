@@ -8,6 +8,7 @@ export {default as AppTextInput} from './AppTextInput';
 export {default as BrandLogo} from '../brand/BrandLogo';
 export {default as DocumentUploadCard} from './DocumentUploadCard';
 export {default as EmptyState} from './EmptyState';
+export {default as FilterSlidersIcon} from './FilterSlidersIcon';
 export {default as Loader} from './Loader';
 export {default as LoadingView} from './LoadingView';
 export {default as OTPInput} from './OTPInput';

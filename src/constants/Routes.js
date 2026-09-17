@@ -27,6 +27,10 @@ export const ROUTES = {
   MANAGE_VEHICLES: 'ManageVehicles',
   MANAGE_DRIVERS: 'ManageDrivers',
   ADD_DRIVER: 'AddDriver',
+  MY_NETWORK: 'MyNetwork',
+  PAYMENT_METHODS: 'PaymentMethods',
+  TRANSACTIONS: 'Transactions',
+  VERIFIED_SUPPLIER: 'VerifiedSupplier',
 
   // Agent tabs / screens
   AGENT_HOME: 'AgentHome',
@@ -36,6 +40,10 @@ export const ROUTES = {
   AGENT_CREATE_BOOKING: 'AgentCreateBooking',
   AGENT_MESSAGES: 'AgentMessages',
   AGENT_PROFILE: 'AgentProfile',
+  POST_BOOKING: 'PostBooking',
+  POST_FREE_VEHICLE: 'PostFreeVehicle',
+  LOCATION_SELECT: 'LocationSelect',
+  ROUTE_ALERT_SETUP: 'RouteAlertSetup',
 
   // Driver tabs / screens
   DRIVER_HOME: 'DriverHome',

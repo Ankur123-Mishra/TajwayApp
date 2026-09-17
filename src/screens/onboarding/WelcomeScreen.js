@@ -1,9 +1,10 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useDispatch} from 'react-redux';
 import BrandHeader from '../../components/brand/BrandHeader';
 import PrimaryButton from '../../components/brand/PrimaryButton';
+import LanguageSelectModal from '../../components/profile/LanguageSelectModal';
 import {ROUTES} from '../../constants/Routes';
 import {setOnboarded} from '../../redux/slices/authSlice';
 import {Colors, Spacing} from '../../theme';
@@ -14,6 +15,8 @@ import {Colors, Spacing} from '../../theme';
 const WelcomeScreen = ({navigation}) => {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
+  const [language, setLanguage] = useState('en');
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
   const goPhone = mode => {
     dispatch(setOnboarded(true));
@@ -60,10 +63,17 @@ const WelcomeScreen = ({navigation}) => {
         </View>
         <PrimaryButton
           title="Change Language"
-          onPress={() => {}}
+          onPress={() => setLanguageModalVisible(true)}
           style={styles.langBtn}
         />
       </View>
+
+      <LanguageSelectModal
+        visible={languageModalVisible}
+        selected={language}
+        onClose={() => setLanguageModalVisible(false)}
+        onSave={setLanguage}
+      />
     </View>
   );
 };

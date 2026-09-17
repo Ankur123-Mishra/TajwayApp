@@ -10,12 +10,14 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useDispatch} from 'react-redux';
+import {Ionicons} from '@react-native-vector-icons/ionicons';
 import BackButton from '../../components/brand/BackButton';
 import PrimaryButton from '../../components/brand/PrimaryButton';
+import CitySelectModal from '../../components/profile/CitySelectModal';
 import {USER_ROLES} from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
 import {updateUser} from '../../redux/slices/authSlice';
-import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {Colors, Spacing, Typography} from '../../theme';
 
 const ROLES = [
   {id: USER_ROLES.AGENT, label: 'Agent'},
@@ -23,8 +25,13 @@ const ROLES = [
   {id: USER_ROLES.DRIVER, label: 'Driver'},
 ];
 
+const VERIFICATION_ITEMS = [
+  {id: 'gst', title: 'GST ID', status: 'Document unverified'},
+  {id: 'aadhaar', title: 'Aadhaar', status: 'Document unverified'},
+];
+
 /**
- * Personal Information + GST upload bottom sheet (screenshots 8–9).
+ * Personal Information — profile edit (screenshot match).
  */
 const PersonalInfoScreen = ({navigation}) => {
   const insets = useSafeAreaInsets();
@@ -35,6 +42,7 @@ const PersonalInfoScreen = ({navigation}) => {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState(USER_ROLES.AGENT);
   const [gstVisible, setGstVisible] = useState(false);
+  const [cityModalVisible, setCityModalVisible] = useState(false);
 
   const onUpdate = () => {
     dispatch(
@@ -46,12 +54,19 @@ const PersonalInfoScreen = ({navigation}) => {
         role,
       }),
     );
-    setGstVisible(true);
+    navigation.goBack();
+  };
+
+  const onVerify = itemId => {
+    if (itemId === 'gst') {
+      setGstVisible(true);
+      return;
+    }
+    navigation.navigate(ROUTES.AADHAAR_VERIFY);
   };
 
   const onGstUpload = () => {
     setGstVisible(false);
-    navigation.navigate(ROUTES.AADHAAR_VERIFY);
   };
 
   return (
@@ -67,16 +82,26 @@ const PersonalInfoScreen = ({navigation}) => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <View style={styles.avatarBox}>
-          <Text style={styles.avatarIcon}>👤</Text>
+          <Ionicons
+            name="person"
+            size={48}
+            color={Colors.textSlate}
+          />
         </View>
 
-        <Field label="Full Name" value={fullName} onChangeText={setFullName} placeholder="Enter full name" />
+        <Field
+          label="Full Name"
+          value={fullName}
+          onChangeText={setFullName}
+          placeholder="Enter full name"
+        />
         <Field
           label="Enter city name"
           value={city}
-          onChangeText={setCity}
-          placeholder="City"
-          rightIcon="📍"
+          placeholder="Select City"
+          rightIcon="location-sharp"
+          editable={false}
+          onPress={() => setCityModalVisible(true)}
         />
         <Field
           label="Company Name"
@@ -90,17 +115,23 @@ const PersonalInfoScreen = ({navigation}) => {
           onChangeText={setEmail}
           placeholder="Enter valid email address"
           keyboardType="email-address"
+          autoCapitalize="none"
         />
 
         <Text style={styles.label}>I am a</Text>
         <View style={styles.roleRow}>
-          {ROLES.map(r => {
+          {ROLES.map((r, index) => {
             const on = role === r.id;
             return (
               <TouchableOpacity
                 key={r.id}
-                style={[styles.roleBtn, on && styles.roleBtnOn]}
-                onPress={() => setRole(r.id)}>
+                style={[
+                  styles.roleBtn,
+                  on && styles.roleBtnOn,
+                  index === ROLES.length - 1 && styles.roleBtnLast,
+                ]}
+                onPress={() => setRole(r.id)}
+                activeOpacity={0.85}>
                 <Text style={[styles.roleText, on && styles.roleTextOn]}>
                   {r.label}
                 </Text>
@@ -108,10 +139,30 @@ const PersonalInfoScreen = ({navigation}) => {
             );
           })}
         </View>
+
+        <Text style={styles.verifyHeading}>VERIFICATION</Text>
+        {VERIFICATION_ITEMS.map(item => (
+          <View key={item.id} style={styles.verifyCard}>
+            <View style={styles.verifyCopy}>
+              <Text style={styles.verifyTitle}>{item.title}</Text>
+              <Text style={styles.verifyStatus}>{item.status}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.verifyBtn}
+              onPress={() => onVerify(item.id)}
+              activeOpacity={0.85}>
+              <Text style={styles.verifyBtnText}>Verify Now</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
       </ScrollView>
 
       <View style={[styles.footer, {paddingBottom: insets.bottom + 12}]}>
-        <PrimaryButton title="Update" onPress={onUpdate} />
+        <PrimaryButton
+          title="Update"
+          onPress={onUpdate}
+          style={styles.updateBtn}
+        />
       </View>
 
       <Modal visible={gstVisible} transparent animationType="slide">
@@ -126,7 +177,11 @@ const PersonalInfoScreen = ({navigation}) => {
             <View style={styles.uploadRow}>
               {[1, 2, 3].map(i => (
                 <TouchableOpacity key={i} style={styles.uploadBox}>
-                  <Text style={styles.camIcon}>📷</Text>
+                  <Ionicons
+                    name="camera-outline"
+                    size={28}
+                    color={Colors.primary}
+                  />
                   <Text style={styles.clickHere}>Click here</Text>
                 </TouchableOpacity>
               ))}
@@ -135,6 +190,13 @@ const PersonalInfoScreen = ({navigation}) => {
           </View>
         </View>
       </Modal>
+
+      <CitySelectModal
+        visible={cityModalVisible}
+        selected={city}
+        onClose={() => setCityModalVisible(false)}
+        onDone={setCity}
+      />
     </View>
   );
 };
@@ -146,20 +208,32 @@ const Field = ({
   placeholder,
   rightIcon,
   keyboardType,
+  autoCapitalize,
+  editable = true,
+  onPress,
 }) => (
   <View style={styles.field}>
     <Text style={styles.label}>{label}</Text>
-    <View style={styles.inputWrap}>
+    <TouchableOpacity
+      style={styles.inputWrap}
+      activeOpacity={onPress ? 0.85 : 1}
+      onPress={onPress}
+      disabled={!onPress}>
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={Colors.textPlaceholder}
         keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        editable={editable && !onPress}
+        pointerEvents={onPress ? 'none' : 'auto'}
         style={styles.input}
       />
-      {rightIcon ? <Text style={styles.rightIcon}>{rightIcon}</Text> : null}
-    </View>
+      {rightIcon ? (
+        <Ionicons name={rightIcon} size={18} color={Colors.primary} />
+      ) : null}
+    </TouchableOpacity>
   </View>
 );
 
@@ -178,7 +252,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: Typography.fontWeights.semibold,
     color: Colors.textSlate,
   },
   headerSpacer: {
@@ -190,25 +264,20 @@ const styles = StyleSheet.create({
   },
   avatarBox: {
     alignSelf: 'center',
-    width: 96,
-    height: 96,
-    borderRadius: 16,
+    width: 110,
+    height: 110,
+    borderRadius: 18,
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Spacing.xl,
-    ...Dimensions.shadow.soft,
-  },
-  avatarIcon: {
-    fontSize: 42,
-    color: Colors.textSlate,
   },
   field: {
     marginBottom: Spacing.base,
   },
   label: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: Typography.fontWeights.bold,
     color: Colors.textSlate,
     marginBottom: 8,
   },
@@ -219,7 +288,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     height: 52,
     paddingHorizontal: 14,
-    ...Dimensions.shadow.soft,
   },
   input: {
     flex: 1,
@@ -227,39 +295,84 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     padding: 0,
   },
-  rightIcon: {
-    fontSize: 16,
-  },
   roleRow: {
     flexDirection: 'row',
-    marginBottom: Spacing.base,
+    marginBottom: Spacing.xl,
   },
   roleBtn: {
     flex: 1,
     height: 44,
     borderRadius: 10,
     backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    marginRight: 10,
+  },
+  roleBtnLast: {
+    marginRight: 0,
   },
   roleBtnOn: {
-    backgroundColor: Colors.textSlate,
-    borderColor: Colors.textSlate,
+    backgroundColor: Colors.secondary,
   },
   roleText: {
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: Typography.fontWeights.semibold,
     color: Colors.textMuted,
   },
   roleTextOn: {
+    color: Colors.textInverse,
+  },
+  verifyHeading: {
+    fontSize: 12,
+    fontWeight: Typography.fontWeights.semibold,
+    color: Colors.textPlaceholder,
+    letterSpacing: 0.6,
+    marginBottom: 12,
+  },
+  verifyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  verifyCopy: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  verifyTitle: {
+    fontSize: 15,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textSlate,
+    marginBottom: 2,
+  },
+  verifyStatus: {
+    fontSize: 13,
+    color: Colors.textMuted,
+  },
+  verifyBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  verifyBtnText: {
+    fontSize: 12,
+    fontWeight: Typography.fontWeights.bold,
     color: Colors.textInverse,
   },
   footer: {
     paddingHorizontal: Spacing.screenPadding,
     paddingTop: 8,
     backgroundColor: Colors.backgroundAlt,
+  },
+  updateBtn: {
+    elevation: 0,
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: {width: 0, height: 0},
   },
   modalOverlay: {
     flex: 1,
@@ -281,7 +394,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: Typography.fontWeights.bold,
     color: Colors.textNavy,
     marginLeft: 24,
   },
@@ -305,10 +418,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  camIcon: {
-    fontSize: 28,
-    marginBottom: 6,
+    gap: 6,
   },
   clickHere: {
     fontSize: 12,

@@ -46,7 +46,7 @@ const OnboardingScreen = ({navigation}) => {
       <Text style={styles.brand}>{APP_NAME}</Text>
       <View style={styles.content}>
         <View style={styles.hero}>
-          <Text style={styles.heroMark}>TC</Text>
+          <Text style={styles.heroMark}>TW</Text>
         </View>
         <Text style={styles.title}>{slide.title}</Text>
         <Text style={styles.body}>{slide.body}</Text>

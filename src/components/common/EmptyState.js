@@ -15,7 +15,7 @@ const EmptyState = ({
   return (
     <View style={styles.container}>
       <View style={styles.iconBubble}>
-        <Text style={styles.iconText}>TC</Text>
+        <Text style={styles.iconText}>TW</Text>
       </View>
       <Text style={styles.title}>{title}</Text>
       {description ? (

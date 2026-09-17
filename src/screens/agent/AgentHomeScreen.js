@@ -35,7 +35,7 @@ const CHECKLIST = [
 ];
 
 /**
- * Agent home — Taxi Sanchalak style marketplace dashboard.
+ * Agent home — Tajway style marketplace dashboard.
  */
 const AgentHomeScreen = ({navigation}) => {
   const insets = useSafeAreaInsets();

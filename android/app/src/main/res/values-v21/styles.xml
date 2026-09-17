@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Framework Material dialog theme — controls calendar header & selected day. -->
+    <style name="TajwayDatePickerDialogTheme" parent="android:Theme.Material.Light.Dialog">
+        <item name="android:colorAccent">@color/tajway_yellow</item>
+        <item name="android:colorPrimary">@color/tajway_yellow</item>
+        <item name="android:colorPrimaryDark">@color/tajway_yellow_dark</item>
+        <item name="android:colorControlActivated">@color/tajway_yellow</item>
+        <item name="android:buttonBarPositiveButtonStyle">@style/TajwayDialogButton</item>
+        <item name="android:buttonBarNegativeButtonStyle">@style/TajwayDialogButton</item>
+        <item name="android:windowBackground">@color/tajway_white</item>
+    </style>
+
+    <style name="TajwayTimePickerDialogTheme" parent="android:Theme.Material.Light.Dialog">
+        <item name="android:colorAccent">@color/tajway_yellow</item>
+        <item name="android:colorPrimary">@color/tajway_yellow</item>
+        <item name="android:colorControlActivated">@color/tajway_yellow</item>
+        <item name="android:buttonBarPositiveButtonStyle">@style/TajwayDialogButton</item>
+        <item name="android:buttonBarNegativeButtonStyle">@style/TajwayDialogButton</item>
+        <item name="android:windowBackground">@color/tajway_white</item>
+    </style>
+</resources>

@@ -1,5 +1,5 @@
 /**
- * TaxiConnect brand buttons — updated for Taxi Sanchalak yellow theme.
+ * Tajway brand buttons — yellow theme.
  */
 import React from 'react';
 import {
