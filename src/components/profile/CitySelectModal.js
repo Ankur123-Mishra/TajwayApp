@@ -233,7 +233,7 @@ const CitySelectModal = ({visible, selected = '', onClose, onDone}) => {
               style={[styles.actionBtn, styles.doneBtn]}
               onPress={handleDone}
               activeOpacity={0.85}>
-              <Text style={styles.actionText}>DONE</Text>
+              <Text style={[styles.actionText, styles.doneText]}>DONE</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.surfaceAlt,
     borderWidth: 1,
     borderColor: Colors.borderLight,
     borderRadius: 999,
@@ -356,6 +356,9 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeights.bold,
     color: Colors.textInverse,
     letterSpacing: 0.4,
+  },
+  doneText: {
+    color: Colors.textInverse,
   },
 });
 

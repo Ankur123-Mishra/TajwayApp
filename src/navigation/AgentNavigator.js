@@ -1,9 +1,8 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {View} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import AgentTabBar from '../components/navigation/AgentTabBar';
-import PostActionSheet from '../components/post/PostActionSheet';
 import {ROUTES} from '../constants/Routes';
 import AgentMessagesScreen from '../screens/agent/AgentMessagesScreen';
 import AgentProfileScreen from '../screens/agent/AgentProfileScreen';
@@ -12,6 +11,7 @@ import MyBookingsScreen from '../screens/agent/MyBookingsScreen';
 import LocationSelectScreen from '../screens/agent/LocationSelectScreen';
 import PostBookingScreen from '../screens/agent/PostBookingScreen';
 import PostFreeVehicleScreen from '../screens/agent/PostFreeVehicleScreen';
+import MarketBookingDetailScreen from '../screens/marketplace/MarketBookingDetailScreen';
 import MarketHomeScreen from '../screens/marketplace/MarketHomeScreen';
 import RouteAlertSetupScreen from '../screens/marketplace/RouteAlertSetupScreen';
 import AadhaarVerifyScreen from '../screens/profile/AadhaarVerifyScreen';
@@ -21,6 +21,7 @@ import MyNetworkScreen from '../screens/profile/MyNetworkScreen';
 import PaymentMethodsScreen from '../screens/profile/PaymentMethodsScreen';
 import PersonalInfoScreen from '../screens/profile/PersonalInfoScreen';
 import TransactionsScreen from '../screens/profile/TransactionsScreen';
+import BecomeVerifiedSupplierScreen from '../screens/profile/BecomeVerifiedSupplierScreen';
 import VerifiedSupplierScreen from '../screens/profile/VerifiedSupplierScreen';
 
 const Tab = createBottomTabNavigator();
@@ -28,59 +29,43 @@ const Stack = createNativeStackNavigator();
 
 const EmptyTab = () => <View />;
 
-const renderAgentTabBar = (onCreatePress, props) => (
-  <AgentTabBar {...props} onCreatePress={onCreatePress} />
+const renderAgentTabBar = (onNewBooking, onFreeVehicle, props) => (
+  <AgentTabBar
+    {...props}
+    onNewBooking={onNewBooking}
+    onFreeVehicle={onFreeVehicle}
+  />
 );
 
 const AgentTabs = ({navigation}) => {
-  const [postSheetVisible, setPostSheetVisible] = useState(false);
-
-  const openPostSheet = () => setPostSheetVisible(true);
-  const closePostSheet = () => setPostSheetVisible(false);
-
-  const goToPostBooking = () => {
-    closePostSheet();
-    navigation.navigate(ROUTES.POST_BOOKING);
-  };
-
-  const goToFreeVehicle = () => {
-    closePostSheet();
-    navigation.navigate(ROUTES.POST_FREE_VEHICLE);
-  };
+  const goToPostBooking = () => navigation.navigate(ROUTES.POST_BOOKING);
+  const goToFreeVehicle = () => navigation.navigate(ROUTES.POST_FREE_VEHICLE);
 
   return (
-    <>
-      <Tab.Navigator
-        tabBar={props => renderAgentTabBar(openPostSheet, props)}
-        screenOptions={{
-          headerShown: false,
-        }}>
-        <Tab.Screen name={ROUTES.AGENT_HOME} component={MarketHomeScreen} />
-        <Tab.Screen name={ROUTES.AGENT_BOOKINGS} component={MyBookingsScreen} />
-        <Tab.Screen
-          name={ROUTES.AGENT_CREATE_BOOKING}
-          component={EmptyTab}
-          listeners={{
-            tabPress: e => {
-              e.preventDefault();
-              openPostSheet();
-            },
-          }}
-        />
-        <Tab.Screen
-          name={ROUTES.AGENT_MESSAGES}
-          component={AgentMessagesScreen}
-        />
-        <Tab.Screen name={ROUTES.AGENT_PROFILE} component={AgentProfileScreen} />
-      </Tab.Navigator>
-
-      <PostActionSheet
-        visible={postSheetVisible}
-        onClose={closePostSheet}
-        onNewBooking={goToPostBooking}
-        onFreeVehicle={goToFreeVehicle}
+    <Tab.Navigator
+      tabBar={props =>
+        renderAgentTabBar(goToPostBooking, goToFreeVehicle, props)
+      }
+      screenOptions={{
+        headerShown: false,
+      }}>
+      <Tab.Screen name={ROUTES.AGENT_HOME} component={MarketHomeScreen} />
+      <Tab.Screen name={ROUTES.AGENT_BOOKINGS} component={MyBookingsScreen} />
+      <Tab.Screen
+        name={ROUTES.AGENT_CREATE_BOOKING}
+        component={EmptyTab}
+        listeners={{
+          tabPress: e => {
+            e.preventDefault();
+          },
+        }}
       />
-    </>
+      <Tab.Screen
+        name={ROUTES.AGENT_MESSAGES}
+        component={AgentMessagesScreen}
+      />
+      <Tab.Screen name={ROUTES.AGENT_PROFILE} component={AgentProfileScreen} />
+    </Tab.Navigator>
   );
 };
 
@@ -103,6 +88,10 @@ const AgentNavigator = () => {
       <Stack.Screen
         name={ROUTES.ROUTE_ALERT_SETUP}
         component={RouteAlertSetupScreen}
+      />
+      <Stack.Screen
+        name={ROUTES.MARKET_BOOKING_DETAIL}
+        component={MarketBookingDetailScreen}
       />
       <Stack.Screen name={ROUTES.PERSONAL_INFO} component={PersonalInfoScreen} />
       <Stack.Screen
@@ -129,6 +118,10 @@ const AgentNavigator = () => {
       <Stack.Screen
         name={ROUTES.VERIFIED_SUPPLIER}
         component={VerifiedSupplierScreen}
+      />
+      <Stack.Screen
+        name={ROUTES.BECOME_VERIFIED_SUPPLIER}
+        component={BecomeVerifiedSupplierScreen}
       />
       <Stack.Screen name={ROUTES.CHAT} component={ChatDetailsScreen} />
     </Stack.Navigator>

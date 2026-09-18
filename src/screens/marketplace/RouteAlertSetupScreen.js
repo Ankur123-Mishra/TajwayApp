@@ -182,7 +182,7 @@ const RouteAlertSetupScreen = ({navigation}) => {
           onPress={handleBack}
           activeOpacity={0.85}
           accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={22} color="#fff" />
+          <Ionicons name="chevron-back" size={22} color={Colors.onPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Route Alert Setup</Text>
         <TouchableOpacity onPress={handleSkip} hitSlop={8} activeOpacity={0.85}>
@@ -244,7 +244,7 @@ const RouteAlertSetupScreen = ({navigation}) => {
                   selected ? styles.checkCircleOn : styles.checkCircleOff,
                 ]}>
                 {selected ? (
-                  <Ionicons name="checkmark" size={12} color={Colors.primary} />
+                  <Ionicons name="checkmark" size={12} color={Colors.onPrimary} />
                 ) : null}
               </View>
               <View style={styles.vehicleImageWrap}>
@@ -462,19 +462,19 @@ const styles = StyleSheet.create({
     height: 34,
     borderRadius: 17,
     borderWidth: 1.5,
-    borderColor: '#fff',
+    borderColor: Colors.onPrimary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    color: '#fff',
+    color: Colors.onPrimary,
     fontSize: 18,
     fontWeight: '700',
   },
   skipText: {
-    color: '#fff',
+    color: Colors.onPrimary,
     fontSize: 15,
     fontWeight: '600',
     minWidth: 34,
@@ -490,10 +490,10 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   progressSegOn: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: Colors.onPrimary,
   },
   progressSegOff: {
-    backgroundColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: 'rgba(26,26,27,0.28)',
   },
   body: {
     flex: 1,
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   vehicleCardOff: {
-    backgroundColor: '#FFE8B0',
+    backgroundColor: Colors.primaryLight,
   },
   checkCircle: {
     position: 'absolute',
@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
   checkCircleOff: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: '#fff',
+    borderColor: Colors.onPrimary,
   },
   vehicleImageWrap: {
     width: '100%',
@@ -574,7 +574,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   vehicleLabel: {
-    color: '#fff',
+    color: Colors.onPrimary,
     fontWeight: '800',
     fontSize: 11,
     textAlign: 'center',
@@ -652,7 +652,7 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   chipTextOn: {
-    color: '#fff',
+    color: Colors.onPrimary,
   },
   chipIcon: {
     marginLeft: 4,
@@ -723,7 +723,7 @@ const styles = StyleSheet.create({
   continueText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#fff',
+    color: Colors.onPrimary,
   },
   modalOverlay: {
     flex: 1,
@@ -761,7 +761,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   modalDoneText: {
-    color: '#fff',
+    color: Colors.onPrimary,
     fontWeight: '700',
     fontSize: 15,
   },

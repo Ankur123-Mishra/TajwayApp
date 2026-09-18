@@ -1,16 +1,18 @@
-import React, {useState} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {Animated, Easing, StyleSheet, Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useDispatch} from 'react-redux';
+import {Ionicons} from '@react-native-vector-icons/ionicons';
 import BrandHeader from '../../components/brand/BrandHeader';
 import PrimaryButton from '../../components/brand/PrimaryButton';
 import LanguageSelectModal from '../../components/profile/LanguageSelectModal';
 import {ROUTES} from '../../constants/Routes';
 import {setOnboarded} from '../../redux/slices/authSlice';
-import {Colors, Spacing} from '../../theme';
+import {Colors, Spacing, Typography} from '../../theme';
 
 /**
- * Welcome — Login / Sign Up / Change Language (screenshot 2).
+ * Welcome — Login / Sign Up / Change Language.
+ * Top (BrandHeader) + bottom actions stay standard; only center visual varies.
  */
 const WelcomeScreen = ({navigation}) => {
   const insets = useSafeAreaInsets();
@@ -18,10 +20,59 @@ const WelcomeScreen = ({navigation}) => {
   const [language, setLanguage] = useState('en');
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
+  const fadeIn = useRef(new Animated.Value(0)).current;
+  const rise = useRef(new Animated.Value(14)).current;
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeIn, {
+        toValue: 1,
+        duration: 480,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(rise, {
+        toValue: 0,
+        duration: 480,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    const pulseLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 1900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0,
+          duration: 1900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    pulseLoop.start();
+    return () => pulseLoop.stop();
+  }, [fadeIn, rise, pulse]);
+
   const goPhone = mode => {
     dispatch(setOnboarded(true));
     navigation.navigate(ROUTES.PHONE_LOGIN, {mode});
   };
+
+  const glowScale = pulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.07],
+  });
+  const glowOpacity = pulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.45, 0.8],
+  });
 
   return (
     <View
@@ -31,19 +82,40 @@ const WelcomeScreen = ({navigation}) => {
       ]}>
       <BrandHeader />
 
-      <View style={styles.heroWrap}>
-        <View style={styles.heroCircle}>
-          <View style={styles.heroHead} />
-          <View style={styles.heroBody}>
-            <View style={styles.tie} />
+      <Animated.View
+        style={[
+          styles.heroWrap,
+          {opacity: fadeIn, transform: [{translateY: rise}]},
+        ]}>
+        <View style={styles.visual}>
+          <Animated.View
+            style={[
+              styles.glow,
+              {opacity: glowOpacity, transform: [{scale: glowScale}]},
+            ]}
+          />
+
+          <View style={styles.ring} />
+
+          <View style={styles.hub}>
+            <View style={styles.hubCore}>
+              <Ionicons name="car-sport" size={32} color={Colors.textPrimary} />
+            </View>
           </View>
-          <View style={styles.arms}>
-            <View style={styles.arm} />
-            <View style={styles.arm} />
+
+          <View style={[styles.node, styles.nodeTop]}>
+            <Ionicons name="briefcase" size={16} color={Colors.textInverse} />
+          </View>
+          <View style={[styles.node, styles.nodeLeft]}>
+            <Ionicons name="person" size={16} color={Colors.textInverse} />
+          </View>
+          <View style={[styles.node, styles.nodeRight]}>
+            <Ionicons name="business" size={16} color={Colors.textInverse} />
           </View>
         </View>
+
         <Text style={styles.heroCaption}>Trusted B2B partners</Text>
-      </View>
+      </Animated.View>
 
       <View style={styles.actions}>
         <View style={styles.row}>
@@ -88,53 +160,77 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroCircle: {
+  visual: {
     width: 220,
-    height: 260,
+    height: 220,
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
   },
-  heroHead: {
+  glow: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: Colors.primaryMuted,
+  },
+  ring: {
+    position: 'absolute',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    borderWidth: 1.5,
+    borderColor: Colors.primaryLight,
+    borderStyle: 'dashed',
+  },
+  hub: {
+    width: 108,
+    height: 108,
+    borderRadius: 54,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.shadow,
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  hubCore: {
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#C68642',
-    marginBottom: 8,
-  },
-  heroBody: {
-    width: 140,
-    height: 150,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
-    ...{
-      shadowColor: '#000',
-      shadowOffset: {width: 0, height: 4},
-      shadowOpacity: 0.08,
-      shadowRadius: 12,
-      elevation: 3,
-    },
+    justifyContent: 'center',
   },
-  tie: {
-    marginTop: 16,
-    width: 18,
-    height: 70,
-    backgroundColor: '#8B1E2D',
-    borderRadius: 4,
-  },
-  arms: {
+  node: {
     position: 'absolute',
-    bottom: 40,
-    flexDirection: 'row',
-    width: 190,
-    justifyContent: 'space-between',
-  },
-  arm: {
     width: 36,
-    height: 70,
-    backgroundColor: '#FFFFFF',
+    height: 36,
     borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.surface,
+    shadowColor: Colors.shadow,
+    shadowOffset: {width: 0, height: 3},
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  nodeTop: {
+    top: 8,
+    backgroundColor: Colors.secondary,
+  },
+  nodeLeft: {
+    left: 10,
+    bottom: 42,
+    backgroundColor: Colors.roleDriver,
+  },
+  nodeRight: {
+    right: 10,
+    bottom: 42,
+    backgroundColor: Colors.roleOwner,
   },
   heroCaption: {
     marginTop: Spacing.base,

@@ -1,5 +1,6 @@
 import React, {useMemo, useState} from 'react';
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,6 +18,13 @@ import {
 import {ROUTES} from '../../constants/Routes';
 import {setPreferences} from '../../redux/slices/authSlice';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+
+const STATE_IMAGES = {
+  delhi: require('../../assets/images/Delhi.jpeg'),
+  rajasthan: require('../../assets/images/Rajasthan.jpeg'),
+  uttarakhand: require('../../assets/images/Uttarakhand.jpeg'),
+  haryana: require('../../assets/images/Haryana.jpeg'),
+};
 
 const BOOKING_OPTIONS = [
   {
@@ -58,9 +66,7 @@ const PreferencesScreen = ({navigation}) => {
   }, [query]);
 
   const toggleState = id => {
-    setSelectedStates(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id],
-    );
+    setSelectedStates([id]);
   };
 
   const onContinue = () => {
@@ -115,7 +121,7 @@ const PreferencesScreen = ({navigation}) => {
           </View>
           <View style={{flex: 1}}>
             <Text style={styles.sectionTitle}>Where do you operate?</Text>
-            <Text style={styles.sectionSub}>Choose all that apply</Text>
+            <Text style={styles.sectionSub}>Choose one</Text>
           </View>
         </View>
 
@@ -143,12 +149,19 @@ const PreferencesScreen = ({navigation}) => {
                   style={[styles.radio, selected && styles.radioOn]}>
                   {selected ? <Text style={styles.radioTick}>✓</Text> : null}
                 </View>
-                <Text style={styles.landmark}>{state.landmark}</Text>
-                <View style={styles.monument}>
-                  <View style={styles.monumentBase} />
-                  <View style={styles.monumentTop} />
+                <View
+                  style={[
+                    styles.imageContainer,
+                    selected && styles.imageContainerOn,
+                  ]}>
+                  <Image
+                    source={STATE_IMAGES[state.id]}
+                    style={styles.stateImage}
+                    resizeMode="contain"
+                  />
                 </View>
                 <Text style={styles.stateName}>{state.name}</Text>
+                <Text style={styles.landmark}>{state.landmark}</Text>
               </TouchableOpacity>
             );
           })}
@@ -314,7 +327,7 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   iconBoxCal: {
-    backgroundColor: '#FFE8CC',
+    backgroundColor: Colors.accentSoft,
   },
   sectionTitle: {
     fontSize: 16,
@@ -353,22 +366,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   stateCard: {
-    width: '48%',
-    borderWidth: 1.5,
+    width: '45%',
+    borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: 14,
-    padding: 12,
-    marginBottom: 12,
-    minHeight: 140,
+    paddingTop: 10,
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+    marginBottom: 10,
     backgroundColor: Colors.surface,
+    alignItems: 'center',
   },
   stateCardOn: {
     borderColor: Colors.primary,
   },
   radio: {
     position: 'absolute',
-    top: 10,
-    right: 10,
+    top: 8,
+    right: 8,
     width: 20,
     height: 20,
     borderRadius: 10,
@@ -376,6 +391,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: Colors.surface,
+    zIndex: 2,
   },
   radioSm: {
     position: 'absolute',
@@ -394,40 +411,42 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   radioTick: {
-    color: '#fff',
+    color: Colors.onPrimary,
     fontSize: 10,
     fontWeight: '700',
   },
   landmark: {
     fontSize: 10,
+    fontWeight: Typography.fontWeights.regular,
     color: Colors.textMuted,
-    marginBottom: 8,
+    marginTop: 2,
+    textAlign: 'center',
   },
-  monument: {
+  imageContainer: {
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    overflow: 'hidden',
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    height: 60,
-    marginBottom: 8,
+    justifyContent: 'center',
+    backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderColor: Colors.borderLight,
+    marginBottom: 6,
   },
-  monumentBase: {
-    width: 48,
-    height: 28,
-    backgroundColor: '#CFCFCF',
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
+  imageContainerOn: {
+    borderColor: Colors.primary,
+    backgroundColor: Colors.surface,
   },
-  monumentTop: {
-    position: 'absolute',
-    top: 8,
-    width: 10,
-    height: 36,
-    backgroundColor: '#BDBDBD',
+  stateImage: {
+    width: 108,
+    height: 108,
   },
   stateName: {
     textAlign: 'center',
-    fontWeight: Typography.fontWeights.bold,
+    fontWeight: Typography.fontWeights.medium,
     color: Colors.textPrimary,
-    fontSize: 14,
+    fontSize: 12,
   },
   bookingRow: {
     flexDirection: 'row',

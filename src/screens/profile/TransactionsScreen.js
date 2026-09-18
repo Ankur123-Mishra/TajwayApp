@@ -21,7 +21,7 @@ const STATUS_THEME = {
   },
   REFUNDED: {
     dateBg: '#AF9B2E',
-    badgeBg: '#FFF8E1',
+    badgeBg: Colors.warningSoft,
     badgeText: '#827717',
   },
 };

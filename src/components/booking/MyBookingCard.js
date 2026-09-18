@@ -76,18 +76,40 @@ const MyBookingCard = ({
       </View>
 
       <View style={styles.actions}>
-        {ACTIONS.map(action => (
-          <TouchableOpacity
-            key={action.key}
-            style={styles.actionBtn}
-            activeOpacity={0.85}
-            onPress={handlers[action.key]}
-            accessibilityRole="button"
-            accessibilityLabel={action.label}>
-            <Ionicons name={action.icon} size={18} color={Colors.textInverse} />
-            <Text style={styles.actionLabel}>{action.label}</Text>
-          </TouchableOpacity>
-        ))}
+        {ACTIONS.map(action => {
+          const isDelete = action.key === 'delete';
+          return (
+            <TouchableOpacity
+              key={action.key}
+              style={[styles.actionBtn, isDelete && styles.actionBtnDelete]}
+              activeOpacity={0.85}
+              onPress={event => {
+                event?.stopPropagation?.();
+                handlers[action.key]?.();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={action.label}>
+              <View
+                style={[
+                  styles.actionIconWrap,
+                  isDelete && styles.actionIconWrapDelete,
+                ]}>
+                <Ionicons
+                  name={action.icon}
+                  size={13}
+                  color={isDelete ? Colors.error : Colors.secondaryDark}
+                />
+              </View>
+              <Text
+                style={[
+                  styles.actionLabel,
+                  isDelete && styles.actionLabelDelete,
+                ]}>
+                {action.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </TouchableOpacity>
   );
@@ -101,8 +123,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.borderLight,
     paddingHorizontal: 14,
     paddingTop: 12,
-    paddingBottom: 14,
-    marginBottom: 14,
+    paddingBottom: 12,
+    marginBottom: 8,
   },
   metaRow: {
     flexDirection: 'row',
@@ -175,21 +197,44 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 5,
   },
   actionBtn: {
     flex: 1,
-    backgroundColor: '#2D2D2D',
-    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 2,
+    borderRadius: 10,
+    backgroundColor: Colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+    minHeight: 46,
+  },
+  actionBtnDelete: {
+    backgroundColor: Colors.errorSoft,
+    borderColor: '#FFCDD2',
+  },
+  actionIconWrap: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  actionIconWrapDelete: {
+    backgroundColor: '#FFCDD2',
   },
   actionLabel: {
-    marginTop: 4,
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: '600',
-    color: Colors.textInverse,
+    color: Colors.textSecondary,
+    letterSpacing: 0.2,
+  },
+  actionLabelDelete: {
+    color: Colors.error,
   },
 });
 

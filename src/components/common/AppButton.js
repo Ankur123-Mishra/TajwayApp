@@ -14,7 +14,7 @@ import {Colors, Dimensions, Spacing, Typography} from '../../theme';
 const VARIANT_STYLES = {
   primary: {
     backgroundColor: Colors.primary,
-    textColor: Colors.textInverse,
+    textColor: Colors.onPrimary,
     borderColor: Colors.primary,
   },
   secondary: {

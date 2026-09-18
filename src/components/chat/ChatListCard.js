@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 10,
     fontWeight: '700',
-    color: Colors.textInverse,
+    color: Colors.onPrimary,
   },
 });
 

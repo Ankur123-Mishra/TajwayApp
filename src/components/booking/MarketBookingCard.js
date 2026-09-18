@@ -4,8 +4,14 @@ import {Colors, Typography} from '../../theme';
 
 const VEHICLE_IMAGES = {
   innova: require('../../assets/images/car_innova.png'),
-  ertiga: require('../../assets/images/car_ertiga.png'),
-  sedan: require('../../assets/images/car_sedan.png'),
+  ertiga: require('../../assets/images/car_innova.png'),
+  sedan: require('../../assets/images/car_innova.png'),
+};
+
+const VEHICLE_SPECS = {
+  innova: 'AC • 7 Seater • Diesel',
+  ertiga: 'AC • 6 Seater • Petrol',
+  sedan: 'AC • 4 Seater • Petrol',
 };
 
 const formatInr = value => `₹${Number(value).toLocaleString('en-IN')}`;
@@ -88,6 +94,7 @@ const MarketBookingCard = ({
   tripType = 'Round Trip',
   vehicle = 'Sedan',
   vehicleType = 'sedan',
+  vehicleSpecs,
   notes,
   extras,
   extrasChecked = false,
@@ -101,8 +108,11 @@ const MarketBookingCard = ({
   secured = true,
   avatarInitials,
   avatarSource,
+  onPress,
   onQuote,
   onChat,
+  onContact,
+  onMenu,
 }) => {
   const isOneWay = String(tripType).toLowerCase().includes('one');
   const initials =
@@ -114,10 +124,24 @@ const MarketBookingCard = ({
       .join('')
       .toUpperCase();
   const hasQuote = totalAmount == null || totalAmount === '';
+  const specs = vehicleSpecs || VEHICLE_SPECS[vehicleType] || VEHICLE_SPECS.sedan;
+  const handleContact = onContact || onChat;
+
+  const stopAndRun = handler => e => {
+    e?.stopPropagation?.();
+    handler?.();
+  };
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.92}
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Open booking details">
       <View style={styles.topRow}>
+        <Text style={styles.bagIcon}>💼</Text>
         <Text style={styles.name} numberOfLines={1}>
           {name}
         </Text>
@@ -129,6 +153,15 @@ const MarketBookingCard = ({
             <Text style={styles.securedText}>Secured</Text>
           </View>
         ) : null}
+        <TouchableOpacity
+          style={styles.menuBtn}
+          hitSlop={8}
+          activeOpacity={0.7}
+          onPress={stopAndRun(onMenu)}
+          accessibilityRole="button"
+          accessibilityLabel="More options">
+          <Text style={styles.menuDots}>⋮</Text>
+        </TouchableOpacity>
       </View>
 
       <Text style={styles.when}>
@@ -137,26 +170,21 @@ const MarketBookingCard = ({
 
       {isOneWay ? (
         <View style={styles.routeRow}>
-          <Text style={styles.city} numberOfLines={1}>
+          <MapPin />
+          <Text style={[styles.city, styles.cityPad]} numberOfLines={1}>
             {from}
           </Text>
-          <DottedLine />
-          <View style={styles.oneWayMid}>
-            <MapPin />
-            <Text style={styles.tripLabel}>{tripType}</Text>
-          </View>
           <DottedLine withArrow />
-          <Text style={styles.city} numberOfLines={1}>
+          <MapPin />
+          <Text style={[styles.city, styles.cityPad]} numberOfLines={1}>
             {to}
           </Text>
         </View>
       ) : (
         <View style={styles.routeRow}>
-          <Text style={styles.city}>{from}</Text>
+          <MapPin />
+          <Text style={[styles.city, styles.cityPad]}>{from}</Text>
           <View style={styles.roundPill}>
-            <View style={styles.roundPinCircle}>
-              <MapPin size={12} />
-            </View>
             <Text style={styles.roundText}>{tripType}</Text>
           </View>
         </View>
@@ -164,14 +192,19 @@ const MarketBookingCard = ({
 
       <View style={styles.vehicleRow}>
         <VehicleThumb type={vehicleType} />
-        <Text style={styles.vehicle}>{vehicle}</Text>
+        <View style={styles.vehicleCopy}>
+          <Text style={styles.vehicle}>{vehicle}</Text>
+          <Text style={styles.vehicleSpecs}>{specs}</Text>
+        </View>
       </View>
 
       {notes ? (
-        <Text style={styles.metaLine}>
-          <Text style={styles.metaLabel}>Trip Notes </Text>
-          <Text style={styles.metaValue}>{notes}</Text>
-        </Text>
+        <View style={styles.notesBox}>
+          <Text style={styles.metaLine}>
+            <Text style={styles.metaLabel}>Trip Notes </Text>
+            <Text style={styles.metaValue}>{notes}</Text>
+          </Text>
+        </View>
       ) : null}
 
       {extras ? (
@@ -185,7 +218,10 @@ const MarketBookingCard = ({
       {hasQuote ? (
         <>
           <View style={styles.dash} />
-          <TouchableOpacity onPress={onQuote} activeOpacity={0.8} style={styles.quoteWrap}>
+          <TouchableOpacity
+            onPress={stopAndRun(onQuote)}
+            activeOpacity={0.8}
+            style={styles.quoteWrap}>
             <Text style={styles.quote}>Quote Best Price</Text>
             <Text style={styles.totalHint}>Total Amount</Text>
           </TouchableOpacity>
@@ -200,9 +236,13 @@ const MarketBookingCard = ({
           <PriceBox
             amount={driverEarning}
             label="Driver's Earning"
-            amountColor={Colors.filterRed}
+            amountColor={Colors.success}
           />
-          <PriceBox amount={commission} label="Commission" />
+          <PriceBox
+            amount={commission}
+            label="Commission"
+            amountColor={Colors.info}
+          />
         </View>
       )}
 
@@ -241,12 +281,16 @@ const MarketBookingCard = ({
           </View>
         </View>
 
-        <TouchableOpacity style={styles.chatBtn} onPress={onChat} activeOpacity={0.85}>
-          <View style={styles.chatBubbleLg} />
-          <View style={styles.chatBubbleSm} />
+        <TouchableOpacity
+          style={styles.contactBtn}
+          onPress={stopAndRun(handleContact)}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Contact">
+          <Text style={styles.contactIcon}>📞</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -257,15 +301,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 14,
     paddingBottom: 12,
-    marginBottom: 14,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: Colors.borderLight,
-    elevation: 0,
-    shadowOpacity: 0,
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  bagIcon: {
+    fontSize: 14,
+    marginRight: 6,
   },
   name: {
     flex: 1,
@@ -277,6 +323,7 @@ const styles = StyleSheet.create({
   secured: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginRight: 4,
   },
   shield: {
     width: 16,
@@ -301,6 +348,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+  menuBtn: {
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  menuDots: {
+    fontSize: 18,
+    color: Colors.textMuted,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
   when: {
     fontSize: 14,
     color: Colors.textPrimary,
@@ -318,10 +375,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   city: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '600',
     color: Colors.textPrimary,
-    flexShrink: 0,
+    flexShrink: 1,
+  },
+  cityPad: {
+    marginLeft: 4,
   },
   dotLine: {
     flex: 1,
@@ -347,15 +407,6 @@ const styles = StyleSheet.create({
     borderTopColor: 'transparent',
     borderBottomColor: 'transparent',
     borderLeftColor: Colors.primary,
-  },
-  oneWayMid: {
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  tripLabel: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    marginTop: 1,
   },
   pinWrap: {
     alignItems: 'center',
@@ -384,10 +435,9 @@ const styles = StyleSheet.create({
   },
   roundPill: {
     flex: 1,
-    marginLeft: 16,
-    flexDirection: 'row',
+    marginLeft: 12,
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     borderWidth: 1,
     borderStyle: 'dashed',
     borderColor: '#C5C5C5',
@@ -395,36 +445,40 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 8,
   },
-  roundPinCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   roundText: {
     fontSize: 13,
     fontWeight: '500',
     color: Colors.textSecondary,
-    marginRight: 8,
   },
   vehicleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     marginBottom: 12,
   },
   carImage: {
-    width: 88,
-    height: 44,
-    marginRight: 10,
+    width: 100,
+    height: 56,
+    marginRight: 12,
+  },
+  vehicleCopy: {
+    flex: 1,
   },
   vehicle: {
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.textPrimary,
     fontSize: 15,
+  },
+  vehicleSpecs: {
+    fontSize: 12,
+    color: Colors.textMuted,
+    marginTop: 2,
+  },
+  notesBox: {
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginBottom: 6,
   },
   metaLine: {
     fontSize: 13,
@@ -456,8 +510,8 @@ const styles = StyleSheet.create({
   },
   quote: {
     fontSize: 20,
-    fontWeight: '600',
-    color: Colors.primary,
+    fontWeight: '700',
+    color: Colors.secondaryDark,
   },
   totalHint: {
     fontSize: 12,
@@ -479,8 +533,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   priceAmt: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: Colors.textPrimary,
   },
   priceLabel: {
@@ -589,32 +643,16 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     marginLeft: 6,
   },
-  chatBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  contactBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chatBubbleLg: {
-    width: 14,
-    height: 11,
-    borderRadius: 4,
-    backgroundColor: '#fff',
-    position: 'absolute',
-    top: 12,
-    left: 10,
-  },
-  chatBubbleSm: {
-    width: 10,
-    height: 8,
-    borderRadius: 3,
-    backgroundColor: '#fff',
-    opacity: 0.85,
-    position: 'absolute',
-    bottom: 11,
-    right: 10,
+  contactIcon: {
+    fontSize: 13,
   },
 });
 

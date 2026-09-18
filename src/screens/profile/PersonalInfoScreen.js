@@ -1,6 +1,9 @@
 import React, {useState} from 'react';
 import {
+  Alert,
+  Image,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -8,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {launchImageLibrary} from 'react-native-image-picker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useDispatch} from 'react-redux';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
@@ -18,6 +22,8 @@ import {USER_ROLES} from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
 import {updateUser} from '../../redux/slices/authSlice';
 import {Colors, Spacing, Typography} from '../../theme';
+
+const EMPTY_GST_DOCS = [null, null, null];
 
 const ROLES = [
   {id: USER_ROLES.AGENT, label: 'Agent'},
@@ -42,6 +48,8 @@ const PersonalInfoScreen = ({navigation}) => {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState(USER_ROLES.AGENT);
   const [gstVisible, setGstVisible] = useState(false);
+  const [gstDocs, setGstDocs] = useState(EMPTY_GST_DOCS);
+  const [gstSubmitted, setGstSubmitted] = useState(false);
   const [cityModalVisible, setCityModalVisible] = useState(false);
 
   const onUpdate = () => {
@@ -65,7 +73,72 @@ const PersonalInfoScreen = ({navigation}) => {
     navigation.navigate(ROUTES.AADHAAR_VERIFY);
   };
 
+  const pickGstDocument = index => {
+    const openPicker = () => {
+      launchImageLibrary(
+        {
+          mediaType: 'photo',
+          selectionLimit: 1,
+          quality: 0.8,
+        },
+        response => {
+          if (Platform.OS === 'ios') {
+            setGstVisible(true);
+          }
+          if (response.didCancel) {
+            return;
+          }
+          if (response.errorCode) {
+            Alert.alert(
+              'Unable to open gallery',
+              response.errorMessage || 'Please try again.',
+            );
+            return;
+          }
+          const uri = response.assets?.[0]?.uri;
+          if (!uri) {
+            return;
+          }
+          setGstDocs(prev => {
+            const next = [...prev];
+            next[index] = uri;
+            return next;
+          });
+        },
+      );
+    };
+
+    if (Platform.OS === 'ios') {
+      setGstVisible(false);
+      setTimeout(openPicker, 350);
+      return;
+    }
+
+    openPicker();
+  };
+
+  const clearGstDocument = index => {
+    setGstDocs(prev => {
+      const next = [...prev];
+      next[index] = null;
+      return next;
+    });
+  };
+
+  const closeGstModal = () => {
+    setGstVisible(false);
+  };
+
   const onGstUpload = () => {
+    const selectedCount = gstDocs.filter(Boolean).length;
+    if (!selectedCount) {
+      Alert.alert(
+        'Select documents',
+        'Please upload at least one GST document from gallery.',
+      );
+      return;
+    }
+    setGstSubmitted(true);
     setGstVisible(false);
   };
 
@@ -145,7 +218,11 @@ const PersonalInfoScreen = ({navigation}) => {
           <View key={item.id} style={styles.verifyCard}>
             <View style={styles.verifyCopy}>
               <Text style={styles.verifyTitle}>{item.title}</Text>
-              <Text style={styles.verifyStatus}>{item.status}</Text>
+              <Text style={styles.verifyStatus}>
+                {item.id === 'gst' && gstSubmitted
+                  ? 'Verification pending'
+                  : item.status}
+              </Text>
             </View>
             <TouchableOpacity
               style={styles.verifyBtn}
@@ -165,25 +242,58 @@ const PersonalInfoScreen = ({navigation}) => {
         />
       </View>
 
-      <Modal visible={gstVisible} transparent animationType="slide">
+      <Modal
+        visible={gstVisible}
+        transparent
+        animationType="slide"
+        presentationStyle="overFullScreen">
         <View style={styles.modalOverlay}>
           <View style={[styles.sheet, {paddingBottom: insets.bottom + 16}]}>
             <View style={styles.sheetHead}>
               <Text style={styles.sheetTitle}>Upload GST Documents</Text>
-              <TouchableOpacity onPress={() => setGstVisible(false)}>
+              <TouchableOpacity onPress={closeGstModal}>
                 <Text style={styles.sheetClose}>✕</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.uploadRow}>
-              {[1, 2, 3].map(i => (
-                <TouchableOpacity key={i} style={styles.uploadBox}>
-                  <Ionicons
-                    name="camera-outline"
-                    size={28}
-                    color={Colors.primary}
-                  />
-                  <Text style={styles.clickHere}>Click here</Text>
-                </TouchableOpacity>
+              {gstDocs.map((uri, index) => (
+                <View key={index} style={styles.uploadBox}>
+                  <TouchableOpacity
+                    style={styles.uploadInner}
+                    onPress={() => pickGstDocument(index)}
+                    activeOpacity={0.85}
+                    accessibilityLabel={`Upload GST document ${index + 1}`}>
+                    {uri ? (
+                      <Image
+                        source={{uri}}
+                        style={styles.uploadPreview}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <>
+                        <Ionicons
+                          name="camera-outline"
+                          size={28}
+                          color={Colors.primary}
+                        />
+                        <Text style={styles.clickHere}>Click here</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                  {uri ? (
+                    <TouchableOpacity
+                      style={styles.uploadClear}
+                      onPress={() => clearGstDocument(index)}
+                      hitSlop={{top: 8, right: 8, bottom: 8, left: 8}}
+                      accessibilityLabel={`Remove GST document ${index + 1}`}>
+                      <Ionicons
+                        name="close-circle"
+                        size={22}
+                        color={Colors.textNavy}
+                      />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
               ))}
             </View>
             <PrimaryButton title="Upload" onPress={onGstUpload} />
@@ -361,7 +471,7 @@ const styles = StyleSheet.create({
   verifyBtnText: {
     fontSize: 12,
     fontWeight: Typography.fontWeights.bold,
-    color: Colors.textInverse,
+    color: Colors.onPrimary,
   },
   footer: {
     paddingHorizontal: Spacing.screenPadding,
@@ -419,6 +529,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
+    overflow: 'hidden',
+    backgroundColor: Colors.surfaceAlt,
+  },
+  uploadInner: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  uploadPreview: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  uploadClear: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    zIndex: 2,
+    backgroundColor: Colors.surface,
+    borderRadius: 11,
   },
   clickHere: {
     fontSize: 12,

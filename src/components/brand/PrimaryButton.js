@@ -25,7 +25,11 @@ const PrimaryButton = ({
 }) => {
   const isSecondary = variant === 'secondary';
   const bg = isSecondary ? Colors.secondary : Colors.primary;
-  const color = darkText ? Colors.textPrimary : Colors.textInverse;
+  const color = isSecondary
+    ? Colors.textInverse
+    : darkText
+      ? Colors.textPrimary
+      : Colors.onPrimary;
 
   return (
     <TouchableOpacity

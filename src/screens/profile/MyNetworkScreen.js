@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -8,8 +8,30 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
+import AddNetworkContactModal from '../../components/profile/AddNetworkContactModal';
 import {mockNetworkContacts} from '../../mockData';
 import {Colors, Spacing, Typography} from '../../theme';
+
+const MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+const formatInviteStatus = () => {
+  const now = new Date();
+  const day = String(now.getDate()).padStart(2, '0');
+  return `Invitation Sent On ${MONTHS[now.getMonth()]} ${day}, ${now.getFullYear()}`;
+};
 
 const NetworkSlidersIcon = () => (
   <View style={styles.sliders}>
@@ -51,6 +73,21 @@ const NetworkRow = ({item}) => (
  */
 const MyNetworkScreen = ({navigation}) => {
   const insets = useSafeAreaInsets();
+  const [contacts, setContacts] = useState(mockNetworkContacts);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  const handleAddContact = contact => {
+    const nextContact = {
+      id: `net-${Date.now()}`,
+      name: contact.name,
+      phones: contact.phone ? [contact.phone] : [],
+      status: formatInviteStatus(),
+      company: contact.company,
+      tripType: contact.tripType,
+      vehicleType: contact.vehicleType,
+    };
+    setContacts(prev => [nextContact, ...prev]);
+  };
 
   return (
     <View style={styles.container}>
@@ -68,7 +105,7 @@ const MyNetworkScreen = ({navigation}) => {
       </View>
 
       <FlatList
-        data={mockNetworkContacts}
+        data={contacts}
         keyExtractor={item => item.id}
         renderItem={({item}) => <NetworkRow item={item} />}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
@@ -82,10 +119,17 @@ const MyNetworkScreen = ({navigation}) => {
       <TouchableOpacity
         style={[styles.fab, {bottom: insets.bottom + 20}]}
         activeOpacity={0.9}
+        onPress={() => setSheetOpen(true)}
         accessibilityRole="button"
         accessibilityLabel="Add to network">
-        <Ionicons name="add" size={32} color={Colors.textInverse} />
+        <Ionicons name="add" size={32} color={Colors.onPrimary} />
       </TouchableOpacity>
+
+      <AddNetworkContactModal
+        visible={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onAdd={handleAddContact}
+      />
     </View>
   );
 };

@@ -31,6 +31,7 @@ export const ROUTES = {
   PAYMENT_METHODS: 'PaymentMethods',
   TRANSACTIONS: 'Transactions',
   VERIFIED_SUPPLIER: 'VerifiedSupplier',
+  BECOME_VERIFIED_SUPPLIER: 'BecomeVerifiedSupplier',
 
   // Agent tabs / screens
   AGENT_HOME: 'AgentHome',
@@ -44,6 +45,7 @@ export const ROUTES = {
   POST_FREE_VEHICLE: 'PostFreeVehicle',
   LOCATION_SELECT: 'LocationSelect',
   ROUTE_ALERT_SETUP: 'RouteAlertSetup',
+  MARKET_BOOKING_DETAIL: 'MarketBookingDetail',
 
   // Driver tabs / screens
   DRIVER_HOME: 'DriverHome',

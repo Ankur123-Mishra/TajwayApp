@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
   dotTextOn: {
-    color: Colors.textInverse,
+    color: Colors.onPrimary,
   },
   label: {
     ...Typography.caption,

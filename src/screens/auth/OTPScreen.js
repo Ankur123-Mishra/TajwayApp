@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   checkMark: {
-    color: Colors.textInverse,
+    color: Colors.onPrimary,
     fontSize: 12,
     fontWeight: '700',
   },

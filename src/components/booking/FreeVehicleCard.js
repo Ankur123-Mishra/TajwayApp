@@ -122,7 +122,7 @@ const FreeVehicleCard = ({
           activeOpacity={0.85}
           accessibilityRole="button"
           accessibilityLabel={`Call ${name}`}>
-          <Ionicons name="call-outline" size={16} color={Colors.primary} />
+          <Text style={styles.callIcon}>📞</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 14,
     paddingBottom: 12,
-    marginBottom: 12,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: Colors.borderLight,
   },
@@ -266,14 +266,15 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
   callBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#FFF8EB',
-    borderWidth: 1,
-    borderColor: Colors.primary,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  callIcon: {
+    fontSize: 13,
   },
 });
 

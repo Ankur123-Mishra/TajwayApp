@@ -1,5 +1,15 @@
-import React from 'react';
-import {Platform, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import React, {useRef, useState} from 'react';
+import {
+  Animated,
+  Dimensions,
+  Easing,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {MaterialDesignIcons} from '@react-native-vector-icons/material-design-icons';
@@ -36,6 +46,8 @@ const TABS = {
   },
 };
 
+const SCREEN_H = Dimensions.get('window').height;
+
 const TabGlyph = ({config, focused}) => {
   const color = focused ? Colors.tabActive : Colors.tabInactive;
   const name = focused ? config.filled : config.outline;
@@ -44,21 +56,172 @@ const TabGlyph = ({config, focused}) => {
 };
 
 /**
- * Bottom tab bar matching the product screenshot:
- * rounded white bar, gold active indicator, outline → filled icons.
+ * Bottom tab bar — center + expands into a speed-dial (no modal).
  */
-const AgentTabBar = ({state, descriptors, navigation, onCreatePress}) => {
+const AgentTabBar = ({
+  state,
+  descriptors,
+  navigation,
+  onNewBooking,
+  onFreeVehicle,
+}) => {
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 8);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuMounted, setMenuMounted] = useState(false);
+  const anim = useRef(new Animated.Value(0)).current;
+  const closingRef = useRef(false);
+
+  const openMenu = () => {
+    closingRef.current = false;
+    setMenuMounted(true);
+    setMenuOpen(true);
+    anim.setValue(0);
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 200,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeMenu = () => {
+    if (closingRef.current || !menuMounted) {
+      return;
+    }
+    closingRef.current = true;
+    setMenuOpen(false);
+    Animated.timing(anim, {
+      toValue: 0,
+      duration: 150,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({finished}) => {
+      if (finished) {
+        setMenuMounted(false);
+        anim.setValue(0);
+        closingRef.current = false;
+      }
+    });
+  };
+
+  const toggleMenu = () => {
+    if (menuOpen) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  };
+
+  const handleNewBooking = () => {
+    closeMenu();
+    onNewBooking?.();
+  };
+
+  const handleFreeVehicle = () => {
+    closeMenu();
+    onFreeVehicle?.();
+  };
+
+  const rotate = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '45deg'],
+  });
+
+  const menuOpacity = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
+  const menuTranslateY = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [16, 0],
+    extrapolate: 'clamp',
+  });
+
+  const menuScale = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.92, 1],
+    extrapolate: 'clamp',
+  });
+
+  const backdropOpacity = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
 
   return (
     <View style={[styles.wrap, {paddingBottom: bottomPad}]}>
+      {menuMounted ? (
+        <>
+          <Animated.View
+            pointerEvents={menuOpen ? 'auto' : 'none'}
+            style={[styles.backdrop, {opacity: backdropOpacity}]}>
+            <Pressable
+              style={StyleSheet.absoluteFill}
+              onPress={closeMenu}
+              accessibilityLabel="Dismiss create menu"
+            />
+          </Animated.View>
+
+          <Animated.View
+            pointerEvents={menuOpen ? 'auto' : 'none'}
+            style={[
+              styles.speedDial,
+              {
+                opacity: menuOpacity,
+                transform: [
+                  {translateY: menuTranslateY},
+                  {scale: menuScale},
+                ],
+              },
+            ]}>
+            <TouchableOpacity
+              style={styles.actionChip}
+              activeOpacity={0.85}
+              onPress={handleNewBooking}
+              accessibilityRole="button"
+              accessibilityLabel="New Booking">
+              <View style={[styles.actionIcon, styles.bookingIcon]}>
+                <Ionicons
+                  name="calendar-outline"
+                  size={18}
+                  color={Colors.onPrimary}
+                />
+              </View>
+              <Text style={styles.actionText}>New Booking</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionChip}
+              activeOpacity={0.85}
+              onPress={handleFreeVehicle}
+              accessibilityRole="button"
+              accessibilityLabel="Free Vehicle">
+              <View style={[styles.actionIcon, styles.vehicleIcon]}>
+                <Ionicons
+                  name="car-outline"
+                  size={18}
+                  color={Colors.textInverse}
+                />
+              </View>
+              <Text style={styles.actionText}>Free Vehicle</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </>
+      ) : null}
+
       {state.routes.map((route, index) => {
         const config = TABS[route.name] || {};
         const isFocused = state.index === index;
         const {options} = descriptors[route.key];
 
         const onPress = () => {
+          if (menuOpen || menuMounted) {
+            closeMenu();
+          }
           const event = navigation.emit({
             type: 'tabPress',
             target: route.key,
@@ -73,13 +236,16 @@ const AgentTabBar = ({state, descriptors, navigation, onCreatePress}) => {
           return (
             <TouchableOpacity
               key={route.key}
-              onPress={() => onCreatePress?.()}
+              onPress={toggleMenu}
               style={styles.centerItem}
               activeOpacity={0.85}
               accessibilityRole="button"
-              accessibilityLabel="Create booking">
-              <View style={styles.plusBtn}>
-                <Ionicons name="add" size={30} color={Colors.textInverse} />
+              accessibilityLabel={menuOpen ? 'Close create menu' : 'Create'}
+              accessibilityState={{expanded: menuOpen}}>
+              <View style={[styles.plusBtn, menuOpen && styles.plusBtnOpen]}>
+                <Animated.View style={{transform: [{rotate}]}}>
+                  <Ionicons name="add" size={30} color={Colors.onPrimary} />
+                </Animated.View>
               </View>
             </TouchableOpacity>
           );
@@ -123,6 +289,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 4,
+    zIndex: 20,
+    overflow: 'visible',
     ...Platform.select({
       ios: {
         shadowColor: Colors.shadow,
@@ -135,12 +303,65 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  backdrop: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: SCREEN_H,
+    backgroundColor: 'rgba(26, 26, 27, 0.28)',
+    zIndex: 1,
+  },
+  speedDial: {
+    position: 'absolute',
+    alignSelf: 'center',
+    marginLeft: 28,
+    bottom: '100%',
+    marginBottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 22,
+    zIndex: 2,
+    paddingHorizontal: 8,
+  },
+  actionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    height: 48,
+    paddingLeft: 8,
+    paddingRight: 16,
+    borderRadius: 24,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  actionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bookingIcon: {
+    backgroundColor: Colors.primary,
+  },
+  vehicleIcon: {
+    backgroundColor: Colors.secondary,
+  },
+  actionText: {
+    fontSize: 13,
+    fontWeight: Typography.fontWeights.semibold,
+    color: Colors.textNavy,
+  },
   item: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'flex-start',
     minHeight: 56,
     paddingTop: 4,
+    zIndex: 3,
   },
   centerItem: {
     flex: 1,
@@ -148,6 +369,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 56,
     marginTop: -10,
+    zIndex: 3,
   },
   activeLine: {
     width: 28,
@@ -173,11 +395,14 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: Colors.plusButton,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 4,
     borderColor: Colors.surface,
+  },
+  plusBtnOpen: {
+    backgroundColor: Colors.primaryDark,
   },
 });
 

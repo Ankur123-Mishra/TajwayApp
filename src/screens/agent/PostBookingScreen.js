@@ -91,33 +91,67 @@ const SegmentTabs = ({options, value, onChange}) => (
   </View>
 );
 
+const normalizeTripType = value => {
+  const raw = String(value || '').toLowerCase();
+  if (raw.includes('round')) {
+    return 'Round Trip';
+  }
+  return 'One Way';
+};
+
+const splitDateTime = dateTime => {
+  if (!dateTime) {
+    return {date: '', time: ''};
+  }
+  const [datePart, timePart] = String(dateTime).split(' @ ');
+  return {
+    date: (datePart || '').trim(),
+    time: (timePart || '').trim(),
+  };
+};
+
 /**
  * Post a Booking — full form (screenshots 2–4).
+ * Also supports edit mode when navigated with { mode: 'edit', booking }.
  */
-const PostBookingScreen = ({navigation}) => {
+const PostBookingScreen = ({navigation, route}) => {
   const insets = useSafeAreaInsets();
+  const editBooking = route?.params?.booking;
+  const isEdit = route?.params?.mode === 'edit' && Boolean(editBooking);
+  const initialDateTime = splitDateTime(editBooking?.dateTime);
 
-  const [tripType, setTripType] = useState('One Way');
-  const [vehicleType, setVehicleType] = useState('Hatchback');
-  const [pickupDate, setPickupDate] = useState('');
-  const [pickupTime, setPickupTime] = useState('');
+  const [tripType, setTripType] = useState(
+    normalizeTripType(editBooking?.tripType),
+  );
+  const [vehicleType, setVehicleType] = useState(
+    editBooking?.vehicle || 'Hatchback',
+  );
+  const [pickupDate, setPickupDate] = useState(initialDateTime.date);
+  const [pickupTime, setPickupTime] = useState(initialDateTime.time);
   const [dateValue, setDateValue] = useState(new Date());
   const [timeValue, setTimeValue] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [iosDraftDate, setIosDraftDate] = useState(new Date());
-  const [pickupLocation, setPickupLocation] = useState('');
-  const [dropLocation, setDropLocation] = useState('');
+  const [pickupLocation, setPickupLocation] = useState(editBooking?.from || '');
+  const [dropLocation, setDropLocation] = useState(editBooking?.to || '');
   const [numberOfDays, setNumberOfDays] = useState('0');
   const [tourDescription, setTourDescription] = useState('');
   const [amountType, setAmountType] = useState('Enter booking amount');
-  const [totalAmount, setTotalAmount] = useState('0');
+  const [totalAmount, setTotalAmount] = useState(
+    editBooking?.amount != null ? String(editBooking.amount) : '0',
+  );
   const [negotiable, setNegotiable] = useState(false);
   const [commission, setCommission] = useState('0');
   const [visibility, setVisibility] = useState('Public');
   const [secureBooking, setSecureBooking] = useState(true);
   const [hideProfile, setHideProfile] = useState(false);
-  const [selectedExtras, setSelectedExtras] = useState([]);
+  const [selectedExtras, setSelectedExtras] = useState(
+    editBooking?.pricingNote &&
+      EXTRA_REQUIREMENTS.includes(editBooking.pricingNote)
+      ? [editBooking.pricingNote]
+      : [],
+  );
   const [otherDetails, setOtherDetails] = useState('');
 
   const [pickerVisible, setPickerVisible] = useState(false);
@@ -196,7 +230,9 @@ const PostBookingScreen = ({navigation}) => {
     <View style={[styles.container, {paddingTop: insets.top + 8}]}>
       <View style={styles.header}>
         <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Post a Booking</Text>
+        <Text style={styles.headerTitle}>
+          {isEdit ? 'Edit Booking' : 'Post a Booking'}
+        </Text>
         <View style={styles.headerSpacer} />
       </View>
 
@@ -312,7 +348,7 @@ const PostBookingScreen = ({navigation}) => {
           onPress={() => setNegotiable(v => !v)}>
           <View style={[styles.checkbox, negotiable && styles.checkboxOn]}>
             {negotiable ? (
-              <Ionicons name="checkmark" size={14} color={Colors.textInverse} />
+              <Ionicons name="checkmark" size={14} color={Colors.onPrimary} />
             ) : null}
           </View>
           <Text style={styles.checkLabel}>Amount is negotiable</Text>
@@ -377,7 +413,7 @@ const PostBookingScreen = ({navigation}) => {
               !secureBooking && styles.checkboxDisabled,
             ]}>
             {hideProfile && secureBooking ? (
-              <Ionicons name="checkmark" size={14} color={Colors.textInverse} />
+              <Ionicons name="checkmark" size={14} color={Colors.onPrimary} />
             ) : null}
           </View>
           <Text
@@ -425,7 +461,10 @@ const PostBookingScreen = ({navigation}) => {
       </ScrollView>
 
       <View style={[styles.footer, {paddingBottom: insets.bottom + 12}]}>
-        <PrimaryButton title="Post Booking" onPress={onPost} />
+        <PrimaryButton
+          title={isEdit ? 'Update Booking' : 'Post Booking'}
+          onPress={onPost}
+        />
       </View>
 
       <Modal visible={pickerVisible} transparent animationType="fade">
@@ -615,7 +654,7 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
   segmentTextOn: {
-    color: Colors.textInverse,
+    color: Colors.onPrimary,
   },
   field: {
     marginBottom: Spacing.base,

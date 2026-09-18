@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   dayChipOn: {
     backgroundColor: Colors.primary,
     borderColor: Colors.primary,
-    color: Colors.textInverse,
+    color: Colors.onPrimary,
   },
   footnote: {
     ...Typography.caption,

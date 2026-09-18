@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   plus: {
-    color: '#fff',
+    color: Colors.onPrimary,
     fontSize: 16,
     fontWeight: '700',
     lineHeight: 18,

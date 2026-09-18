@@ -44,7 +44,9 @@ const PostActionSheet = ({
                 style={[styles.actionBtn, styles.newBookingBtn]}
                 activeOpacity={0.85}
                 onPress={onNewBooking}>
-                <Text style={styles.actionLabel}>New Booking</Text>
+                <Text style={[styles.actionLabel, styles.newBookingLabel]}>
+                  New Booking
+                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -114,6 +116,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: Colors.textInverse,
+  },
+  newBookingLabel: {
+    color: Colors.onPrimary,
   },
 });
 

@@ -65,7 +65,7 @@ export const BOOKING_TYPES = {
 };
 
 export const OPERATING_STATES = [
-  {id: 'delhi', name: 'Delhi', landmark: 'India Gate'},
+  {id: 'delhi', name: 'Delhi', landmark: 'Lotus Temple'},
   {id: 'rajasthan', name: 'Rajasthan', landmark: 'Fort'},
   {id: 'uttarakhand', name: 'Uttarakhand', landmark: 'Temple'},
   {id: 'haryana', name: 'Haryana', landmark: 'Tower'},
