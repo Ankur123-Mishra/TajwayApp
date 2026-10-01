@@ -182,6 +182,7 @@ const ProfileMenuRow = ({item, onPress, toggleValue, onToggle, isLast}) => {
 /**
  * Profile tab — refined professional layout (no elevation).
  */
+
 const AgentProfileScreen = ({navigation}) => {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
@@ -239,7 +240,7 @@ const AgentProfileScreen = ({navigation}) => {
       }),
     );
   };
-
+ 
   const onPickProfileImage = () => {
     launchImageLibrary(
       {

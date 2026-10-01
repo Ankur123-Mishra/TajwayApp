@@ -118,6 +118,7 @@ export const CITIES = [
 /**
  * Bottom sheet to pick a city — matches Select City design.
  */
+
 const CitySelectModal = ({visible, selected = '', onClose, onDone}) => {
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState(selected);

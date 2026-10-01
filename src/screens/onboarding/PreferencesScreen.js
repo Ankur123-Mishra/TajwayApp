@@ -50,6 +50,7 @@ const BOOKING_OPTIONS = [
 /**
  * Preferences — operate states + preferred booking type (screenshots 5–6).
  */
+
 const PreferencesScreen = ({navigation}) => {
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
@@ -166,7 +167,7 @@ const PreferencesScreen = ({navigation}) => {
             );
           })}
         </View>
-
+ 
         <View style={[styles.sectionHead, {marginTop: Spacing.xl}]}>
           <View style={[styles.iconBox, styles.iconBoxCal]}>
             <Text>📅</Text>
