@@ -1834,6 +1834,8 @@ PODS:
     - Yoga
   - SocketRocket (0.7.1):
     - ReactNativeDependencies
+  - TextToSpeech (4.1.1):
+    - React-Core
   - Yoga (0.0.0):
     - React-Core-prebuilt
 
@@ -1932,6 +1934,7 @@ DEPENDENCIES:
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - SocketRocket (from `build/rndeps-facades/SocketRocket`)
+  - TextToSpeech (from `../node_modules/react-native-tts`)
   - Yoga (from `build/rncore-facades/Yoga`)
 
 EXTERNAL SOURCES:
@@ -2122,6 +2125,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-screens"
   SocketRocket:
     :path: build/rndeps-facades/SocketRocket
+  TextToSpeech:
+    :path: "../node_modules/react-native-tts"
   Yoga:
     :path: build/rncore-facades/Yoga
 
@@ -2219,6 +2224,7 @@ SPEC CHECKSUMS:
   RNGestureHandler: f1976ee206660832241a6802c866bc4b019be94d
   RNScreens: 038dc998fe1ab34778d9e8f4a33318a6c7a5bde8
   SocketRocket: 37aec555668fb852ec12e3c0de59a86ca58f0871
+  TextToSpeech: 89b239221ec378d213af422d14789a729705360b
   Yoga: d1c536142c5ff8ec8cd856ab2a7c227a1d875c8e
 
 PODFILE CHECKSUM: bf51eab33937950416ac5ca88841186435c1ec9f

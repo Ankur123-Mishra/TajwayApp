@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   Animated,
   Dimensions,
@@ -13,6 +13,7 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {MaterialDesignIcons} from '@react-native-vector-icons/material-design-icons';
+import {setTourTarget} from '../tour/tourTargets';
 import {ROUTES} from '../../constants/Routes';
 import {Colors, Typography} from '../../theme';
 
@@ -67,6 +68,7 @@ const AgentTabBar = ({
 }) => {
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 8);
+  const plusRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuMounted, setMenuMounted] = useState(false);
   const anim = useRef(new Animated.Value(0)).current;
@@ -104,6 +106,19 @@ const AgentTabBar = ({
       }
     });
   };
+
+  const publishPlusTarget = () => {
+    requestAnimationFrame(() => {
+      plusRef.current?.measureInWindow((x, y, width, height) => {
+        setTourTarget('post', {x, y, width, height});
+      });
+    });
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(publishPlusTarget, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const toggleMenu = () => {
     if (menuOpen) {
@@ -242,7 +257,11 @@ const AgentTabBar = ({
               accessibilityRole="button"
               accessibilityLabel={menuOpen ? 'Close create menu' : 'Create'}
               accessibilityState={{expanded: menuOpen}}>
-              <View style={[styles.plusBtn, menuOpen && styles.plusBtnOpen]}>
+              <View
+                ref={plusRef}
+                collapsable={false}
+                onLayout={publishPlusTarget}
+                style={[styles.plusBtn, menuOpen && styles.plusBtnOpen]}>
                 <Animated.View style={{transform: [{rotate}]}}>
                   <Ionicons name="add" size={30} color={Colors.onPrimary} />
                 </Animated.View>

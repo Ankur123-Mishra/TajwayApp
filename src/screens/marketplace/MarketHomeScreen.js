@@ -1,5 +1,6 @@
-import React, {useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
+  Dimensions as WindowDimensions,
   Linking,
   Modal,
   ScrollView,
@@ -10,6 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {useIsFocused} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import BrandLogo from '../../components/brand/BrandLogo';
 import {FilterSlidersIcon} from '../../components/common';
@@ -18,6 +21,12 @@ import MarketBookingCard from '../../components/booking/MarketBookingCard';
 import MarketFilterSheet, {
   EMPTY_FILTERS,
 } from '../../components/booking/MarketFilterSheet';
+import MarketAppTour from '../../components/tour/MarketAppTour';
+import {
+  getTourTarget,
+  subscribeTourTargets,
+} from '../../components/tour/tourTargets';
+import {STORAGE_KEYS} from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
 import {mockFreeVehicles, mockMarketBookings} from '../../mockData';
 import {Colors, Dimensions, Spacing} from '../../theme';
@@ -190,8 +199,10 @@ const ProfileProgressChecklist = ({flows, onItemPress}) => (
 /**
  * Market home — Bookings setup / Free Vehicles listings.
  */
+
 const MarketHomeScreen = ({navigation}) => {
   const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
   const [alerts, setAlerts] = useState(false);
   const [tab, setTab] = useState('bookings');
   const [dismissed, setDismissed] = useState({});
@@ -204,7 +215,163 @@ const MarketHomeScreen = ({navigation}) => {
     'This feature is coming soon.',
   );
   const [helpMenuOpen, setHelpMenuOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [spotlight, setSpotlight] = useState(null);
+  const [activeTourTarget, setActiveTourTarget] = useState(null);
   const isVehicles = tab === 'vehicles';
+  const scrollRef = useRef(null);
+  const scrollYRef = useRef(0);
+  const targetRefs = useRef({});
+  const revealGen = useRef(0);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const setTargetRef = id => node => {
+    targetRefs.current[id] = node;
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    AsyncStorage.getItem(STORAGE_KEYS.MARKET_TOUR)
+      .then(value => {
+        if (mounted && value !== 'done') {
+          setTourOpen(true);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setTourOpen(true);
+        }
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!tourOpen) {
+      return undefined;
+    }
+    setTab('bookings');
+    setHelpMenuOpen(false);
+    setFilterOpen(false);
+    return undefined;
+  }, [tourOpen]);
+
+  useEffect(() => {
+    if (!tourOpen || activeTourTarget !== 'post') {
+      return undefined;
+    }
+    const sync = () => setSpotlight(getTourTarget('post'));
+    sync();
+    return subscribeTourTargets(id => {
+      if (id === 'post') {
+        sync();
+      }
+    });
+  }, [tourOpen, activeTourTarget]);
+
+  const measureNode = node =>
+    new Promise(resolve => {
+      if (!node || typeof node.measureInWindow !== 'function') {
+        resolve(null);
+        return;
+      }
+      node.measureInWindow((x, y, width, height) => {
+        if (width > 0 && height > 0) {
+          resolve({x, y, width, height});
+        } else {
+          resolve(null);
+        }
+      });
+    });
+
+  const revealTourStep = useCallback(
+    async step => {
+      const gen = ++revealGen.current;
+      const targetId = step?.target || null;
+      setActiveTourTarget(targetId);
+
+      if (!targetId) {
+        scrollRef.current?.scrollTo({y: 0, animated: false});
+        scrollYRef.current = 0;
+        setSpotlight(null);
+        return;
+      }
+
+      if (targetId === 'post') {
+        const rect = getTourTarget('post');
+        if (rect) {
+          setSpotlight(rect);
+          return;
+        }
+        const {width, height} = WindowDimensions.get('window');
+        const size = 64;
+        setSpotlight({
+          x: (width - size) / 2,
+          y: height - Math.max(insets.bottom, 8) - 78,
+          width: size,
+          height: size,
+        });
+        return;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 80));
+      if (gen !== revealGen.current || !mountedRef.current) {
+        return;
+      }
+
+      const node =
+        targetRefs.current[targetId] ||
+        (step.fallback ? targetRefs.current[step.fallback] : null);
+      if (!node) {
+        setSpotlight(null);
+        return;
+      }
+
+      setSpotlight(null);
+      const first = await measureNode(node);
+      if (gen !== revealGen.current || !mountedRef.current) {
+        return;
+      }
+      if (first && scrollRef.current && !step.fixed) {
+        const windowH = WindowDimensions.get('window').height;
+        const anchor = step.placement === 'below' ? 148 : windowH * 0.52;
+        const delta = first.y - anchor;
+        if (Math.abs(delta) > 20) {
+          const nextY = Math.max(0, scrollYRef.current + delta);
+          scrollRef.current.scrollTo({y: nextY, animated: true});
+          scrollYRef.current = nextY;
+          await new Promise(resolve => setTimeout(resolve, 480));
+        }
+      }
+      if (gen !== revealGen.current || !mountedRef.current) {
+        return;
+      }
+      const rect = await measureNode(
+        targetRefs.current[targetId] ||
+          (step.fallback ? targetRefs.current[step.fallback] : null),
+      );
+      if (gen === revealGen.current && mountedRef.current) {
+        setSpotlight(rect);
+      }
+    },
+    [insets.bottom],
+  );
+
+  const finishTour = useCallback(() => {
+    revealGen.current += 1;
+    setTourOpen(false);
+    setSpotlight(null);
+    setActiveTourTarget(null);
+    AsyncStorage.setItem(STORAGE_KEYS.MARKET_TOUR, 'done').catch(() => {});
+  }, []);
 
   const showComingSoon = (message = 'This feature is coming soon.') => {
     setComingSoonMessage(message);
@@ -383,7 +550,13 @@ const MarketHomeScreen = ({navigation}) => {
           <Text style={styles.tagline}>Your Ride, Our Priority</Text>
         </View>
         <View style={styles.headerActions}>
-          <View style={styles.alertsWrap}>
+          <View
+            ref={setTargetRef('alerts')}
+            collapsable={false}
+            style={[
+              styles.alertsWrap,
+              activeTourTarget === 'alerts' && styles.tourChip,
+            ]}>
             <Text style={styles.bellIcon}>🔔</Text>
             <Text style={styles.alertsLabel}>Alerts</Text>
             <Switch
@@ -394,7 +567,13 @@ const MarketHomeScreen = ({navigation}) => {
               style={styles.alertsSwitch}
             />
           </View>
-          <View style={styles.helpWrap}>
+          <View
+            ref={setTargetRef('help')}
+            collapsable={false}
+            style={[
+              styles.helpWrap,
+              activeTourTarget === 'help' && styles.tourChip,
+            ]}>
             <TouchableOpacity
               style={styles.helpBtn}
               activeOpacity={0.85}
@@ -424,6 +603,12 @@ const MarketHomeScreen = ({navigation}) => {
       </View>
 
       <ScrollView
+        ref={scrollRef}
+        scrollEnabled={!tourOpen}
+        onScroll={event => {
+          scrollYRef.current = event.nativeEvent.contentOffset.y;
+        }}
+        scrollEventThrottle={16}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
         <View style={styles.segment}>
@@ -480,7 +665,12 @@ const MarketHomeScreen = ({navigation}) => {
                   style={styles.searchInput}
                 />
                 <TouchableOpacity
-                  style={styles.searchFilter}
+                  ref={setTargetRef('filter')}
+                  collapsable={false}
+                  style={[
+                    styles.searchFilter,
+                    activeTourTarget === 'filter' && styles.tourFilter,
+                  ]}
                   activeOpacity={0.85}
                   onPress={() => setFilterOpen(true)}>
                   <FilterSlidersIcon />
@@ -511,7 +701,14 @@ const MarketHomeScreen = ({navigation}) => {
               {FEATURES.map(f => (
                 <TouchableOpacity
                   key={f.id}
-                  style={styles.featureCard}
+                  ref={f.id === 'videos' ? setTargetRef('videos') : undefined}
+                  collapsable={false}
+                  style={[
+                    styles.featureCard,
+                    activeTourTarget === 'videos' &&
+                      f.id === 'videos' &&
+                      styles.tourLift,
+                  ]}
                   activeOpacity={0.85}
                   onPress={() => handleFeaturePress(f.id)}>
                   <View style={[styles.featureIconWrap, {backgroundColor: f.iconBg}]}>
@@ -524,7 +721,13 @@ const MarketHomeScreen = ({navigation}) => {
               ))}
             </View>
 
-            <View style={styles.progressCard}>
+            <View
+              ref={setTargetRef('progress')}
+              collapsable={false}
+              style={[
+                styles.progressCard,
+                activeTourTarget === 'progress' && styles.tourLift,
+              ]}>
               <TouchableOpacity
                 activeOpacity={0.9}
                 onPress={handleProgressCardPress}>
@@ -563,7 +766,18 @@ const MarketHomeScreen = ({navigation}) => {
             </View>
 
             {visibleSetups.map(flow => (
-              <View key={flow.id} style={styles.setupCard}>
+              <View
+                key={flow.id}
+                ref={
+                  flow.id === 'vehicle' ? setTargetRef('vehicle') : undefined
+                }
+                collapsable={false}
+                style={[
+                  styles.setupCard,
+                  activeTourTarget === 'vehicle' &&
+                    flow.id === 'vehicle' &&
+                    styles.tourLift,
+                ]}>
                 <TouchableOpacity
                   activeOpacity={0.9}
                   onPress={() => navigation.navigate(flow.route)}>
@@ -635,24 +849,33 @@ const MarketHomeScreen = ({navigation}) => {
               })}
             </ScrollView>
 
-            {filteredBookings.map(({id, hasAvatar, ...booking}) => (
-              <MarketBookingCard
+            {filteredBookings.map(({id, hasAvatar, ...booking}, index) => (
+              <View
                 key={id}
-                {...booking}
-                avatarSource={hasAvatar ? AVATAR : undefined}
-                onPress={() =>
-                  navigation.navigate(ROUTES.MARKET_BOOKING_DETAIL, {
-                    booking: {id, ...booking},
-                  })
-                }
-                onMenu={() =>
-                  showComingSoon('More options will be available soon.')
-                }
-                onQuote={() =>
-                  showComingSoon('Quote best price will be available soon.')
-                }
-                onContact={() => handleOpenDialer()}
-              />
+                ref={index === 0 ? setTargetRef('booking') : undefined}
+                collapsable={false}
+                style={
+                  index === 0 && activeTourTarget === 'booking'
+                    ? styles.tourLift
+                    : null
+                }>
+                <MarketBookingCard
+                  {...booking}
+                  avatarSource={hasAvatar ? AVATAR : undefined}
+                  onPress={() =>
+                    navigation.navigate(ROUTES.MARKET_BOOKING_DETAIL, {
+                      booking: {id, ...booking},
+                    })
+                  }
+                  onMenu={() =>
+                    showComingSoon('More options will be available soon.')
+                  }
+                  onQuote={() =>
+                    showComingSoon('Quote best price will be available soon.')
+                  }
+                  onContact={() => handleOpenDialer()}
+                />
+              </View>
             ))}
           </>
         )}
@@ -705,6 +928,13 @@ const MarketHomeScreen = ({navigation}) => {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+
+      <MarketAppTour
+        visible={tourOpen && isFocused}
+        spotlight={spotlight}
+        onStepChange={revealTourStep}
+        onFinish={finishTour}
+      />
     </View>
   );
 };
@@ -713,6 +943,38 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  tourChip: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.14,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  tourLift: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    backgroundColor: Colors.surface,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.16,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  tourFilter: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.16,
+    shadowRadius: 6,
+    elevation: 6,
   },
   header: {
     flexDirection: 'row',

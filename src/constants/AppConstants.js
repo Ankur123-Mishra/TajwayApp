@@ -45,6 +45,7 @@ export const VERIFICATION_STATUS = {
 export const STORAGE_KEYS = {
   AUTH_SESSION: 'auth_session',
   ONBOARDING: 'onboarding_completed',
+  MARKET_TOUR: 'market_tour_completed',
   BOOKINGS: 'bookings',
   DRIVER_INTERESTS: 'driver_interests',
 };
