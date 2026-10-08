@@ -1,13 +1,8 @@
 import React from 'react';
-import {
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {Modal, Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Colors, Spacing} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Bottom sheet shown when tapping the + tab — "Post" with New Booking / Free Vehicle.
@@ -18,6 +13,7 @@ const PostActionSheet = ({
   onNewBooking,
   onFreeVehicle,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -63,7 +59,7 @@ const PostActionSheet = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   overlay: {
     flex: 1,
     backgroundColor: Colors.overlay,
@@ -120,6 +116,6 @@ const styles = StyleSheet.create({
   newBookingLabel: {
     color: Colors.onPrimary,
   },
-});
+};
 
 export default PostActionSheet;

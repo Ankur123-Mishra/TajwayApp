@@ -4,3 +4,5 @@ export const useAppDispatch = () => useDispatch();
 export const useAppSelector = useSelector;
 
 export const useAuth = () => useSelector(state => state.auth);
+
+export {useResponsiveStyles} from './useResponsive';

@@ -1,15 +1,19 @@
 import React from 'react';
-import {Image, Linking, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Image, Linking, Text, TouchableOpacity, View} from 'react-native';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {Colors} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
-const DateTimeValue = ({date, time, alignRight}) => (
+const DateTimeValue = ({date, time, alignRight}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <Text
     style={[styles.availValue, alignRight && styles.alignRight]}
     allowFontScaling={false}>
     {date} @ {time}
   </Text>
 );
+};
 
 /**
  * Free vehicle listing card — matches Taxi Sanchalak marketplace screenshots.
@@ -31,6 +35,7 @@ const FreeVehicleCard = ({
   avatarSource,
   onCall,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   const note =
     pickupNote ||
     (currentLocationOnly
@@ -129,7 +134,7 @@ const FreeVehicleCard = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   card: {
     backgroundColor: Colors.surface,
     borderRadius: 16,
@@ -276,6 +281,6 @@ const styles = StyleSheet.create({
   callIcon: {
     fontSize: 13,
   },
-});
+};
 
 export default FreeVehicleCard;

@@ -1,6 +1,7 @@
 import React from 'react';
-import {StyleSheet, Text, TextInput, View} from 'react-native';
+import {Text, TextInput, View} from 'react-native';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Labeled text input with consistent marketplace styling.
@@ -12,6 +13,7 @@ const AppTextInput = ({
   style,
   ...inputProps
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   return (
     <View style={[styles.container, containerStyle]}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
@@ -25,7 +27,7 @@ const AppTextInput = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     marginBottom: Spacing.base,
   },
@@ -52,6 +54,6 @@ const styles = StyleSheet.create({
     color: Colors.error,
     marginTop: Spacing.xs,
   },
-});
+};
 
 export default AppTextInput;

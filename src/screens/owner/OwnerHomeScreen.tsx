@@ -1,5 +1,5 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {View} from 'react-native';
 import {useDispatch} from 'react-redux';
 import {
   AppButton,
@@ -10,11 +10,12 @@ import {
   ScreenHeader,
 } from '../../components/common';
 import {ROUTES} from '../../constants/Routes';
-import {useAuth} from '../../hooks';
+import {useAuth, useResponsiveStyles} from '../../hooks';
 import {logout} from '../../redux/slices/authSlice';
 import {Colors, Spacing} from '../../theme';
 
 const OwnerHomeScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const dispatch = useDispatch();
   const {user} = useAuth();
 
@@ -52,7 +53,7 @@ const OwnerHomeScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -64,6 +65,6 @@ const styles = StyleSheet.create({
   card: {
     marginBottom: Spacing.base,
   },
-});
+};
 
 export default OwnerHomeScreen;

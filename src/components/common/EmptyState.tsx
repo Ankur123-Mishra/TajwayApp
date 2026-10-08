@@ -1,7 +1,8 @@
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Text, View} from 'react-native';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
 import AppButton from './AppButton';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Empty / placeholder state for lists and unfinished modules.
@@ -12,6 +13,7 @@ const EmptyState = ({
   actionLabel,
   onAction,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   return (
     <View style={styles.container}>
       <View style={styles.iconBubble}>
@@ -33,7 +35,7 @@ const EmptyState = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -69,6 +71,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
     paddingHorizontal: Spacing.xl,
   },
-});
+};
 
 export default EmptyState;

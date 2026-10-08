@@ -1,5 +1,5 @@
 import React from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {Pressable, Text, View} from 'react-native';
 import {useDispatch} from 'react-redux';
 import {ScreenHeader} from '../../components/common';
 import {
@@ -10,6 +10,7 @@ import {
 import {ROUTES} from '../../constants/Routes';
 import {setRole} from '../../redux/slices/authSlice';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const ROLES = [
   {
@@ -33,6 +34,7 @@ const ROLES = [
 ];
 
 const RoleSelectScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const dispatch = useDispatch();
 
   const onSelect = role => {
@@ -67,7 +69,7 @@ const RoleSelectScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -96,6 +98,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: Spacing.xs,
   },
-});
+};
 
 export default RoleSelectScreen;

@@ -1,12 +1,14 @@
 import React from 'react';
-import {StyleSheet, TouchableOpacity} from 'react-native';
+import {TouchableOpacity} from 'react-native';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {Colors} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Circular white back button with yellow chevron — flat (no elevation).
  */
 const BackButton = ({onPress, style}) => {
+  const styles = useResponsiveStyles(baseStyles);
   return (
     <TouchableOpacity
       accessibilityRole="button"
@@ -19,7 +21,7 @@ const BackButton = ({onPress, style}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   btn: {
     width: 40,
     height: 40,
@@ -30,6 +32,6 @@ const styles = StyleSheet.create({
     elevation: 0,
     shadowOpacity: 0,
   },
-});
+};
 
 export default BackButton;

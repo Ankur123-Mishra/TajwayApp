@@ -1,6 +1,7 @@
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Text, View} from 'react-native';
 import {Colors, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Tajway logo mark + wordmark.
@@ -11,6 +12,7 @@ const BrandLogo = ({
   showDivider = true,
   style,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   const isLg = size === 'lg';
   const isSm = size === 'sm';
   const markW = isLg ? 40 : isSm ? 26 : 34;
@@ -43,7 +45,7 @@ const BrandLogo = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -96,6 +98,6 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeights.bold,
     color: Colors.textPrimary,
   },
-});
+};
 
 export default BrandLogo;

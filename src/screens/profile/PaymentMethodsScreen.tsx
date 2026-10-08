@@ -1,22 +1,16 @@
 import React, {useState} from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import {KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import BackButton from '../../components/brand/BackButton';
 import PrimaryButton from '../../components/brand/PrimaryButton';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Payment Methods — bank account details for commission payouts.
  */
 const PaymentMethodsScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const [accountNumber, setAccountNumber] = useState('');
   const [reAccountNumber, setReAccountNumber] = useState('');
@@ -92,7 +86,9 @@ const Field = ({
   placeholder,
   keyboardType = 'default',
   autoCapitalize = 'sentences',
-}) => (
+}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.inputWrap}>
     <TextInput
       value={value}
@@ -106,8 +102,9 @@ const Field = ({
     />
   </View>
 );
+};
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
@@ -160,6 +157,6 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     backgroundColor: Colors.backgroundAlt,
   },
-});
+};
 
 export default PaymentMethodsScreen;

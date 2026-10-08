@@ -1,15 +1,17 @@
 import React, {useState} from 'react';
-import {StyleSheet, Text, TextInput, View} from 'react-native';
+import {Text, TextInput, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import BackButton from '../../components/brand/BackButton';
 import PrimaryButton from '../../components/brand/PrimaryButton';
 import {ROUTES} from '../../constants/Routes';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Verify with Aadhaar (screenshots 10 / 12).
  */
 const AadhaarVerifyScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const [aadhaar, setAadhaar] = useState('');
 
@@ -51,7 +53,7 @@ const AadhaarVerifyScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
@@ -102,6 +104,6 @@ const styles = StyleSheet.create({
   cta: {
     marginTop: Spacing.xl,
   },
-});
+};
 
 export default AadhaarVerifyScreen;

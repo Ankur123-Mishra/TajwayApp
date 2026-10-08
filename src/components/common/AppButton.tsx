@@ -4,12 +4,14 @@
 import React from 'react';
 import {
   ActivityIndicator,
-  StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
+import {moderateScale} from '../../utils/responsive';
 
 const VARIANT_STYLES = {
   primary: {
@@ -50,9 +52,14 @@ const AppButton = ({
   style,
   textStyle,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
+  const {width, height} = useWindowDimensions();
   const palette = VARIANT_STYLES[variant] || VARIANT_STYLES.primary;
-  const height =
-    Dimensions.buttonHeight[size] || Dimensions.buttonHeight.md;
+  const buttonHeight = moderateScale(
+    Dimensions.buttonHeight[size] || Dimensions.buttonHeight.md,
+    width,
+    height,
+  );
 
   return (
     <TouchableOpacity
@@ -65,7 +72,7 @@ const AppButton = ({
         {
           backgroundColor: palette.backgroundColor,
           borderColor: palette.borderColor,
-          height,
+          height: buttonHeight,
           opacity: disabled || loading ? 0.55 : 1,
           alignSelf: fullWidth ? 'stretch' : 'flex-start',
         },
@@ -84,7 +91,7 @@ const AppButton = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   base: {
     borderRadius: Dimensions.borderRadius.md,
     borderWidth: 0,
@@ -100,6 +107,6 @@ const styles = StyleSheet.create({
     ...Typography.button,
     fontWeight: Typography.fontWeights.bold,
   },
-});
+};
 
 export default AppButton;

@@ -1,6 +1,7 @@
 export const ROUTES = {
   // Auth / onboarding flow
   SPLASH: 'Splash',
+  INTRO: 'Intro',
   WELCOME: 'Welcome',
   PHONE_LOGIN: 'PhoneLogin',
   OTP: 'OTP',

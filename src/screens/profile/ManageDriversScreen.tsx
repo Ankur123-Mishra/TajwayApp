@@ -1,18 +1,11 @@
 import React, {useState} from 'react';
-import {
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {Modal, ScrollView, Text, TextInput, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import BackButton from '../../components/brand/BackButton';
 import PrimaryButton from '../../components/brand/PrimaryButton';
 import {ROUTES} from '../../constants/Routes';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const DRIVER_FIELDS = [
   'Driver Full Name',
@@ -28,6 +21,7 @@ const DRIVER_FIELDS = [
  */
 
 const ManageDriversScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [form, setForm] = useState({});
@@ -100,7 +94,7 @@ const ManageDriversScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
@@ -218,6 +212,6 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     padding: 0,
   },
-});
+};
 
 export default ManageDriversScreen;

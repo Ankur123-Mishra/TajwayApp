@@ -1,11 +1,6 @@
-import {Dimensions as RNDimensions, Platform} from 'react-native';
-
-const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = RNDimensions.get('window');
+import {Platform} from 'react-native';
 
 const Dimensions = {
-  screenWidth: SCREEN_WIDTH,
-  screenHeight: SCREEN_HEIGHT,
-
   borderRadius: {
     xs: 4,
     sm: 8,

@@ -1,8 +1,11 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {View} from 'react-native';
 import {Colors} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
-const FilterSlidersIcon = () => (
+const FilterSlidersIcon = () => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <>
     <View style={styles.sliderLine}>
       <View style={[styles.sliderKnob, styles.sliderKnobRight]} />
@@ -12,8 +15,9 @@ const FilterSlidersIcon = () => (
     </View>
   </>
 );
+};
 
-const styles = StyleSheet.create({
+const baseStyles = {
   sliderLine: {
     width: 18,
     height: 2,
@@ -43,6 +47,6 @@ const styles = StyleSheet.create({
   sliderKnobLeft: {
     left: 1,
   },
-});
+};
 
 export default FilterSlidersIcon;

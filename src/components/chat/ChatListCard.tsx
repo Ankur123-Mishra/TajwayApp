@@ -1,6 +1,7 @@
 import React from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Text, TouchableOpacity, View} from 'react-native';
 import {Colors} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Chat inbox row — contact preview + booking route snippet.
@@ -17,6 +18,7 @@ const ChatListCard = ({
   status,
   onPress,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   const preview = String(lastMessage || '')
     .replace(/\n/g, ' ')
     .trim();
@@ -73,7 +75,7 @@ const ChatListCard = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -172,6 +174,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.onPrimary,
   },
-});
+};
 
 export default ChatListCard;

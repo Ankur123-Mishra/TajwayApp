@@ -14,11 +14,10 @@ import {
   APP_VERSION,
 } from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
-import {useAuth} from '../../hooks';
+import {useAuth, useResponsiveStyles} from '../../hooks';
 import BrandLogo from '../../components/brand/BrandLogo';
+import {Images} from '../../constants/Images';
 import {Colors, Spacing, Typography} from '../../theme';
-
-const carInnova = require('../../assets/images/Innova.webp');
 
 /**
  * Splash — logo, tagline, car spotlight middle, brand hill footer.
@@ -26,6 +25,7 @@ const carInnova = require('../../assets/images/Innova.webp');
 
 
 const SplashScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const spin = useRef(new Animated.Value(0)).current;
   const fadeIn = useRef(new Animated.Value(0)).current;
@@ -108,7 +108,7 @@ const SplashScreen = ({navigation}) => {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!isAuthenticated) {
-        navigation.replace(ROUTES.WELCOME);
+        navigation.replace(ROUTES.INTRO);
         return;
       }
       if (!hasPreferences) {
@@ -186,7 +186,7 @@ const SplashScreen = ({navigation}) => {
               styles.carStage,
               {transform: [{translateY: carTranslateY}]},
             ]}>
-            <Image source={carInnova} style={styles.midCar} resizeMode="contain" />
+            <Image source={Images.innova} style={styles.midCar} resizeMode="contain" />
           </Animated.View>
 
           <View style={styles.shadowOval} />
@@ -255,7 +255,7 @@ const SplashScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.surface,
@@ -482,6 +482,6 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeights.semibold,
     color: Colors.textPrimary,
   },
-});
+};
 
 export default SplashScreen;

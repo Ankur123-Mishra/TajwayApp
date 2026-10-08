@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import {useDispatch} from 'react-redux';
 import {
   AppButton,
@@ -14,13 +8,15 @@ import {
   StatusBadge,
 } from '../../components/common';
 import {ROUTES} from '../../constants/Routes';
-import {useAuth} from '../../hooks';
+import {useAuth, useResponsiveStyles} from '../../hooks';
 import {mockDrivers, mockUsers} from '../../mockData';
 import {logout} from '../../redux/slices/authSlice';
 import {AuthService} from '../../services';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
 
-const SectionRow = ({label, onPress, value}) => (
+const SectionRow = ({label, onPress, value}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <TouchableOpacity
     style={styles.row}
     onPress={onPress}
@@ -30,11 +26,13 @@ const SectionRow = ({label, onPress, value}) => (
     <Text style={styles.rowValue}>{value || '›'}</Text>
   </TouchableOpacity>
 );
+};
 
 /**
  * Driver profile — personal / driving / vehicle / docs / bank / availability.
  */
 const DriverProfileScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const dispatch = useDispatch();
   const {user} = useAuth();
   const driver = user || mockUsers.driver;
@@ -143,7 +141,7 @@ const DriverProfileScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -216,6 +214,6 @@ const styles = StyleSheet.create({
   logout: {
     marginTop: Spacing.md,
   },
-});
+};
 
 export default DriverProfileScreen;

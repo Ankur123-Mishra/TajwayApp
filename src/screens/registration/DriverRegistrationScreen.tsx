@@ -30,6 +30,7 @@ import {
   isValidIFSC,
   required,
 } from '../../utils/validation';
+import {useResponsiveStyles} from '../../hooks';
 
 const STEPS = [
   'Personal',
@@ -45,18 +46,26 @@ const FUEL_TYPES = ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid'];
 const mockUploadUri = key =>
   `https://picsum.photos/seed/${key}-${Date.now()}/400/240`;
 
-const SectionTitle = ({children}) => (
+const SectionTitle = ({children}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <Text style={styles.sectionTitle}>{children}</Text>
 );
+};
 
-const ReviewRow = ({label, value}) => (
+const ReviewRow = ({label, value}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.reviewRow}>
     <Text style={styles.reviewLabel}>{label}</Text>
     <Text style={styles.reviewValue}>{value || '—'}</Text>
   </View>
 );
+};
 
-const Chip = ({label, selected, onPress}) => (
+const Chip = ({label, selected, onPress}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <TouchableOpacity
     onPress={onPress}
     activeOpacity={0.85}
@@ -66,8 +75,11 @@ const Chip = ({label, selected, onPress}) => (
     </Text>
   </TouchableOpacity>
 );
+};
 
-const PhotoPlaceholder = ({uri, onPress}) => (
+const PhotoPlaceholder = ({uri, onPress}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <TouchableOpacity style={styles.photoBtn} onPress={onPress} activeOpacity={0.85}>
     <Text style={styles.photoIcon}>{uri ? '✓' : '📷'}</Text>
     <Text style={styles.photoLabel}>
@@ -75,11 +87,13 @@ const PhotoPlaceholder = ({uri, onPress}) => (
     </Text>
   </TouchableOpacity>
 );
+};
 
 /**
  * Multi-step Driver registration.
  */
 const DriverRegistrationScreen = ({navigation, route}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const mobilePrefill = route?.params?.mobile || '';
 
@@ -600,7 +614,7 @@ const DriverRegistrationScreen = ({navigation, route}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -709,6 +723,6 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: Colors.border,
   },
-});
+};
 
 export default DriverRegistrationScreen;

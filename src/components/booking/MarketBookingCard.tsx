@@ -1,11 +1,14 @@
 import React from 'react';
-import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Image, Text, TouchableOpacity, useWindowDimensions, View} from 'react-native';
+import {Images} from '../../constants/Images';
 import {Colors, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
+import {moderateScale} from '../../utils/responsive';
 
 const VEHICLE_IMAGES = {
-  innova: require('../../assets/images/car_innova.png'),
-  ertiga: require('../../assets/images/car_innova.png'),
-  sedan: require('../../assets/images/car_innova.png'),
+  innova: Images.carInnova,
+  ertiga: Images.carInnova,
+  sedan: Images.carInnova,
 };
 
 const VEHICLE_SPECS = {
@@ -16,7 +19,9 @@ const VEHICLE_SPECS = {
 
 const formatInr = value => `₹${Number(value).toLocaleString('en-IN')}`;
 
-const DottedLine = ({withArrow}) => (
+const DottedLine = ({withArrow}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.dotLine}>
     {Array.from({length: 7}).map((_, i) => (
       <View key={i} style={styles.dot} />
@@ -24,16 +29,21 @@ const DottedLine = ({withArrow}) => (
     {withArrow ? <View style={styles.arrow} /> : null}
   </View>
 );
+};
 
-const MapPin = ({size = 14}) => (
-  <View style={[styles.pinWrap, {width: size, height: size + 4}]}>
+const MapPin = ({size = 14}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  const {width, height} = useWindowDimensions();
+  const pin = moderateScale(size, width, height);
+  return (
+  <View style={[styles.pinWrap, {width: pin, height: pin + moderateScale(4, width, height)}]}>
     <View
       style={[
         styles.pinHead,
         {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
+          width: pin,
+          height: pin,
+          borderRadius: pin / 2,
         },
       ]}>
       <View style={styles.pinInner} />
@@ -41,16 +51,21 @@ const MapPin = ({size = 14}) => (
     <View style={styles.pinTip} />
   </View>
 );
+};
 
-const VehicleThumb = ({type = 'sedan'}) => (
+const VehicleThumb = ({type = 'sedan'}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <Image
     source={VEHICLE_IMAGES[type] || VEHICLE_IMAGES.sedan}
     style={styles.carImage}
     resizeMode="contain"
   />
 );
+};
 
 const StarRow = ({rating = 5}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const stars = [];
   for (let i = 1; i <= 5; i += 1) {
     const filled = rating >= i;
@@ -71,7 +86,9 @@ const StarRow = ({rating = 5}) => {
   return <View style={styles.starRow}>{stars}</View>;
 };
 
-const PriceBox = ({amount, label, hint, amountColor}) => (
+const PriceBox = ({amount, label, hint, amountColor}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.priceBox}>
     <Text style={[styles.priceAmt, amountColor && {color: amountColor}]}>
       {formatInr(amount)}
@@ -80,10 +97,12 @@ const PriceBox = ({amount, label, hint, amountColor}) => (
     {hint ? <Text style={styles.priceHint}>{hint}</Text> : null}
   </View>
 );
+};
 
 /**
  * Market trip request card — matches Tajway marketplace booking card.
  */
+
 const MarketBookingCard = ({
   name = 'Travel Partner',
   company,
@@ -114,6 +133,7 @@ const MarketBookingCard = ({
   onContact,
   onMenu,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   const isOneWay = String(tripType).toLowerCase().includes('one');
   const initials =
     avatarInitials ||
@@ -189,7 +209,7 @@ const MarketBookingCard = ({
           </View>
         </View>
       )}
-
+   
       <View style={styles.vehicleRow}>
         <VehicleThumb type={vehicleType} />
         <View style={styles.vehicleCopy}>
@@ -294,7 +314,7 @@ const MarketBookingCard = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   card: {
     backgroundColor: Colors.surface,
     borderRadius: 18,
@@ -325,6 +345,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 4,
   },
+  
   shield: {
     width: 16,
     height: 18,
@@ -654,6 +675,6 @@ const styles = StyleSheet.create({
   contactIcon: {
     fontSize: 13,
   },
-});
+};
 
 export default MarketBookingCard;

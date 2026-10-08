@@ -11,6 +11,7 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {Colors, Spacing} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const POPULAR_LOCATIONS = [
   'Delhi',
@@ -40,6 +41,7 @@ const POPULAR_LOCATIONS = [
  * Location picker — search + popular pickup/drop cities (design match).
  */
 const LocationSelectScreen = ({navigation, route}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const onSelect = route.params?.onSelect;
@@ -165,7 +167,7 @@ const LocationSelectScreen = ({navigation, route}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -263,6 +265,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textMuted,
   },
-});
+};
 
 export default LocationSelectScreen;

@@ -1,15 +1,10 @@
 import React, {useEffect, useState} from 'react';
-import {
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {Modal, Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {Colors, Spacing} from '../../theme';
 import CitySelectModal from '../profile/CitySelectModal';
+import {useResponsiveStyles} from '../../hooks';
 
 const TRIP_TYPE_OPTIONS = ['Both', 'One Way', 'Round Trip'];
 
@@ -39,6 +34,7 @@ const MarketFilterSheet = ({
   initial = EMPTY_FILTERS,
   onSave,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const [tripType, setTripType] = useState(initial.tripType || 'Both');
   const [vehicleType, setVehicleType] = useState(initial.vehicleType || '');
@@ -259,7 +255,7 @@ const MarketFilterSheet = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   overlay: {
     flex: 1,
     backgroundColor: Colors.overlay,
@@ -368,7 +364,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.textPrimary,
   },
-});
+};
 
 export default MarketFilterSheet;
 export {EMPTY_FILTERS};

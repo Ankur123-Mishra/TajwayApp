@@ -1,77 +1,112 @@
 import React, {useState} from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {Text, TextInput} from 'react-native';
 import {useDispatch} from 'react-redux';
-import BrandHeader from '../../components/brand/BrandHeader';
-import PhoneInputRow from '../../components/brand/PhoneInputRow';
+import AuthHeroLayout from '../../components/brand/AuthHeroLayout';
 import PrimaryButton from '../../components/brand/PrimaryButton';
 import {ROUTES} from '../../constants/Routes';
 import {setPhone} from '../../redux/slices/authSlice';
-import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
- * Phone number entry — Enter your phone number + Next Step.
+ * Phone login — Welcome sheet over the driver hero.
  */
 const PhoneLoginScreen = ({navigation, route}) => {
-  const insets = useSafeAreaInsets();
+  const styles = useResponsiveStyles(baseStyles);
   const dispatch = useDispatch();
   const mode = route?.params?.mode || 'login';
   const [phone, setPhoneLocal] = useState('');
 
+  const digits = phone.replace(/\D/g, '');
+
   const onNext = () => {
-    if (phone.replace(/\D/g, '').length < 10) {
+    if (digits.length < 10) {
       return;
     }
     dispatch(setPhone(phone));
-    navigation.navigate(ROUTES.OTP, {phone, mode});
+    navigation.navigate(ROUTES.OTP, {phone: digits, mode});
   };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, {paddingTop: insets.top + 28}]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <BrandHeader />
-
-      <View style={styles.middle}>
-        <Text style={styles.heading}>Enter your phone number:</Text>
-        <PhoneInputRow value={phone} onChangeText={setPhoneLocal} />
-        <PrimaryButton
-          title="Next Step"
-          onPress={onNext}
-          disabled={phone.replace(/\D/g, '').length < 10}
-          style={styles.cta}
-        />
-      </View>
-    </KeyboardAvoidingView>
+    <AuthHeroLayout>
+      <Text style={styles.welcome}>Welcome!</Text>
+      <Text style={styles.subtitle}>
+        Login/Sign up to your account and continue your journey
+      </Text>
+      <TextInput
+        value={phone}
+        onChangeText={text =>
+          setPhoneLocal(text.replace(/\D/g, '').slice(0, 10))
+        }
+        keyboardType="phone-pad"
+        maxLength={10}
+        placeholder="Enter Phone number"
+        placeholderTextColor="#B0B4BC"
+        style={styles.input}
+      />
+      <PrimaryButton
+        title="Continue"
+        onPress={onNext}
+        showArrow
+        style={styles.cta}
+      />
+      <Text style={styles.legal}>
+        By continue, you're agreeing to our{' '}
+        <Text style={styles.legalLink}>Term & Conditions</Text>
+        {' & '}
+        <Text style={styles.legalLink}>Privacy Policy</Text>
+      </Text>
+    </AuthHeroLayout>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  middle: {
-    flex: 1,
-    paddingHorizontal: Spacing.screenPadding,
-    paddingTop: Spacing.xxxl,
-  },
-  heading: {
+const baseStyles = {
+  welcome: {
     textAlign: 'center',
-    fontSize: 16,
-    fontWeight: Typography.fontWeights.semibold,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.lg,
+    fontSize: 26,
+    lineHeight: 32,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  subtitle: {
+    marginTop: 8,
+    marginBottom: 22,
+    textAlign: 'center',
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#A3A8B0',
+    paddingHorizontal: 12,
+  },
+  input: {
+    height: 52,
+    borderWidth: 1,
+    borderColor: '#E6E6E6',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: '#1A1A1A',
+    backgroundColor: '#FFFFFF',
   },
   cta: {
-    marginTop: Spacing.xl,
+    marginTop: 16,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#F5C400',
+    shadowOpacity: 0,
+    elevation: 0,
   },
-});
+  legal: {
+    marginTop: 18,
+    textAlign: 'center',
+    color: '#B0B4BA',
+    fontSize: 13,
+    lineHeight: 20,
+    paddingHorizontal: 6,
+  },
+  legalLink: {
+    color: '#1A1A1A',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
+};
 
 export default PhoneLoginScreen;

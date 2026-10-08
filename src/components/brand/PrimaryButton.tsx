@@ -1,12 +1,7 @@
 import React from 'react';
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {ActivityIndicator, Text, TouchableOpacity, View} from 'react-native';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Tajway primary CTA — yellow, rounded, white label by default.
@@ -23,6 +18,7 @@ const PrimaryButton = ({
   style,
   textStyle,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   const isSecondary = variant === 'secondary';
   const bg = isSecondary ? Colors.secondary : Colors.primary;
   const color = isSecondary
@@ -58,7 +54,7 @@ const PrimaryButton = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   base: {
     height: 54,
     borderRadius: Dimensions.borderRadius.md,
@@ -83,6 +79,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
   },
-});
+};
 
 export default PrimaryButton;

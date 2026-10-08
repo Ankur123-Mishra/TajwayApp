@@ -1,5 +1,5 @@
 import React, {useMemo, useState} from 'react';
-import {Alert, StyleSheet, Text, View} from 'react-native';
+import {Alert, Text, View} from 'react-native';
 import {useDispatch} from 'react-redux';
 import {AppButton, AppTextInput, ScreenHeader} from '../../components/common';
 import {ROLE_LABELS, USER_ROLES} from '../../constants/AppConstants';
@@ -7,8 +7,10 @@ import {ROUTES} from '../../constants/Routes';
 import {loginSuccess} from '../../redux/slices/authSlice';
 import {AuthService} from '../../services';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const LoginScreen = ({navigation, route}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const dispatch = useDispatch();
   const role = route?.params?.role || USER_ROLES.AGENT;
   const [email, setEmail] = useState('');
@@ -75,7 +77,7 @@ const LoginScreen = ({navigation, route}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -91,6 +93,6 @@ const styles = StyleSheet.create({
   back: {
     marginTop: Spacing.sm,
   },
-});
+};
 
 export default LoginScreen;

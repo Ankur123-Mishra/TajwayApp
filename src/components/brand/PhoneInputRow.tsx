@@ -1,6 +1,7 @@
 import React from 'react';
-import {StyleSheet, Text, TextInput, View} from 'react-native';
+import {Text, TextInput, View} from 'react-native';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Country code + phone input row matching login / OTP screens.
@@ -11,6 +12,7 @@ const PhoneInputRow = ({
   editable = true,
   placeholder = 'Enter your phone number',
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   return (
     <View style={styles.row}>
       <View style={styles.codeBox}>
@@ -33,7 +35,7 @@ const PhoneInputRow = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -76,6 +78,6 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     padding: 0,
   },
-});
+};
 
 export default PhoneInputRow;

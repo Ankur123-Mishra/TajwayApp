@@ -22,6 +22,7 @@ import {USER_ROLES} from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
 import {updateUser} from '../../redux/slices/authSlice';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const EMPTY_GST_DOCS = [null, null, null];
 
@@ -40,6 +41,7 @@ const VERIFICATION_ITEMS = [
  * Personal Information — profile edit (screenshot match).
  */
 const PersonalInfoScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
   const [fullName, setFullName] = useState('');
@@ -321,7 +323,9 @@ const Field = ({
   autoCapitalize,
   editable = true,
   onPress,
-}) => (
+}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.field}>
     <Text style={styles.label}>{label}</Text>
     <TouchableOpacity
@@ -346,8 +350,9 @@ const Field = ({
     </TouchableOpacity>
   </View>
 );
+};
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
@@ -554,6 +559,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textSecondary,
   },
-});
+};
 
 export default PersonalInfoScreen;

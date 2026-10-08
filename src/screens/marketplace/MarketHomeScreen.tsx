@@ -1,6 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
-  Dimensions as WindowDimensions,
   Linking,
   Modal,
   ScrollView,
@@ -9,6 +8,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -29,9 +29,9 @@ import {
 import {STORAGE_KEYS} from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
 import {mockFreeVehicles, mockMarketBookings} from '../../mockData';
+import {Images} from '../../constants/Images';
 import {Colors, Dimensions, Spacing} from '../../theme';
-
-const AVATAR = require('../../assets/images/partner_deepesh.png');
+import {useResponsiveStyles} from '../../hooks';
 
 const BOOKING_FILTERS = ['All', 'Today', 'Upcoming', 'Completed'];
 
@@ -114,7 +114,9 @@ const SETUP_FLOWS = [
   },
 ];
 
-const SetupMiniSteps = ({steps}) => (
+const SetupMiniSteps = ({steps}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.miniSteps}>
     {steps.map((label, index) => (
       <React.Fragment key={label}>
@@ -131,8 +133,11 @@ const SetupMiniSteps = ({steps}) => (
     ))}
   </View>
 );
+};
 
-const ProfileProgressChecklist = ({flows, onItemPress}) => (
+const ProfileProgressChecklist = ({flows, onItemPress}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.progressChecklist}>
     {flows.map((flow, index) => {
       const done = !!flow.completed;
@@ -195,12 +200,15 @@ const ProfileProgressChecklist = ({flows, onItemPress}) => (
     })}
   </View>
 );
+};
 
 /**
  * Market home — Bookings setup / Free Vehicles listings.
  */
 
 const MarketHomeScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  const {width: windowWidth, height: windowHeight} = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
   const [alerts, setAlerts] = useState(false);
@@ -311,11 +319,10 @@ const MarketHomeScreen = ({navigation}) => {
           setSpotlight(rect);
           return;
         }
-        const {width, height} = WindowDimensions.get('window');
         const size = 64;
         setSpotlight({
-          x: (width - size) / 2,
-          y: height - Math.max(insets.bottom, 8) - 78,
+          x: (windowWidth - size) / 2,
+          y: windowHeight - Math.max(insets.bottom, 8) - 78,
           width: size,
           height: size,
         });
@@ -341,8 +348,7 @@ const MarketHomeScreen = ({navigation}) => {
         return;
       }
       if (first && scrollRef.current && !step.fixed) {
-        const windowH = WindowDimensions.get('window').height;
-        const anchor = step.placement === 'below' ? 148 : windowH * 0.52;
+        const anchor = step.placement === 'below' ? 148 : windowHeight * 0.52;
         const delta = first.y - anchor;
         if (Math.abs(delta) > 20) {
           const nextY = Math.max(0, scrollYRef.current + delta);
@@ -362,7 +368,7 @@ const MarketHomeScreen = ({navigation}) => {
         setSpotlight(rect);
       }
     },
-    [insets.bottom],
+    [insets.bottom, windowWidth, windowHeight],
   );
 
   const finishTour = useCallback(() => {
@@ -649,7 +655,7 @@ const MarketHomeScreen = ({navigation}) => {
                 key={id}
                 {...vehicle}
                 phone={phone}
-                avatarSource={hasAvatar ? AVATAR : undefined}
+                avatarSource={hasAvatar ? Images.partnerDeepesh : undefined}
                 onCall={() => handleOpenDialer(getRandomPhone())}
               />
             ))}
@@ -861,7 +867,7 @@ const MarketHomeScreen = ({navigation}) => {
                 }>
                 <MarketBookingCard
                   {...booking}
-                  avatarSource={hasAvatar ? AVATAR : undefined}
+                  avatarSource={hasAvatar ? Images.partnerDeepesh : undefined}
                   onPress={() =>
                     navigation.navigate(ROUTES.MARKET_BOOKING_DETAIL, {
                       booking: {id, ...booking},
@@ -939,7 +945,7 @@ const MarketHomeScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -1653,6 +1659,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Colors.onPrimary,
   },
-});
+};
 
 export default MarketHomeScreen;

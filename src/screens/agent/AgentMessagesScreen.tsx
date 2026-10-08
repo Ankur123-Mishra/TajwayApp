@@ -12,6 +12,7 @@ import {ChatListCard} from '../../components/chat';
 import {ROUTES} from '../../constants/Routes';
 import {mockChats} from '../../mockData';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const SAMPLE_PHONES = [
   '9876543210',
@@ -35,6 +36,7 @@ const openDialer = (phone = getRandomPhone()) => {
  * Chats tab — Posted / Received chat list → Chat Details.
  */
 const AgentMessagesScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState('posted');
   const [helpMenuOpen, setHelpMenuOpen] = useState(false);
@@ -153,7 +155,7 @@ const AgentMessagesScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -287,6 +289,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: Colors.textMuted,
   },
-});
+};
 
 export default AgentMessagesScreen;

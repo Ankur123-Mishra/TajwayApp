@@ -1,13 +1,5 @@
 import React, {useMemo, useState} from 'react';
-import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {Image, ScrollView, Text, TextInput, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useDispatch} from 'react-redux';
 import PrimaryButton from '../../components/brand/PrimaryButton';
@@ -17,14 +9,9 @@ import {
 } from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
 import {setPreferences} from '../../redux/slices/authSlice';
+import {Images} from '../../constants/Images';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
-
-const STATE_IMAGES = {
-  delhi: require('../../assets/images/Delhi.jpeg'),
-  rajasthan: require('../../assets/images/Rajasthan.jpeg'),
-  uttarakhand: require('../../assets/images/Uttarakhand.jpeg'),
-  haryana: require('../../assets/images/Haryana.jpeg'),
-};
+import {useResponsiveStyles} from '../../hooks';
 
 const BOOKING_OPTIONS = [
   {
@@ -52,6 +39,7 @@ const BOOKING_OPTIONS = [
  */
 
 const PreferencesScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
   const [query, setQuery] = useState('');
@@ -156,7 +144,7 @@ const PreferencesScreen = ({navigation}) => {
                     selected && styles.imageContainerOn,
                   ]}>
                   <Image
-                    source={STATE_IMAGES[state.id]}
+                    source={Images[state.id]}
                     style={styles.stateImage}
                     resizeMode="contain"
                   />
@@ -220,7 +208,7 @@ const PreferencesScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#FCFAF7',
@@ -500,6 +488,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.textMuted,
   },
-});
+};
 
 export default PreferencesScreen;

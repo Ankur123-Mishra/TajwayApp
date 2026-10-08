@@ -12,21 +12,21 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
+import {Images} from '../../constants/Images';
 import {Colors, Dimensions, Spacing} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const TOTAL_STEPS = 3;
 
-const carInnova = require('../../assets/images/car_innova.png');
-
 const VEHICLE_OPTIONS = [
-  {id: 'hatchback', label: 'Hatchback', image: carInnova},
-  {id: 'sedan', label: 'Sedan', image: carInnova},
-  {id: 'ertiga', label: 'Ertiga', image: carInnova},
-  {id: 'suv', label: 'SUV', image: carInnova},
-  {id: 'innova', label: 'INNOVA', image: carInnova},
-  {id: 'innova_crysta', label: 'INNOVA CRYSTA', image: carInnova},
-  {id: 'force', label: 'FORCE Traveller', image: carInnova},
-  {id: 'bus', label: 'Bus', image: carInnova},
+  {id: 'hatchback', label: 'Hatchback', image: Images.carInnova},
+  {id: 'sedan', label: 'Sedan', image: Images.carInnova},
+  {id: 'ertiga', label: 'Ertiga', image: Images.carInnova},
+  {id: 'suv', label: 'SUV', image: Images.carInnova},
+  {id: 'innova', label: 'INNOVA', image: Images.carInnova},
+  {id: 'innova_crysta', label: 'INNOVA CRYSTA', image: Images.carInnova},
+  {id: 'force', label: 'FORCE Traveller', image: Images.carInnova},
+  {id: 'bus', label: 'Bus', image: Images.carInnova},
 ];
 
 const STATE_CHIPS = [
@@ -44,7 +44,9 @@ const MORE_STATES = [
   'Maharashtra',
 ];
 
-const ProgressBar = ({step}) => (
+const ProgressBar = ({step}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.progressRow}>
     {Array.from({length: TOTAL_STEPS}).map((_, index) => (
       <View
@@ -57,6 +59,7 @@ const ProgressBar = ({step}) => (
     ))}
   </View>
 );
+};
 
 const SearchField = ({
   placeholder,
@@ -64,7 +67,9 @@ const SearchField = ({
   onChangeText,
   style,
   editable = true,
-}) => (
+}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={[styles.searchField, style]}>
     <TextInput
       value={value}
@@ -77,11 +82,13 @@ const SearchField = ({
     <Ionicons name="search-outline" size={18} color={Colors.textMuted} />
   </View>
 );
+};
 
 /**
  * Route Alert Setup — 3-step wizard opened from Market Alerts switch.
  */
 const RouteAlertSetupScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState(0);
 
@@ -442,7 +449,7 @@ const RouteAlertSetupScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -765,6 +772,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 15,
   },
-});
+};
 
 export default RouteAlertSetupScreen;

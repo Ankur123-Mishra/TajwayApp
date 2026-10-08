@@ -1,13 +1,13 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {
   Animated,
-  Dimensions,
   Easing,
   Platform,
   Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -16,6 +16,7 @@ import {MaterialDesignIcons} from '@react-native-vector-icons/material-design-ic
 import {setTourTarget} from '../tour/tourTargets';
 import {ROUTES} from '../../constants/Routes';
 import {Colors, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const TABS = {
   [ROUTES.AGENT_HOME]: {
@@ -47,8 +48,6 @@ const TABS = {
   },
 };
 
-const SCREEN_H = Dimensions.get('window').height;
-
 const TabGlyph = ({config, focused}) => {
   const color = focused ? Colors.tabActive : Colors.tabInactive;
   const name = focused ? config.filled : config.outline;
@@ -66,6 +65,8 @@ const AgentTabBar = ({
   onNewBooking,
   onFreeVehicle,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
+  const {height: windowHeight} = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 8);
   const plusRef = useRef(null);
@@ -173,7 +174,7 @@ const AgentTabBar = ({
         <>
           <Animated.View
             pointerEvents={menuOpen ? 'auto' : 'none'}
-            style={[styles.backdrop, {opacity: backdropOpacity}]}>
+            style={[styles.backdrop, {height: windowHeight, opacity: backdropOpacity}]}>
             <Pressable
               style={StyleSheet.absoluteFill}
               onPress={closeMenu}
@@ -300,7 +301,7 @@ const AgentTabBar = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   wrap: {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -327,7 +328,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: SCREEN_H,
     backgroundColor: 'rgba(26, 26, 27, 0.28)',
     zIndex: 1,
   },
@@ -423,6 +423,6 @@ const styles = StyleSheet.create({
   plusBtnOpen: {
     backgroundColor: Colors.primaryDark,
   },
-});
+};
 
 export default AgentTabBar;

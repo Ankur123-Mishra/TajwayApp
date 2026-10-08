@@ -1,6 +1,7 @@
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Text, View} from 'react-native';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 export {default as AppButton} from './AppButton';
 export {default as AppCard, CardTitle, CardSubtitle} from './AppCard';
@@ -17,7 +18,9 @@ export {default as StatusBadge, VerificationStatus} from './StatusBadge';
 export {default as StepIndicator} from './StepIndicator';
 
 /** Small helper text toast bar matching OTP screenshot */
-export const ToastBar = ({message, logo = true}) => (
+export const ToastBar = ({message, logo = true}) => {
+  const toastStyles = useResponsiveStyles(baseToastStyles);
+  return (
   <View style={toastStyles.bar}>
     {logo ? (
       <View style={toastStyles.logo}>
@@ -28,8 +31,9 @@ export const ToastBar = ({message, logo = true}) => (
     <Text style={toastStyles.text}>{message}</Text>
   </View>
 );
+};
 
-const toastStyles = StyleSheet.create({
+const baseToastStyles = {
   bar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -63,4 +67,4 @@ const toastStyles = StyleSheet.create({
     color: Colors.textInverse,
     flex: 1,
   },
-});
+};

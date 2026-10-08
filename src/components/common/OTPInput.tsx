@@ -1,10 +1,11 @@
-import React, {useRef} from 'react';
-import {StyleSheet, TextInput, View} from 'react-native';
-import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import React, {useRef, useState} from 'react';
+import {TextInput, View} from 'react-native';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Multi-box OTP input. Keeps a single string value for callers.
  */
+
 const OTPInput = ({
   length = 4,
   value = '',
@@ -12,7 +13,9 @@ const OTPInput = ({
   autoFocus = true,
   style,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   const refs = useRef([]);
+  const [focused, setFocused] = useState(autoFocus ? 0 : -1);
   const digits = Array.from({length}, (_, i) => value[i] || '');
 
   const updateAt = (index, char) => {
@@ -39,38 +42,44 @@ const OTPInput = ({
           ref={el => {
             refs.current[index] = el;
           }}
-          style={styles.box}
+          style={[styles.box, focused === index && styles.boxFocused]}
           value={digit}
           onChangeText={text => updateAt(index, text)}
           onKeyPress={({nativeEvent}) => onKeyPress(index, nativeEvent.key)}
+          onFocus={() => setFocused(index)}
           keyboardType="number-pad"
           maxLength={1}
           autoFocus={autoFocus && index === 0}
           selectTextOnFocus
           textAlign="center"
+          selectionColor="#E98A82"
+          cursorColor="#2C2C2C"
         />
       ))}
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: Spacing.sm,
+    justifyContent: 'center',
+    gap: 14,
   },
   box: {
-    flex: 1,
-    height: Dimensions.inputHeight + 4,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Dimensions.borderRadius.md,
-    backgroundColor: Colors.surface,
-    fontSize: Typography.sizes.xl,
-    fontWeight: Typography.fontWeights.bold,
-    color: Colors.textPrimary,
+    width: 56,
+    height: 56,
+    borderWidth: 1.5,
+    borderColor: '#E6E6E6',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '600',
+    color: '#1C1C1C',
   },
-});
+  boxFocused: {
+    borderColor: '#F0A095',
+  },
+};
 
 export default OTPInput;

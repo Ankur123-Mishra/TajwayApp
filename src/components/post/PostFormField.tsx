@@ -1,7 +1,8 @@
 import React from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Text, TouchableOpacity, View} from 'react-native';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {Colors, Spacing} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Labeled form row matching Post Booking / Free Vehicle screenshots.
@@ -15,6 +16,7 @@ const PostFormField = ({
   multiline = false,
   rightElement,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   const display = value || placeholder;
   const isPlaceholder = !value;
 
@@ -40,7 +42,7 @@ const PostFormField = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   field: {
     marginBottom: Spacing.base,
   },
@@ -72,6 +74,6 @@ const styles = StyleSheet.create({
   placeholder: {
     color: Colors.textPlaceholder,
   },
-});
+};
 
 export default PostFormField;

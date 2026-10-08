@@ -1,16 +1,11 @@
 import React from 'react';
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import {Alert, ScrollView, Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import BackButton from '../../components/brand/BackButton';
 import PrimaryButton from '../../components/brand/PrimaryButton';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const BENEFITS = [
   {id: 'badge', text: 'Get a verified supplier batch in your profile.', lined: true},
@@ -23,13 +18,18 @@ const BENEFITS = [
   {id: 'vehicles', text: 'Add upto 10 vehicles in your profile', lined: true},
 ];
 
-const DottedLine = () => (
+const DottedLine = () => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.dottedClip}>
     <View style={styles.dottedStroke} />
   </View>
 );
+};
 
-const Sparkle = ({size = 8, style}) => (
+const Sparkle = ({size = 8, style}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={[{width: size, height: size}, style]}>
     <View
       style={[
@@ -53,8 +53,11 @@ const Sparkle = ({size = 8, style}) => (
     />
   </View>
 );
+};
 
-const SupplierBadge = () => (
+const SupplierBadge = () => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.badgeWrap}>
     <View style={styles.badgeInner}>
       <Sparkle size={8} style={styles.sparkleTL} />
@@ -76,11 +79,13 @@ const SupplierBadge = () => (
     </View>
   </View>
 );
+};
 
 /**
  * Become a Taxi Sanchalak Verified Supplier — ₹999/month upsell.
  */
 const BecomeVerifiedSupplierScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
 
   const onUpgrade = () => {
@@ -140,7 +145,7 @@ const BecomeVerifiedSupplierScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#F4F5F7',
@@ -355,6 +360,6 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeights.bold,
     color: '#2C3548',
   },
-});
+};
 
 export default BecomeVerifiedSupplierScreen;

@@ -1,12 +1,5 @@
 import React, {useMemo, useState} from 'react';
-import {
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {ScrollView, Switch, Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useSelector} from 'react-redux';
 import {BookingCard, DriverCard} from '../../components/booking';
@@ -16,7 +9,7 @@ import {
   BrandLogo,
 } from '../../components/common';
 import {ROUTES} from '../../constants/Routes';
-import {useAuth} from '../../hooks';
+import {useAuth, useResponsiveStyles} from '../../hooks';
 import {mockDrivers} from '../../mockData';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
 import {formatCurrency} from '../../utils/helpers';
@@ -38,6 +31,7 @@ const CHECKLIST = [
  * Agent home — Tajway style marketplace dashboard.
  */
 const AgentHomeScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const {user} = useAuth();
   const bookings = useSelector(state => state.booking.bookings);
@@ -242,7 +236,7 @@ const AgentHomeScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -424,6 +418,6 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     color: Colors.textMuted,
   },
-});
+};
 
 export default AgentHomeScreen;

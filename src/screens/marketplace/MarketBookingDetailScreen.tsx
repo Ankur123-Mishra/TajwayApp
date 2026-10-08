@@ -1,35 +1,34 @@
 import React from 'react';
-import {
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {Image, ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import BackButton from '../../components/brand/BackButton';
 import {ROUTES} from '../../constants/Routes';
+import {Images} from '../../constants/Images';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const VEHICLE_IMAGES = {
-  innova: require('../../assets/images/car_innova.png'),
-  ertiga: require('../../assets/images/car_innova.png'),
-  sedan: require('../../assets/images/car_innova.png'),
+  innova: Images.carInnova,
+  ertiga: Images.carInnova,
+  sedan: Images.carInnova,
 };
 
 const formatInr = value => `₹${Number(value).toLocaleString('en-IN')}`;
 
-const DashedDivider = () => (
+const DashedDivider = () => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.dashRow}>
     {Array.from({length: 28}).map((_, i) => (
       <View key={i} style={styles.dashSeg} />
     ))}
   </View>
 );
+};
 
 const DetailField = ({label, value}) => {
+  const styles = useResponsiveStyles(baseStyles);
   if (!value) {
     return null;
   }
@@ -41,7 +40,9 @@ const DetailField = ({label, value}) => {
   );
 };
 
-const PriceCard = ({amount, label, amountColor}) => (
+const PriceCard = ({amount, label, amountColor}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.priceCard}>
     <Text style={[styles.priceAmt, amountColor ? {color: amountColor} : null]}>
       {formatInr(amount)}
@@ -49,8 +50,10 @@ const PriceCard = ({amount, label, amountColor}) => (
     <Text style={styles.priceLabel}>{label}</Text>
   </View>
 );
+};
 
 const StarRow = ({rating = 5}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const stars = [];
   for (let i = 1; i <= 5; i += 1) {
     const filled = rating >= i;
@@ -69,6 +72,7 @@ const StarRow = ({rating = 5}) => {
  * Market booking detail — matches Tajway trip detail screenshots.
  */
 const MarketBookingDetailScreen = ({navigation, route}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const booking = route?.params?.booking || {};
 
@@ -248,7 +252,7 @@ const MarketBookingDetailScreen = ({navigation, route}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.surface,
@@ -514,6 +518,6 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeights.semibold,
     letterSpacing: 0.6,
   },
-});
+};
 
 export default MarketBookingDetailScreen;

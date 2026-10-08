@@ -3,6 +3,7 @@ import {StyleSheet, Text, View} from 'react-native';
 import {APP_TAGLINE} from '../../constants/AppConstants';
 import {Colors, Spacing, Typography} from '../../theme';
 import BrandLogo from './BrandLogo';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Logo + tagline block used on Welcome / Phone / OTP screens.
@@ -13,6 +14,7 @@ const BrandHeader = ({
   size = 'md',
   style,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   const parts = tagline.split(highlight);
 
   return (
@@ -29,7 +31,7 @@ const BrandHeader = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   wrap: {
     alignItems: 'center',
     paddingHorizontal: Spacing.screenPadding,
@@ -50,6 +52,6 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontWeight: Typography.fontWeights.bold,
   },
-});
+};
 
 export default BrandHeader;

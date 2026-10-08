@@ -10,26 +10,43 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {speak, stopSpeech} from '../../services/speech';
 import {MARKET_TOUR_STEPS} from './marketTourSteps';
+import {useResponsiveStyles} from '../../hooks';
+import {moderateScale} from '../../utils/responsive';
 
 const OVERLAY = 'rgba(62, 70, 86, 0.58)';
 const GOLD = '#F5B942';
 
-const ArrowHead = ({up}) => (
+const ArrowHead = ({up}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={up ? styles.arrowHeadUp : styles.arrowHeadDown} />
 );
+};
 
-const Skyline = () => (
+const Skyline = () => {
+  const styles = useResponsiveStyles(baseStyles);
+  const {width, height} = useWindowDimensions();
+  return (
   <View style={styles.skyline}>
-    {[22, 36, 18, 44, 28, 38, 16, 30].map((height, index) => (
+    {[22, 36, 18, 44, 28, 38, 16, 30].map((barHeight, index) => (
       <View
-        key={height + index}
-        style={[styles.building, {height, opacity: 0.35 + (index % 3) * 0.12}]}
+        key={barHeight + index}
+        style={[
+          styles.building,
+          {
+            height: moderateScale(barHeight, width, height),
+            opacity: 0.35 + (index % 3) * 0.12,
+          },
+        ]}
       />
     ))}
   </View>
 );
+};
 
-const TaxiFront = () => (
+const TaxiFront = () => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.taxiWrap}>
     <View style={styles.taxiRoof} />
     <View style={styles.taxiBody}>
@@ -43,15 +60,20 @@ const TaxiFront = () => (
     </View>
   </View>
 );
+};
 
-const PhoneFrame = ({children}) => (
+const PhoneFrame = ({children}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.phone}>
     <View style={styles.phoneNotch} />
     <View style={styles.phoneScreen}>{children}</View>
   </View>
 );
+};
 
 const TourArt = ({type, caption}) => {
+  const styles = useResponsiveStyles(baseStyles);
   let graphic = null;
   if (type === 'welcome') {
     graphic = (
@@ -148,6 +170,7 @@ const TourArt = ({type, caption}) => {
 };
 
 const Spotlight = ({rect, shape, cornerRadius = 18}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const {width: screenW, height: screenH} = useWindowDimensions();
 
   if (!rect) {
@@ -200,6 +223,7 @@ const Spotlight = ({rect, shape, cornerRadius = 18}) => {
  */
 
 const MarketAppTour = ({visible, spotlight, onStepChange, onFinish}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const {width: screenW, height: screenH} = useWindowDimensions();
   const [index, setIndex] = useState(0);
@@ -247,6 +271,7 @@ const MarketAppTour = ({visible, spotlight, onStepChange, onFinish}) => {
   } else if (spotlight && step.placement === 'above') {
     cardTop = spotlight.y - cardHeight - 34;
   }
+
   const minTop = insets.top + 8;
   const maxTop =
     screenH - cardHeight - (step.showVolume ? 78 : 12) - insets.bottom;
@@ -259,6 +284,7 @@ const MarketAppTour = ({visible, spotlight, onStepChange, onFinish}) => {
       cardBox.x + cardBox.width - 28,
       Math.max(cardBox.x + 28, anchorX),
     );
+
     const pointsUp = step.placement === 'below';
     const fromY = pointsUp
       ? spotlight.y + spotlight.height + 4
@@ -338,31 +364,36 @@ const MarketAppTour = ({visible, spotlight, onStepChange, onFinish}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   root: {
     flex: 1,
   },
+
   dim: {
     position: 'absolute',
     backgroundColor: OVERLAY,
   },
+
   holeRing: {
     position: 'absolute',
     borderWidth: 3,
     borderColor: '#FFFFFF',
     backgroundColor: 'transparent',
   },
+
   connector: {
     position: 'absolute',
     width: 16,
     alignItems: 'center',
     zIndex: 3,
   },
+
   connectorLine: {
     width: 2,
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
+  
   arrowHeadUp: {
     width: 0,
     height: 0,
@@ -662,6 +693,6 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     fontWeight: '500',
   },
-});
+};
 
 export default MarketAppTour;

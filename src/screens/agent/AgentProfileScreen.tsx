@@ -21,7 +21,7 @@ import LanguageSelectModal, {
   LANGUAGES,
 } from '../../components/profile/LanguageSelectModal';
 import {ROUTES} from '../../constants/Routes';
-import {useAuth} from '../../hooks';
+import {useAuth, useResponsiveStyles} from '../../hooks';
 import {logout} from '../../redux/slices/authSlice';
 import {Colors, Spacing, Typography} from '../../theme';
 
@@ -139,6 +139,7 @@ const MenuIcon = ({library, name}) => {
 };
 
 const ProfileMenuRow = ({item, onPress, toggleValue, onToggle, isLast}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const content = (
     <>
       <View style={styles.rowIconWrap}>
@@ -184,6 +185,7 @@ const ProfileMenuRow = ({item, onPress, toggleValue, onToggle, isLast}) => {
  */
 
 const AgentProfileScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
   const {user, phone, role} = useAuth();
@@ -473,7 +475,7 @@ const AgentProfileScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
@@ -807,6 +809,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: Colors.onPrimary,
   },
-});
+};
 
 export default AgentProfileScreen;

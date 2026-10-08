@@ -1,7 +1,8 @@
 import React, {useState} from 'react';
-import {StyleSheet, Switch, Text, View} from 'react-native';
+import {Switch, Text, View} from 'react-native';
 import {AppCard, ScreenHeader} from '../../components/common';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -10,6 +11,7 @@ const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
  * Local state until driverSlice availability actions exist.
  */
 const AvailabilityScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   // TODO: persist via driverSlice when available
   const [availableToday, setAvailableToday] = useState(true);
   const [availableTomorrow, setAvailableTomorrow] = useState(false);
@@ -83,7 +85,7 @@ const AvailabilityScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -150,6 +152,6 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     marginTop: Spacing.base,
   },
-});
+};
 
 export default AvailabilityScreen;

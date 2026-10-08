@@ -17,6 +17,7 @@ import PrimaryButton from '../../components/brand/PrimaryButton';
 import PostFormField from '../../components/post/PostFormField';
 import {ROUTES} from '../../constants/Routes';
 import {Colors, Spacing} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const VEHICLE_OPTIONS = [
   'Hatchback',
@@ -66,6 +67,7 @@ const formatDateTime = date => `${formatDate(date)}, ${formatTime(date)}`;
  * Post Free Vehicle form (screenshot 5).
  */
 const PostFreeVehicleScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
 
   const [vehicleType, setVehicleType] = useState('Hatchback');
@@ -379,7 +381,7 @@ const PostFreeVehicleScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
@@ -519,6 +521,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
   },
-});
+};
 
 export default PostFreeVehicleScreen;

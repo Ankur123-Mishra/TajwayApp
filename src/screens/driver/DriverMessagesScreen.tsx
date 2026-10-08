@@ -1,12 +1,14 @@
 import React from 'react';
-import {StyleSheet, View} from 'react-native';
+import {View} from 'react-native';
 import {EmptyState, ScreenHeader} from '../../components/common';
 import {Colors} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Driver messages — placeholder until chat is wired.
  */
 const DriverMessagesScreen = () => {
+  const styles = useResponsiveStyles(baseStyles);
   return (
     <View style={styles.container}>
       <ScreenHeader
@@ -22,11 +24,11 @@ const DriverMessagesScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
   },
-});
+};
 
 export default DriverMessagesScreen;

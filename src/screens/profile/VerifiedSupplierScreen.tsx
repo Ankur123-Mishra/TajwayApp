@@ -11,10 +11,13 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import BackButton from '../../components/brand/BackButton';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const FEATURES = ['All bookings', '24x7 Support', 'Cancel anytime'];
 
-const RocketHero = () => (
+const RocketHero = () => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.heroWrap}>
     <View style={styles.glowOuter} />
     <View style={styles.glowMid} />
@@ -43,18 +46,23 @@ const RocketHero = () => (
     </View>
   </View>
 );
+};
 
-const FeatureItem = ({label}) => (
+const FeatureItem = ({label}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.featureItem}>
     <Ionicons name="checkmark" size={15} color="#B7B3A8" />
     <Text style={styles.featureText}>{label}</Text>
   </View>
 );
+};
 
 /**
  * Upgrade Now — monthly subscribe + verified supplier upsell.
  */
 const VerifiedSupplierScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
 
   const onSubscribe = () => {
@@ -175,7 +183,7 @@ const VerifiedSupplierScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#F4F5F7',
@@ -562,6 +570,6 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     color: Colors.textPlaceholder,
   },
-});
+};
 
 export default VerifiedSupplierScreen;

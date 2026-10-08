@@ -1,11 +1,5 @@
 import React, {useMemo, useState} from 'react';
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {FlatList, Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useSelector} from 'react-redux';
 import {BookingCard, FilterSheet} from '../../components/booking';
@@ -13,6 +7,7 @@ import {EmptyState, ScreenHeader} from '../../components/common';
 import {BOOKING_STATUS} from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const TABS = [
   {key: 'all', label: 'All'},
@@ -25,6 +20,7 @@ const TABS = [
 ];
 
 const AgentBookingsScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const bookings = useSelector(state => state.booking.bookings);
   const [tab, setTab] = useState('all');
@@ -125,7 +121,7 @@ const AgentBookingsScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -165,6 +161,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.screenPadding,
     paddingBottom: Spacing.xxxl,
   },
-});
+};
 
 export default AgentBookingsScreen;

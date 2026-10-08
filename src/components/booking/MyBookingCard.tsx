@@ -1,7 +1,8 @@
 import React from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Text, TouchableOpacity, View} from 'react-native';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {Colors} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const formatInr = value => `₹${Number(value).toLocaleString('en-IN')}*`;
 
@@ -31,6 +32,7 @@ const MyBookingCard = ({
   onDelete,
   onPress,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   const handlers = {
     edit: onEdit,
     chat: onChat,
@@ -115,7 +117,7 @@ const MyBookingCard = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   card: {
     backgroundColor: Colors.surface,
     borderRadius: 14,
@@ -236,6 +238,6 @@ const styles = StyleSheet.create({
   actionLabelDelete: {
     color: Colors.error,
   },
-});
+};
 
 export default MyBookingCard;

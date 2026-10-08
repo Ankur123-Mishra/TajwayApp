@@ -1,14 +1,16 @@
 import React from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import BackButton from '../../components/brand/BackButton';
 import {ROUTES} from '../../constants/Routes';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Manage Vehicles — empty state (screenshot 11).
  */
 const ManageVehiclesScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -43,7 +45,7 @@ const ManageVehiclesScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
@@ -115,6 +117,6 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontWeight: '700',
   },
-});
+};
 
 export default ManageVehiclesScreen;

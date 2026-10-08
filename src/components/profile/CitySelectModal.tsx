@@ -1,16 +1,9 @@
 import React, {useEffect, useMemo, useState} from 'react';
-import {
-  FlatList,
-  Modal,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {FlatList, Modal, Text, TextInput, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 export const CITIES = [
   'Abhaneri',
@@ -120,6 +113,7 @@ export const CITIES = [
  */
 
 const CitySelectModal = ({visible, selected = '', onClose, onDone}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState(selected);
   const [query, setQuery] = useState('');
@@ -243,7 +237,7 @@ const CitySelectModal = ({visible, selected = '', onClose, onDone}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   overlay: {
     flex: 1,
     backgroundColor: Colors.overlay,
@@ -361,6 +355,6 @@ const styles = StyleSheet.create({
   doneText: {
     color: Colors.textInverse,
   },
-});
+};
 
 export default CitySelectModal;

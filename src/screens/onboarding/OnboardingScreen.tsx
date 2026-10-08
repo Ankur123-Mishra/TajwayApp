@@ -1,140 +1,231 @@
-import React, {useState} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
-import {useDispatch} from 'react-redux';
-import {AppButton} from '../../components/common';
-import {APP_NAME} from '../../constants/AppConstants';
+import React, {useEffect, useRef, useState} from 'react';
+import {
+  FlatList,
+  Image,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import PrimaryButton from '../../components/brand/PrimaryButton';
+import {Images} from '../../constants/Images';
 import {ROUTES} from '../../constants/Routes';
-import {setOnboarded} from '../../redux/slices/authSlice';
-import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
+import {Colors, Spacing, Typography} from '../../theme';
+
+const CREAM = '#FDF7E3';
+const AUTO_SCROLL_MS = 3200;
+
+/** Source art is a phone mock. Hide only its status bar and home indicator. */
+const SRC_W = 512;
+const SRC_H = 1110;
+const ART_TOP = 36;
+const ART_BOTTOM = 1068;
 
 const SLIDES = [
-  {
-    title: 'Connect travel demand with fleet supply',
-    body: 'Post B2B taxi requirements and receive quotes from verified drivers and fleet owners.',
-  },
-  {
-    title: 'One marketplace for agents, drivers & owners',
-    body: 'Role-based workflows keep booking, dispatch, and fleet operations clear and professional.',
-  },
-  {
-    title: 'Built for reliable business travel',
-    body: 'Track bookings, manage vehicles, and collaborate without phone-tag chaos.',
-  },
+  {key: 'verified', image: Images.introDriver1},
+  {key: 'earnings', image: Images.introDriver2},
+  {key: 'requests', image: Images.introDriver3},
 ];
 
+/**
+ * Intro carousel after splash. Artwork swipes on its own.
+ * Get Started opens login / sign up.
+ */
 const OnboardingScreen = ({navigation}) => {
-  const dispatch = useDispatch();
+  const styles = useResponsiveStyles(baseStyles);
+  const insets = useSafeAreaInsets();
+  const {width, height} = useWindowDimensions();
+  const listRef = useRef(null);
+  const indexRef = useRef(0);
+  const pausedRef = useRef(false);
   const [index, setIndex] = useState(0);
-  const slide = SLIDES[index];
-  const isLast = index === SLIDES.length - 1;
+
+  const sliceH = ART_BOTTOM - ART_TOP;
+  const scale = Math.min(width / SRC_W, height / sliceH);
+  const imageWidth = SRC_W * scale;
+  const imageHeight = SRC_H * scale;
+  const imageTop = -ART_TOP * scale + 22;
+  const imageLeft = (width - imageWidth) / 2;
+  const artY = sourceY => imageTop + (sourceY / SRC_H) * imageHeight;
+
+  useEffect(() => {
+    if (!width) {
+      return undefined;
+    }
+    const timer = setInterval(() => {
+      if (pausedRef.current) {
+        return;
+      }
+      const next = (indexRef.current + 1) % SLIDES.length;
+      listRef.current?.scrollToOffset({
+        offset: next * width,
+        animated: true,
+      });
+    }, AUTO_SCROLL_MS);
+    return () => clearInterval(timer);
+  }, [width]);
+
+  const onScroll = event => {
+    const next = Math.round(event.nativeEvent.contentOffset.x / width);
+    if (next !== indexRef.current && next >= 0 && next < SLIDES.length) {
+      indexRef.current = next;
+      setIndex(next);
+    }
+  };
 
   const finish = () => {
-    dispatch(setOnboarded(true));
-    navigation.replace(ROUTES.ROLE_SELECT);
+    navigation.replace(ROUTES.WELCOME);
   };
 
-  const onNext = () => {
-    if (isLast) {
-      finish();
-      return;
-    }
-    setIndex(prev => prev + 1);
-  };
+  const renderSlide = ({item}) => (
+    <View style={[styles.slide, {width, height}]}>
+      <Image
+        source={item.image}
+        resizeMode="contain"
+        style={{
+          position: 'absolute',
+          width: imageWidth,
+          height: imageHeight,
+          top: imageTop,
+          left: imageLeft,
+        }}
+      />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.brand}>{APP_NAME}</Text>
-      <View style={styles.content}>
-        <View style={styles.hero}>
-          <Text style={styles.heroMark}>TW</Text>
-        </View>
-        <Text style={styles.title}>{slide.title}</Text>
-        <Text style={styles.body}>{slide.body}</Text>
-        <View style={styles.dots}>
-          {SLIDES.map((_, i) => (
-            <View
-              key={`dot-${i}`}
-              style={[styles.dot, i === index && styles.dotActive]}
-            />
-          ))}
-        </View>
+      <FlatList
+        ref={listRef}
+        data={SLIDES}
+        keyExtractor={item => item.key}
+        renderItem={renderSlide}
+        horizontal
+        pagingEnabled
+        bounces={false}
+        showsHorizontalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        onScrollBeginDrag={() => {
+          pausedRef.current = true;
+        }}
+        onScrollEndDrag={() => {
+          pausedRef.current = false;
+        }}
+        getItemLayout={(_, i) => ({
+          length: width,
+          offset: width * i,
+          index: i,
+        })}
+        style={styles.list}
+      />
+
+      <View pointerEvents="none" style={[styles.copy, {top: insets.top + 16}]}>
+        <Text style={styles.title}>
+          Drive More. Earn More. With{'\n'}Tajway Cabs.
+        </Text>
+        <Text style={styles.subtitle}>
+          Get customer bookings, manage your rides, and{'\n'}
+          grow your earnings — all in one app.
+        </Text>
       </View>
-      <View style={styles.footer}>
-        <AppButton title={isLast ? 'Get Started' : 'Continue'} onPress={onNext} />
-        {!isLast ? (
-          <AppButton
-            title="Skip"
-            variant="ghost"
-            onPress={finish}
-            style={styles.skip}
+
+      <View pointerEvents="none" style={[styles.dots, {top: artY(918)}]}>
+        {SLIDES.map((slide, i) => (
+          <View
+            key={slide.key}
+            style={[styles.dot, i === index && styles.dotActive]}
           />
-        ) : null}
+        ))}
+      </View>
+
+      <View
+        pointerEvents="box-none"
+        style={[
+          styles.bottom,
+          {paddingBottom: Math.max(insets.bottom, 12) + 36},
+        ]}>
+        <PrimaryButton
+          title="Get Started"
+          onPress={finish}
+          style={styles.button}
+        />
       </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
-    paddingHorizontal: Spacing.screenPadding,
-    paddingTop: Spacing.massive,
-    paddingBottom: Spacing.xl,
+    backgroundColor: CREAM,
   },
-  brand: {
-    ...Typography.label,
-    color: Colors.primary,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  content: {
+  list: {
     flex: 1,
-    justifyContent: 'center',
+    backgroundColor: CREAM,
   },
-  hero: {
-    width: 96,
-    height: 96,
-    borderRadius: Dimensions.borderRadius.xl,
-    backgroundColor: Colors.primaryMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: Spacing.xl,
+  slide: {
+    overflow: 'hidden',
+    backgroundColor: CREAM,
   },
-  heroMark: {
-    ...Typography.h1,
-    color: Colors.primary,
+  copy: {
+    position: 'absolute',
+    top: 12,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 28,
   },
   title: {
-    ...Typography.h2,
+    textAlign: 'center',
+    fontSize: 23,
+    lineHeight: 34,
+    fontWeight: Typography.fontWeights.bold,
     color: Colors.textPrimary,
   },
-  body: {
-    ...Typography.body,
-    color: Colors.textSecondary,
+  subtitle: {
     marginTop: Spacing.md,
+    textAlign: 'center',
+    fontSize: 14,
+    lineHeight: 20,
+    color: Colors.textMuted,
+  },
+  bottom: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    paddingHorizontal: Spacing.screenPadding,
+  },
+  button: {
+    backgroundColor: Colors.primary,
+    elevation: 0,
+    shadowOpacity: 0,
+    shadowRadius: 0,
   },
   dots: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     flexDirection: 'row',
-    marginTop: Spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   dot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 4,
-    backgroundColor: Colors.borderStrong,
-    marginRight: Spacing.sm,
+    backgroundColor: '#C8C8C8',
+    marginHorizontal: 4,
   },
   dotActive: {
-    width: 20,
-    backgroundColor: Colors.primary,
+    width: 22,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: Colors.textPrimary,
   },
-  footer: {
-    gap: Spacing.sm,
-  },
-  skip: {
-    marginTop: Spacing.xs,
-  },
-});
+};
 
 export default OnboardingScreen;

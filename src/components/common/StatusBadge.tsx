@@ -1,6 +1,7 @@
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Text, View} from 'react-native';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const normalize = value => String(value || '').trim().toLowerCase();
 
@@ -39,6 +40,7 @@ const toneFor = status => {
  * Compact status pill used on cards and booking rows.
  */
 const StatusBadge = ({status = 'Pending', style, textStyle}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const tone = toneFor(status);
   const label =
     typeof status === 'string'
@@ -65,6 +67,7 @@ export const VerificationStatus = ({
   status = 'pending',
   style,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   const tone = toneFor(status);
   const isPending = normalize(status).includes('pending');
 
@@ -82,7 +85,7 @@ export const VerificationStatus = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   badge: {
     paddingHorizontal: Spacing.sm,
     paddingVertical: Spacing.xxs + 1,
@@ -129,6 +132,6 @@ const styles = StyleSheet.create({
   cardBadge: {
     marginTop: Spacing.base,
   },
-});
+};
 
 export default StatusBadge;

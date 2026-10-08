@@ -1,6 +1,7 @@
 import React from 'react';
-import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {ScrollView, Text, View} from 'react-native';
 import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Horizontal step progress for multi-step forms.
@@ -8,6 +9,7 @@ import {Colors, Dimensions, Spacing, Typography} from '../../theme';
  * @param {number} current zero-based index
  */
 const StepIndicator = ({steps = [], current = 0}) => {
+  const styles = useResponsiveStyles(baseStyles);
   return (
     <ScrollView
       horizontal
@@ -47,7 +49,7 @@ const StepIndicator = ({steps = [], current = 0}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   row: {
     paddingHorizontal: Spacing.screenPadding,
     paddingVertical: Spacing.md,
@@ -104,6 +106,6 @@ const styles = StyleSheet.create({
   lineOn: {
     backgroundColor: Colors.success,
   },
-});
+};
 
 export default StepIndicator;

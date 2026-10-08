@@ -1,7 +1,8 @@
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Simple screen header for stack / role home screens.
@@ -12,6 +13,7 @@ const ScreenHeader = ({
   rightElement,
   showBorder = true,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -36,7 +38,7 @@ const ScreenHeader = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -62,6 +64,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 2,
   },
-});
+};
 
 export default ScreenHeader;

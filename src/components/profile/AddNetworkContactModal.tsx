@@ -1,18 +1,9 @@
 import React, {useEffect, useState} from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const TRIP_TYPES = ['One Way', 'Round Trip'];
 
@@ -35,7 +26,9 @@ const EMPTY_FORM = {
   vehicleType: '',
 };
 
-const RadioOption = ({label, selected, onPress}) => (
+const RadioOption = ({label, selected, onPress}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <TouchableOpacity
     style={styles.radioItem}
     activeOpacity={0.8}
@@ -50,11 +43,13 @@ const RadioOption = ({label, selected, onPress}) => (
     </Text>
   </TouchableOpacity>
 );
+};
 
 /**
  * Bottom sheet to add a network contact — matches Add Network Contacts screenshot.
  */
 const AddNetworkContactModal = ({visible, onClose, onAdd}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const [form, setForm] = useState(EMPTY_FORM);
 
@@ -186,7 +181,7 @@ const AddNetworkContactModal = ({visible, onClose, onAdd}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   flex: {
     flex: 1,
   },
@@ -289,6 +284,6 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeights.bold,
     color: Colors.textInverse,
   },
-});
+};
 
 export default AddNetworkContactModal;

@@ -1,34 +1,34 @@
 import React, {useEffect, useState} from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {Text, TouchableOpacity} from 'react-native';
 import {useDispatch} from 'react-redux';
-import BackButton from '../../components/brand/BackButton';
-import BrandHeader from '../../components/brand/BrandHeader';
-import PhoneInputRow from '../../components/brand/PhoneInputRow';
+import AuthHeroLayout from '../../components/brand/AuthHeroLayout';
 import PrimaryButton from '../../components/brand/PrimaryButton';
+import OTPInput from '../../components/common/OTPInput';
 import {ROUTES} from '../../constants/Routes';
 import {loginSuccess} from '../../redux/slices/authSlice';
-import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
+
+const RESEND_SECONDS = 51;
+
+const maskPhone = phone => {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (digits.length < 5) {
+    return '98912*****';
+  }
+  return `${digits.slice(0, 5)}${'*'.repeat(digits.length - 5)}`;
+};
 
 /**
- * OTP verification — timer, terms, Verify CTA, toast.
+ * OTP verification — boxed code, resend timer, invalid state.
  */
 const OTPScreen = ({navigation, route}) => {
-  const insets = useSafeAreaInsets();
+  const styles = useResponsiveStyles(baseStyles);
   const dispatch = useDispatch();
   const phone = route?.params?.phone || '';
   const [otp, setOtp] = useState('');
-  const [accepted, setAccepted] = useState(false);
-  const [seconds, setSeconds] = useState(28);
-  const [showToast, setShowToast] = useState(true);
+  const [seconds, setSeconds] = useState(RESEND_SECONDS);
+  const [invalid, setInvalid] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -37,13 +37,9 @@ const OTPScreen = ({navigation, route}) => {
     return () => clearInterval(t);
   }, []);
 
-  useEffect(() => {
-    const hide = setTimeout(() => setShowToast(false), 3500);
-    return () => clearTimeout(hide);
-  }, []);
-
   const onVerify = () => {
-    if (!accepted || otp.length < 4) {
+    if (otp.length < 4) {
+      setInvalid(true);
       return;
     }
     dispatch(
@@ -62,177 +58,118 @@ const OTPScreen = ({navigation, route}) => {
     navigation.replace(ROUTES.PREFERENCES);
   };
 
+  const onResend = () => {
+    if (seconds > 0) {
+      return;
+    }
+    setOtp('');
+    setInvalid(false);
+    setSeconds(RESEND_SECONDS);
+  };
+
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, {paddingTop: insets.top + 8}]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.topBar}>
-        <BackButton onPress={() => navigation.goBack()} />
-      </View>
+    <AuthHeroLayout>
+      <Text style={styles.title}>OTP Verification</Text>
+      <Text style={styles.sent}>
+        We have sent a verification OTP to {maskPhone(phone)}{' '}
+        <Text style={styles.edit} onPress={() => navigation.goBack()}>
+          Edit
+        </Text>
+      </Text>
 
-      <BrandHeader />
+      <OTPInput
+        length={4}
+        value={otp}
+        onChangeText={text => {
+          setOtp(text);
+          if (invalid) {
+            setInvalid(false);
+          }
+        }}
+        style={styles.otp}
+      />
 
-      <View style={styles.form}>
-        <Text style={styles.title}>Verify with OTP</Text>
-        <PhoneInputRow value={phone} editable={false} />
+      {invalid ? <Text style={styles.error}>Invalid OTP</Text> : null}
 
-        <View style={styles.otpBox}>
-          <TextInput
-            value={otp}
-            onChangeText={setOtp}
-            keyboardType="number-pad"
-            maxLength={6}
-            placeholder="Enter OTP"
-            placeholderTextColor={Colors.textPlaceholder}
-            style={styles.otpInput}
-          />
-        </View>
+      <PrimaryButton
+        title="Verify OTP"
+        onPress={onVerify}
+        style={[styles.verify, invalid && styles.verifyInvalid]}
+        textStyle={invalid ? styles.verifyInvalidText : undefined}
+      />
 
-        <Text style={styles.timer}>Expire In {seconds}s</Text>
-
-        <TouchableOpacity
-          style={styles.termsRow}
-          activeOpacity={0.8}
-          onPress={() => setAccepted(v => !v)}>
-          <View style={[styles.checkbox, accepted && styles.checkboxOn]}>
-            {accepted ? <Text style={styles.checkMark}>✓</Text> : null}
-          </View>
-          <Text style={styles.termsText}>
-            By clicking here accept{' '}
-            <Text style={styles.link}>Terms & Conditions</Text>
-          </Text>
-        </TouchableOpacity>
-
-        <PrimaryButton
-          title="Verify"
-          onPress={onVerify}
-          disabled={!accepted || otp.length < 4}
-          style={styles.verifyBtn}
-        />
-
-        <TouchableOpacity>
-          <Text style={styles.privacy}>Privacy Policy</Text>
-        </TouchableOpacity>
-      </View>
-
-      {showToast ? (
-        <View style={[styles.toast, {bottom: insets.bottom + 24}]}>
-          <View style={styles.toastDot} />
-          <Text style={styles.toastText}>OTP Sent to your mobile number</Text>
-        </View>
-      ) : null}
-    </KeyboardAvoidingView>
+      <TouchableOpacity
+        activeOpacity={seconds > 0 ? 1 : 0.8}
+        onPress={onResend}
+        style={[styles.resend, seconds === 0 && styles.resendReady]}>
+        <Text style={styles.resendText}>
+          {seconds > 0 ? `Resend OTP in ${seconds}` : 'Resend OTP'}
+        </Text>
+      </TouchableOpacity>
+    </AuthHeroLayout>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  topBar: {
-    paddingHorizontal: Spacing.screenPadding,
-    marginBottom: Spacing.sm,
-  },
-  form: {
-    flex: 1,
-    paddingHorizontal: Spacing.screenPadding,
-    paddingTop: Spacing.xl,
-  },
+const baseStyles = {
   title: {
-    fontSize: 22,
+    textAlign: 'center',
+    fontSize: 24,
+    lineHeight: 30,
     fontWeight: Typography.fontWeights.bold,
-    color: Colors.textSlate,
-    marginBottom: Spacing.base,
+    color: '#1A1A1A',
   },
-  otpBox: {
-    marginTop: Spacing.base,
-    backgroundColor: Colors.surface,
-    borderRadius: Dimensions.borderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    height: 54,
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.base,
-  },
-  otpInput: {
-    fontSize: 15,
-    color: Colors.textPrimary,
-    padding: 0,
-  },
-  timer: {
+  sent: {
+    marginTop: 8,
     textAlign: 'center',
-    marginTop: Spacing.md,
-    color: Colors.timer,
-    fontWeight: Typography.fontWeights.semibold,
     fontSize: 14,
+    lineHeight: 20,
+    color: '#9AA0A8',
+    paddingHorizontal: 8,
   },
-  termsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.xl,
+  edit: {
+    color: '#2F6BFF',
+    fontWeight: Typography.fontWeights.bold,
   },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1.5,
-    borderColor: Colors.borderStrong,
-    marginRight: 10,
+  otp: {
+    marginTop: 22,
+  },
+  error: {
+    marginTop: 10,
+    textAlign: 'center',
+    color: '#F04343',
+    fontSize: 13,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  verify: {
+    marginTop: 22,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#F5C400',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  verifyInvalid: {
+    backgroundColor: '#2C2C2C',
+  },
+  verifyInvalidText: {
+    color: '#FFFFFF',
+  },
+  resend: {
+    marginTop: 12,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#E6E6E6',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxOn: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
+  resendReady: {
+    backgroundColor: '#F1F1F1',
   },
-  checkMark: {
-    color: Colors.onPrimary,
-    fontSize: 12,
-    fontWeight: '700',
+  resendText: {
+    fontSize: 16,
+    fontWeight: Typography.fontWeights.bold,
+    color: '#A3A3A3',
   },
-  termsText: {
-    flex: 1,
-    color: Colors.textMuted,
-    fontSize: 13,
-  },
-  link: {
-    color: Colors.primary,
-    textDecorationLine: 'underline',
-    fontWeight: Typography.fontWeights.semibold,
-  },
-  verifyBtn: {
-    marginTop: Spacing.lg,
-  },
-  privacy: {
-    textAlign: 'center',
-    marginTop: Spacing.base,
-    color: Colors.primary,
-    textDecorationLine: 'underline',
-    fontWeight: Typography.fontWeights.semibold,
-  },
-  toast: {
-    position: 'absolute',
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(40,40,40,0.92)',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 24,
-    maxWidth: '90%',
-  },
-  toastDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 4,
-    backgroundColor: Colors.primary,
-    marginRight: 10,
-  },
-  toastText: {
-    color: '#F0F0F0',
-    fontSize: 13,
-  },
-});
+};
 
 export default OTPScreen;

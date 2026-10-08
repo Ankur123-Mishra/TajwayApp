@@ -4,6 +4,7 @@ import {ROUTES} from '../constants/Routes';
 import OTPScreen from '../screens/auth/OTPScreen';
 import PhoneLoginScreen from '../screens/auth/PhoneLoginScreen';
 import PreferencesScreen from '../screens/onboarding/PreferencesScreen';
+import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import SplashScreen from '../screens/onboarding/SplashScreen';
 import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
 import DriverHomeScreen from '../screens/driver/DriverHomeScreen';
@@ -21,7 +22,7 @@ const screenOptions = {
 
 /**
  * Root flow:
- * Splash → Welcome → Phone → OTP → Preferences → Agent tabs
+ * Splash → Intro → Welcome → Phone → OTP → Preferences → Agent tabs
  */
 const RootNavigator = () => {
   return (
@@ -29,6 +30,11 @@ const RootNavigator = () => {
       initialRouteName={ROUTES.SPLASH}
       screenOptions={screenOptions}>
       <Stack.Screen name={ROUTES.SPLASH} component={SplashScreen} />
+      <Stack.Screen
+        name={ROUTES.INTRO}
+        component={OnboardingScreen}
+        options={{contentStyle: {backgroundColor: '#FDF7E3'}}}
+      />
       <Stack.Screen name={ROUTES.WELCOME} component={WelcomeScreen} />
       <Stack.Screen name={ROUTES.PHONE_LOGIN} component={PhoneLoginScreen} />
       <Stack.Screen name={ROUTES.OTP} component={OTPScreen} />

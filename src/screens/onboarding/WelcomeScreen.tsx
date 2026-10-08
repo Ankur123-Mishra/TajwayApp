@@ -1,5 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Animated, Easing, StyleSheet, Text, View} from 'react-native';
+import {Animated, Easing, Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useDispatch} from 'react-redux';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
@@ -9,12 +9,14 @@ import LanguageSelectModal from '../../components/profile/LanguageSelectModal';
 import {ROUTES} from '../../constants/Routes';
 import {setOnboarded} from '../../redux/slices/authSlice';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Welcome — Login / Sign Up / Change Language.
  * Top (BrandHeader) + bottom actions stay standard; only center visual varies.
  */
 const WelcomeScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
   const [language, setLanguage] = useState('en');
@@ -150,7 +152,7 @@ const WelcomeScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -251,6 +253,6 @@ const styles = StyleSheet.create({
   langBtn: {
     marginTop: 0,
   },
-});
+};
 
 export default WelcomeScreen;

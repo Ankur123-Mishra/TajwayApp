@@ -25,16 +25,18 @@ import {
   types as documentTypes,
 } from '@react-native-documents/picker';
 import {getChatById} from '../../mockData';
+import {Images} from '../../constants/Images';
 import {Colors, Spacing, Typography} from '../../theme';
-
-const partnerAvatar = require('../../assets/images/partner_deepesh.png');
-const carSedan = require('../../assets/images/car_sedan.png');
-const carInnova = require('../../assets/images/car_innova.png');
-const carErtiga = require('../../assets/images/car_ertiga.png');
+import {useResponsiveStyles} from '../../hooks';
 
 const formatInr = value => `₹${Number(value).toLocaleString('en-IN')}*`;
 
-const GRID_IMAGES = [partnerAvatar, carSedan, carInnova, carErtiga];
+const GRID_IMAGES = [
+  Images.partnerDeepesh,
+  Images.carSedan,
+  Images.carInnova,
+  Images.carErtiga,
+];
 
 const openDialer = phone => {
   const digits = String(phone || '').replace(/[^\d+]/g, '');
@@ -88,6 +90,7 @@ const formatFileSize = bytes => {
 };
 
 const BookingSummaryCard = ({booking}) => {
+  const styles = useResponsiveStyles(baseStyles);
   if (!booking) {
     return null;
   }
@@ -133,6 +136,7 @@ const BookingSummaryCard = ({booking}) => {
 };
 
 const ImagePreview = ({uri, fileName}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const [failed, setFailed] = useState(false);
   const sourceUri = normalizeMediaUri(uri);
 
@@ -160,6 +164,7 @@ const ImagePreview = ({uri, fileName}) => {
 };
 
 const FilePreview = ({fileName, fileSize, mimeType, uri}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const name = getBaseName(fileName, uri);
   const showAsImage = isImageMime(mimeType) || isImageFileName(name);
 
@@ -188,6 +193,7 @@ const FilePreview = ({fileName, fileSize, mimeType, uri}) => {
 };
 
 const MessageBubble = ({message, showAvatar}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const isMe = message.sender === 'me';
   const isImage =
     message.type === 'image' ||
@@ -199,7 +205,7 @@ const MessageBubble = ({message, showAvatar}) => {
       {!isMe ? (
         showAvatar ? (
           <View style={styles.msgAvatar}>
-            <Image source={partnerAvatar} style={styles.msgAvatarImg} />
+            <Image source={Images.partnerDeepesh} style={styles.msgAvatarImg} />
           </View>
         ) : (
           <View style={styles.msgAvatarSpacer} />
@@ -246,6 +252,7 @@ const MessageBubble = ({message, showAvatar}) => {
 };
 
 const AttachSheet = ({visible, onClose, onPickImage, onPickDocument}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -314,6 +321,7 @@ const AttachSheet = ({visible, onClose, onPickImage, onPickDocument}) => {
  * Chat details — booking summary + message thread matching product screenshot.
  */
 const ChatDetailsScreen = ({navigation, route}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const chatId = route?.params?.chatId;
   const chat = useMemo(
@@ -590,7 +598,7 @@ const ChatDetailsScreen = ({navigation, route}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -977,6 +985,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textNavy,
   },
-});
+};
 
 export default ChatDetailsScreen;

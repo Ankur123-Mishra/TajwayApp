@@ -1,9 +1,10 @@
 import React from 'react';
-import {FlatList, StyleSheet, Text, View} from 'react-native';
+import {FlatList, Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import BackButton from '../../components/brand/BackButton';
 import {mockTransactions} from '../../mockData';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const DATE_BOX_WIDTH = 58;
 const DATE_OVERHANG = 22;
@@ -28,7 +29,9 @@ const STATUS_THEME = {
 
 const formatRupee = value => `₹${Number(value).toFixed(1)}`;
 
-const AmountRow = ({label, value, emphasize}) => (
+const AmountRow = ({label, value, emphasize}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.amountRow}>
     <Text style={[styles.amountLabel, emphasize && styles.amountLabelBold]}>
       {label}
@@ -38,8 +41,10 @@ const AmountRow = ({label, value, emphasize}) => (
     </Text>
   </View>
 );
+};
 
 const TransactionCard = ({item}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const theme = STATUS_THEME[item.status] || STATUS_THEME.SUCCESS;
 
   return (
@@ -83,6 +88,7 @@ const TransactionCard = ({item}) => {
  * Transactions — overlapping date ribbon matches production screenshot.
  */
 const TransactionsScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
 
   return (
@@ -107,7 +113,7 @@ const TransactionsScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
@@ -251,6 +257,6 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeights.bold,
     color: Colors.textPrimary,
   },
-});
+};
 
 export default TransactionsScreen;

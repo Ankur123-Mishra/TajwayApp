@@ -17,6 +17,7 @@ import {FilterSlidersIcon} from '../../components/common';
 import {ROUTES} from '../../constants/Routes';
 import {getChatByBookingId, mockMyBookings} from '../../mockData';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const SAMPLE_PHONES = [
   '9876543210',
@@ -40,6 +41,7 @@ const openDialer = (phone = getRandomPhone()) => {
  * My Bookings — posted/received list with screenshot-matching cards.
  */
 const MyBookingsScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState('posted');
   const [query, setQuery] = useState('');
@@ -306,7 +308,7 @@ const MyBookingsScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -506,6 +508,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 14,
   },
-});
+};
 
 export default MyBookingsScreen;

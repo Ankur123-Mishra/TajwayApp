@@ -1,14 +1,9 @@
 import React, {useEffect, useState} from 'react';
-import {
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import {Modal, Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import PrimaryButton from '../brand/PrimaryButton';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 export const LANGUAGES = [
   {id: 'en', label: 'English'},
@@ -24,6 +19,7 @@ const LanguageSelectModal = ({
   onClose,
   onSave,
 }) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const [draft, setDraft] = useState(selected);
 
@@ -97,7 +93,7 @@ const LanguageSelectModal = ({
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   overlay: {
     flex: 1,
     backgroundColor: Colors.overlay,
@@ -167,6 +163,6 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderColor: Colors.borderLight,
   },
-});
+};
 
 export default LanguageSelectModal;

@@ -18,6 +18,7 @@ import PrimaryButton from '../../components/brand/PrimaryButton';
 import PostFormField from '../../components/post/PostFormField';
 import {ROUTES} from '../../constants/Routes';
 import {Colors, Spacing} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const MONTHS = [
   'Jan',
@@ -72,7 +73,9 @@ const EXTRA_REQUIREMENTS = [
   'All exclusive',
 ];
 
-const SegmentTabs = ({options, value, onChange}) => (
+const SegmentTabs = ({options, value, onChange}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.segment}>
     {options.map(opt => {
       const active = value === opt;
@@ -90,6 +93,7 @@ const SegmentTabs = ({options, value, onChange}) => (
     })}
   </View>
 );
+};
 
 const normalizeTripType = value => {
   const raw = String(value || '').toLowerCase();
@@ -115,6 +119,7 @@ const splitDateTime = dateTime => {
  * Also supports edit mode when navigated with { mode: 'edit', booking }.
  */
 const PostBookingScreen = ({navigation, route}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const editBooking = route?.params?.booking;
   const isEdit = route?.params?.mode === 'edit' && Boolean(editBooking);
@@ -606,7 +611,7 @@ const PostBookingScreen = ({navigation, route}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
@@ -857,6 +862,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     width: '100%',
   },
-});
+};
 
 export default PostBookingScreen;

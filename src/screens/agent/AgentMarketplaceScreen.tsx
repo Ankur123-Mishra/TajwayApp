@@ -1,5 +1,5 @@
 import React, {useMemo, useState} from 'react';
-import {FlatList, StyleSheet, View} from 'react-native';
+import {FlatList, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {DriverCard, FilterSheet} from '../../components/booking';
 import {
@@ -9,11 +9,13 @@ import {
 } from '../../components/common';
 import {mockDrivers} from '../../mockData';
 import {Colors, Spacing} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Placeholder marketplace — browse available drivers.
  */
 const AgentMarketplaceScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -104,7 +106,7 @@ const AgentMarketplaceScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
@@ -119,6 +121,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.screenPadding,
     paddingBottom: Spacing.xxxl,
   },
-});
+};
 
 export default AgentMarketplaceScreen;

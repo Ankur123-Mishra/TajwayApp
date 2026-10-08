@@ -1,11 +1,13 @@
 import React from 'react';
-import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
+import {ActivityIndicator, Text, View} from 'react-native';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Full-screen or inline loading state.
  */
 const LoadingView = ({message = 'Loading...', fullScreen = true}) => {
+  const styles = useResponsiveStyles(baseStyles);
   return (
     <View style={[styles.container, fullScreen && styles.fullScreen]}>
       <ActivityIndicator size="large" color={Colors.primary} />
@@ -14,7 +16,7 @@ const LoadingView = ({message = 'Loading...', fullScreen = true}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -29,6 +31,6 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: Spacing.md,
   },
-});
+};
 
 export default LoadingView;

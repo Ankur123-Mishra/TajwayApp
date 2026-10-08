@@ -11,6 +11,7 @@ import {Ionicons} from '@react-native-vector-icons/ionicons';
 import AddNetworkContactModal from '../../components/profile/AddNetworkContactModal';
 import {mockNetworkContacts} from '../../mockData';
 import {Colors, Spacing, Typography} from '../../theme';
+import {useResponsiveStyles} from '../../hooks';
 
 const MONTHS = [
   'Jan',
@@ -33,7 +34,9 @@ const formatInviteStatus = () => {
   return `Invitation Sent On ${MONTHS[now.getMonth()]} ${day}, ${now.getFullYear()}`;
 };
 
-const NetworkSlidersIcon = () => (
+const NetworkSlidersIcon = () => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.sliders}>
     <View style={styles.sliderLine}>
       <View style={[styles.sliderKnob, styles.sliderKnobRight]} />
@@ -46,8 +49,11 @@ const NetworkSlidersIcon = () => (
     </View>
   </View>
 );
+};
 
-const NetworkRow = ({item}) => (
+const NetworkRow = ({item}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
   <View style={styles.row}>
     <View style={styles.rowContent}>
       {item.name ? <Text style={styles.name}>{item.name}</Text> : null}
@@ -67,11 +73,13 @@ const NetworkRow = ({item}) => (
     </TouchableOpacity>
   </View>
 );
+};
 
 /**
  * My Network — contact list with FAB (screenshot match).
  */
 const MyNetworkScreen = ({navigation}) => {
+  const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const [contacts, setContacts] = useState(mockNetworkContacts);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -134,7 +142,7 @@ const MyNetworkScreen = ({navigation}) => {
   );
 };
 
-const styles = StyleSheet.create({
+const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#F9F9F9',
@@ -264,6 +272,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
   },
-});
+};
 
 export default MyNetworkScreen;
