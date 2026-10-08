@@ -24,6 +24,7 @@ const carInnova = require('../../assets/images/Innova.webp');
  * Splash — logo, tagline, car spotlight middle, brand hill footer.
  */
 
+
 const SplashScreen = ({navigation}) => {
   const insets = useSafeAreaInsets();
   const spin = useRef(new Animated.Value(0)).current;

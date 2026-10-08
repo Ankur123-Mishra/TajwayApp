@@ -148,10 +148,13 @@ const TourArt = ({type, caption}) => {
 };
 
 const Spotlight = ({rect, shape, cornerRadius = 18}) => {
+  const {width: screenW, height: screenH} = useWindowDimensions();
+
   if (!rect) {
     return <View style={[StyleSheet.absoluteFill, styles.dim]} />;
   }
-  const pad = shape === 'circle' ? 10 : 8;
+
+  const pad = shape === 'circle' ? 6 : 0;
   const x = Math.max(0, rect.x - pad);
   const y = Math.max(0, rect.y - pad);
   const width = rect.width + pad * 2;
@@ -161,32 +164,26 @@ const Spotlight = ({rect, shape, cornerRadius = 18}) => {
     width / 2,
     height / 2,
   );
-
-  const corner = (top, left, radiusStyle) => (
-    <View
-      pointerEvents="none"
-      style={[
-        styles.dim,
-        {top, left, width: radius, height: radius},
-        radiusStyle,
-      ]}
-    />
-  );
+  // One rounded hole. A thick border with a matching radius clips the dim
+  // overlay to the card edge, so corners stay a normal border radius.
+  const border = Math.ceil(Math.max(screenW, screenH));
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      <View style={[styles.dim, {top: 0, left: 0, right: 0, height: y}]} />
       <View
-        style={[styles.dim, {top: y + height, left: 0, right: 0, bottom: 0}]}
+        pointerEvents="none"
+        style={{
+          position: 'absolute',
+          top: y - border,
+          left: x - border,
+          width: width + border * 2,
+          height: height + border * 2,
+          borderWidth: border,
+          borderColor: OVERLAY,
+          borderRadius: radius + border,
+          backgroundColor: 'transparent',
+        }}
       />
-      <View style={[styles.dim, {top: y, left: 0, width: x, height}]} />
-      <View style={[styles.dim, {top: y, left: x + width, right: 0, height}]} />
-      {corner(y, x, {borderBottomRightRadius: radius})}
-      {corner(y, x + width - radius, {borderBottomLeftRadius: radius})}
-      {corner(y + height - radius, x, {borderTopRightRadius: radius})}
-      {corner(y + height - radius, x + width - radius, {
-        borderTopLeftRadius: radius,
-      })}
       <View
         pointerEvents="none"
         style={[
@@ -201,6 +198,7 @@ const Spotlight = ({rect, shape, cornerRadius = 18}) => {
 /**
  * Market coach tour — dim overlay, highlighted section, Next, and spoken guide.
  */
+
 const MarketAppTour = ({visible, spotlight, onStepChange, onFinish}) => {
   const insets = useSafeAreaInsets();
   const {width: screenW, height: screenH} = useWindowDimensions();
@@ -232,13 +230,14 @@ const MarketAppTour = ({visible, spotlight, onStepChange, onFinish}) => {
       onFinish?.();
       return;
     }
+
     setCardBox(null);
     setIndex(prev => prev + 1);
   };
 
   if (!visible || !step) {
     return null;
-  }
+  } 
 
   const cardWidth = screenW - 28;
   const cardHeight = cardBox?.height || 390;
