@@ -1,46 +1,40 @@
 import React from 'react';
 import {Image, Linking, Text, TouchableOpacity, View} from 'react-native';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
+import {Images} from '../../constants/Images';
 import {Colors} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
-const DateTimeValue = ({date, time, alignRight}) => {
-  const styles = useResponsiveStyles(baseStyles);
-  return (
-  <Text
-    style={[styles.availValue, alignRight && styles.alignRight]}
-    allowFontScaling={false}>
-    {date} @ {time}
-  </Text>
-);
-};
-
 /**
- * Free vehicle listing card — matches Taxi Sanchalak marketplace screenshots.
+ * Free vehicle listing card — matches the marketplace free-vehicle screenshot.
  */
 const FreeVehicleCard = ({
+  vehicleName,
   vehicleType = 'Sedan',
   availableFromDate = 'Today',
-  availableFromTime = '12:00 PM',
-  availableTillDate = 'Today',
-  availableTillTime = '12:00 PM',
+  availableFromTime = '1:00 PM',
+  availableTillDate = 'Tomorrow',
+  availableTillTime = '10:00 PM',
   location = '',
-  otherDetails = '-',
+  otherDetails = '',
   pickupNote,
   currentLocationOnly = false,
   name = 'Travel Partner',
   company,
-  verified = true,
   phone,
   avatarSource,
   onCall,
+  // onMenu,
 }) => {
   const styles = useResponsiveStyles(baseStyles);
-  const note =
-    pickupNote ||
-    (currentLocationOnly
-      ? 'Ready to pick booking from current location only'
-      : 'Ready to pick booking from any location');
+  const title = vehicleName || vehicleType;
+  const details =
+    otherDetails && otherDetails !== '-'
+      ? otherDetails
+      : pickupNote ||
+        (currentLocationOnly
+          ? 'Ready to pick booking from current location only'
+          : 'Ready to pick booking from any location');
 
   const initials = String(name)
     .split(' ')
@@ -61,182 +55,239 @@ const FreeVehicleCard = ({
 
   return (
     <View style={styles.card}>
-      <View style={styles.typeRow}>
-        <Text style={styles.typeLabel}>Vehicle Type</Text>
-        <Text style={styles.typeValue}>{vehicleType}</Text>
-      </View>
+        <View style={styles.decor} />
 
-      <View style={styles.availRow}>
-        <View style={[styles.availCol, styles.availColFrom]}>
-          <Text style={styles.availLabel}>Available From</Text>
-          <DateTimeValue date={availableFromDate} time={availableFromTime} />
-        </View>
-        <View style={[styles.availCol, styles.availColTill]}>
-          <Text style={[styles.availLabel, styles.alignRight]}>
-            Available Till
-          </Text>
-          <DateTimeValue
-            date={availableTillDate}
-            time={availableTillTime}
-            alignRight
-          />
-        </View>
-      </View>
-
-      <Text style={styles.sectionLabel}>Vehicle Location</Text>
-      <Text style={styles.location}>{location}</Text>
-
-      <Text style={styles.sectionLabel}>Other Details</Text>
-      <Text style={styles.details}>{otherDetails || '-'}</Text>
-
-      <Text style={styles.note}>* {note}</Text>
-
-      <View style={styles.footer}>
-        {avatarSource ? (
-          <Image source={avatarSource} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarFallback}>
-            <Text style={styles.avatarText}>{initials}</Text>
+        <View style={styles.topRow}>
+          <View style={styles.typePill}>
+            <Ionicons name="car" size={14} color="#1A1A1A" />
+            <Text style={styles.typeText}>{vehicleType}</Text>
           </View>
-        )}
+          {/* <TouchableOpacity
+            style={styles.menuBtn}
+            activeOpacity={0.7}
+            onPress={onMenu}
+            disabled={!onMenu}
+            accessibilityRole="button"
+            accessibilityLabel="More options">
+            <Ionicons name="ellipsis-vertical" size={18} color="#9AA1A9" />
+          </TouchableOpacity> */}
+        </View>
 
-        <View style={styles.partnerInfo}>
-          <View style={styles.nameRow}>
+        <Text style={styles.title} numberOfLines={2}>
+          {title}
+        </Text>
+
+        <View style={styles.availRow}>
+          <View style={styles.availCol}>
+            <View style={styles.labelRow}>
+              <Ionicons name="calendar-outline" size={16} color="#8E959E" />
+              <Text style={styles.fieldLabel}>Available from</Text>
+            </View>
+            <Text style={styles.fieldValue}>
+              {availableFromDate}, {availableFromTime}
+            </Text>
+          </View>
+          <View style={styles.availCol}>
+            <View style={styles.labelRow}>
+              <Ionicons name="calendar-outline" size={16} color="#8E959E" />
+              <Text style={styles.fieldLabel}>Available till</Text>
+            </View>
+            <Text style={styles.fieldValue}>
+              {availableTillDate}, {availableTillTime}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.locationBlock}>
+          <View style={styles.labelRow}>
+            <Image source={Images.locationIcon} style={styles.pin} />
+            <Text style={styles.fieldLabel}>Location</Text>
+          </View>
+          <Text style={styles.fieldValue} numberOfLines={2}>
+            {location}
+          </Text>
+        </View>
+
+        <View style={styles.detailsBox}>
+          <View style={styles.detailsTitleRow}>
+            <Ionicons name="document-text-outline" size={18} color="#1A1A1A" />
+            <Text style={styles.detailsTitle}>Other Details</Text>
+          </View>
+          <Text style={styles.detailsText} numberOfLines={3}>
+            {details}
+          </Text>
+        </View>
+
+        <View style={styles.footer}>
+          {avatarSource ? (
+            <Image source={avatarSource} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarFallback}>
+              <Text style={styles.avatarText}>{initials}</Text>
+            </View>
+          )}
+
+          <View style={styles.partnerInfo}>
             <Text style={styles.partnerName} numberOfLines={1}>
               {name}
             </Text>
-            {verified ? (
-              <Ionicons
-                name="checkmark-circle"
-                size={14}
-                color={Colors.secured}
-                style={styles.verified}
-              />
+            {company ? (
+              <Text style={styles.company} numberOfLines={1}>
+                {company}
+              </Text>
             ) : null}
           </View>
-          {company ? (
-            <Text style={styles.company} numberOfLines={2}>
-              {company}
-            </Text>
-          ) : null}
-        </View>
 
-        <TouchableOpacity
-          style={styles.callBtn}
-          onPress={handleCall}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel={`Call ${name}`}>
-          <Text style={styles.callIcon}>📞</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.callBtn}
+            onPress={handleCall}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={`Call ${name}`}>
+            <Ionicons name="call-outline" size={16} color="#1A1A1A" />
+            <Text style={styles.callText}>Call</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
   );
 };
 
 const baseStyles = {
   card: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
+    marginBottom: 14,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255, 255, 255, 1)',
+    overflow: 'hidden',
     paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 12,
-    marginBottom: 8,
+    paddingTop: 16,
+    paddingBottom: 14,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: 'rgba(236, 236, 236, 1)',
+    elevation: 0,
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: {width: 0, height: 0},
   },
-  typeRow: {
+  decor: {
+    position: 'absolute',
+    top: -52,
+    right: -42,
+    width: 148,
+    height: 148,
+    borderRadius: 74,
+    backgroundColor: '#FBF6E4',
+  },
+  topRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    zIndex: 1,
   },
-  typeLabel: {
-    fontSize: 12,
-    color: '#B0B3B8',
-    fontWeight: '400',
-    marginRight: 10,
+  typePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E7F6EA',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    gap: 6,
   },
-  typeValue: {
-    fontSize: 14,
+  typeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E9A45',
+  },
+  menuBtn: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    marginTop: 12,
+    fontSize: 18,
+    lineHeight: 24,
     fontWeight: '800',
-    color: Colors.textPrimary,
+    color: '#1A1A1A',
   },
   availRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 14,
+    marginTop: 16,
+    gap: 12,
   },
   availCol: {
     flex: 1,
   },
-  availColFrom: {
-    paddingRight: 10,
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
   },
-  availColTill: {
-    paddingLeft: 10,
+  fieldLabel: {
+    fontSize: 12,
+    color: '#8B919A',
   },
-  availLabel: {
-    fontSize: 11,
-    color: '#B0B3B8',
-    fontWeight: '400',
-    marginBottom: 3,
-  },
-  availValue: {
-    fontSize: 13,
+  fieldValue: {
+    fontSize: 14,
+    lineHeight: 20,
     fontWeight: '700',
-    color: Colors.textPrimary,
-    lineHeight: 18,
-    width: '100%',
+    color: '#1A1A1A',
+    paddingLeft: 22,
   },
-  alignRight: {
-    textAlign: 'right',
-    alignSelf: 'stretch',
+  locationBlock: {
+    marginTop: 16,
   },
-  sectionLabel: {
-    fontSize: 11,
-    color: '#B0B3B8',
-    fontWeight: '400',
-    marginBottom: 3,
+  pin: {
+    width: 16,
+    height: 18,
+    resizeMode: 'contain',
   },
-  location: {
+  detailsBox: {
+    marginTop: 16,
+    backgroundColor: '#F2F6FB',
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  detailsTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  detailsTitle: {
     fontSize: 13,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    lineHeight: 18,
-    marginBottom: 10,
+    fontWeight: '800',
+    color: '#1B2437',
   },
-  details: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-    lineHeight: 18,
-    marginBottom: 8,
-  },
-  note: {
+  detailsText: {
+    marginTop: 6,
+    marginLeft: 26,
     fontSize: 11,
-    fontStyle: 'italic',
-    color: '#E57373',
     lineHeight: 16,
-    marginBottom: 10,
+    color: '#3E4A59',
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 16,
-    paddingHorizontal: 10,
+    marginTop: 14,
+    backgroundColor: '#FFF8E6',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#F6E8C0',
+    paddingLeft: 8,
+    paddingRight: 8,
     paddingVertical: 8,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
   },
   avatarFallback: {
-    width: 40,
-    height: 40,
-    borderRadius: 8,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: '#3E4A40',
     alignItems: 'center',
     justifyContent: 'center',
@@ -251,35 +302,29 @@ const baseStyles = {
     marginLeft: 10,
     marginRight: 8,
   },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   partnerName: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-    flexShrink: 1,
-  },
-  verified: {
-    marginLeft: 4,
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1B2437',
   },
   company: {
-    fontSize: 11,
-    color: '#9AA0A6',
+    fontSize: 12,
+    color: '#8B919A',
     marginTop: 1,
-    lineHeight: 15,
   },
   callBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.primary,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: Colors.primary,
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 6,
   },
-  callIcon: {
-    fontSize: 13,
+  callText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#1B2437',
   },
 };
 

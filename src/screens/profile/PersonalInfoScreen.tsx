@@ -15,8 +15,8 @@ import {launchImageLibrary} from 'react-native-image-picker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useDispatch} from 'react-redux';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
-import BackButton from '../../components/brand/BackButton';
 import PrimaryButton from '../../components/brand/PrimaryButton';
+import BannerHeader from '../../components/common/BannerHeader';
 import CitySelectModal from '../../components/profile/CitySelectModal';
 import {USER_ROLES} from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
@@ -145,23 +145,19 @@ const PersonalInfoScreen = ({navigation}) => {
   };
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + 8}]}>
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Personal Information</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+    <View style={styles.container}>
+      <BannerHeader
+        title="Personal Information"
+        onBack={() => navigation.goBack()}
+      />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <View style={styles.avatarBox}>
-          <Ionicons
-            name="person"
-            size={48}
-            color={Colors.textSlate}
-          />
+          <View style={styles.avatarHead} />
+          <View style={styles.avatarBody} />
         </View>
 
         <Field
@@ -174,7 +170,7 @@ const PersonalInfoScreen = ({navigation}) => {
           label="Enter city name"
           value={city}
           placeholder="Select City"
-          rightIcon="location-sharp"
+          rightIcon="location-outline"
           editable={false}
           onPress={() => setCityModalVisible(true)}
         />
@@ -215,7 +211,7 @@ const PersonalInfoScreen = ({navigation}) => {
           })}
         </View>
 
-        <Text style={styles.verifyHeading}>VERIFICATION</Text>
+        <Text style={styles.verifyHeading}>Verification</Text>
         {VERIFICATION_ITEMS.map(item => (
           <View key={item.id} style={styles.verifyCard}>
             <View style={styles.verifyCopy}>
@@ -345,7 +341,7 @@ const Field = ({
         style={styles.input}
       />
       {rightIcon ? (
-        <Ionicons name={rightIcon} size={18} color={Colors.primary} />
+        <Ionicons name={rightIcon} size={18} color="#8B93A1" />
       ) : null}
     </TouchableOpacity>
   </View>
@@ -355,53 +351,59 @@ const Field = ({
 const baseStyles = {
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundAlt,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.screenPadding,
-    marginBottom: Spacing.base,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: Typography.fontWeights.semibold,
-    color: Colors.textSlate,
-  },
-  headerSpacer: {
-    width: 40,
+    backgroundColor: Colors.surface,
   },
   scroll: {
     paddingHorizontal: Spacing.screenPadding,
     paddingBottom: 24,
+    paddingTop: 8,
   },
   avatarBox: {
     alignSelf: 'center',
-    width: 110,
-    height: 110,
-    borderRadius: 18,
+    width: 108,
+    height: 108,
+    borderRadius: 54,
     backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderColor: '#E3E3E3',
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 18,
     marginBottom: Spacing.xl,
+  },
+  avatarHead: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#F6C431',
+    marginBottom: 5,
+  },
+  avatarBody: {
+    width: 54,
+    height: 28,
+    backgroundColor: '#F6C431',
+    borderTopLeftRadius: 27,
+    borderTopRightRadius: 27,
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
   },
   field: {
     marginBottom: Spacing.base,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: Typography.fontWeights.bold,
-    color: Colors.textSlate,
+    color: Colors.textPrimary,
     marginBottom: 8,
   },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderRadius: 14,
-    height: 52,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E4E7EC',
+    height: 48,
     paddingHorizontal: 14,
   },
   input: {
@@ -419,6 +421,8 @@ const baseStyles = {
     height: 44,
     borderRadius: 10,
     backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: '#E4E7EC',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -427,7 +431,8 @@ const baseStyles = {
     marginRight: 0,
   },
   roleBtnOn: {
-    backgroundColor: Colors.secondary,
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   roleText: {
     fontSize: 14,
@@ -435,20 +440,21 @@ const baseStyles = {
     color: Colors.textMuted,
   },
   roleTextOn: {
-    color: Colors.textInverse,
+    color: Colors.textPrimary,
   },
   verifyHeading: {
-    fontSize: 12,
-    fontWeight: Typography.fontWeights.semibold,
-    color: Colors.textPlaceholder,
-    letterSpacing: 0.6,
+    fontSize: 16,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
     marginBottom: 12,
   },
   verifyCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderRadius: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E8EAED',
     paddingVertical: 14,
     paddingHorizontal: 16,
     marginBottom: 12,
@@ -460,7 +466,7 @@ const baseStyles = {
   verifyTitle: {
     fontSize: 15,
     fontWeight: Typography.fontWeights.bold,
-    color: Colors.textSlate,
+    color: Colors.textPrimary,
     marginBottom: 2,
   },
   verifyStatus: {
@@ -469,8 +475,8 @@ const baseStyles = {
   },
   verifyBtn: {
     backgroundColor: Colors.primary,
-    borderRadius: 8,
-    paddingHorizontal: 12,
+    borderRadius: 18,
+    paddingHorizontal: 14,
     paddingVertical: 8,
   },
   verifyBtnText: {
@@ -481,7 +487,7 @@ const baseStyles = {
   footer: {
     paddingHorizontal: Spacing.screenPadding,
     paddingTop: 8,
-    backgroundColor: Colors.backgroundAlt,
+    backgroundColor: Colors.surface,
   },
   updateBtn: {
     elevation: 0,

@@ -1,108 +1,31 @@
 import React from 'react';
-import {Image, Text, TouchableOpacity, useWindowDimensions, View} from 'react-native';
+import {Image, Text, TouchableOpacity, View} from 'react-native';
+import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {Images} from '../../constants/Images';
-import {Colors, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
-import {moderateScale} from '../../utils/responsive';
-
-const VEHICLE_IMAGES = {
-  innova: Images.carInnova,
-  ertiga: Images.carInnova,
-  sedan: Images.carInnova,
-};
-
-const VEHICLE_SPECS = {
-  innova: 'AC • 7 Seater • Diesel',
-  ertiga: 'AC • 6 Seater • Petrol',
-  sedan: 'AC • 4 Seater • Petrol',
-};
 
 const formatInr = value => `₹${Number(value).toLocaleString('en-IN')}`;
 
-const DottedLine = ({withArrow}) => {
-  const styles = useResponsiveStyles(baseStyles);
-  return (
-  <View style={styles.dotLine}>
-    {Array.from({length: 7}).map((_, i) => (
-      <View key={i} style={styles.dot} />
-    ))}
-    {withArrow ? <View style={styles.arrow} /> : null}
-  </View>
-);
-};
-
-const MapPin = ({size = 14}) => {
-  const styles = useResponsiveStyles(baseStyles);
-  const {width, height} = useWindowDimensions();
-  const pin = moderateScale(size, width, height);
-  return (
-  <View style={[styles.pinWrap, {width: pin, height: pin + moderateScale(4, width, height)}]}>
-    <View
-      style={[
-        styles.pinHead,
-        {
-          width: pin,
-          height: pin,
-          borderRadius: pin / 2,
-        },
-      ]}>
-      <View style={styles.pinInner} />
-    </View>
-    <View style={styles.pinTip} />
-  </View>
-);
-};
-
-const VehicleThumb = ({type = 'sedan'}) => {
-  const styles = useResponsiveStyles(baseStyles);
-  return (
-  <Image
-    source={VEHICLE_IMAGES[type] || VEHICLE_IMAGES.sedan}
-    style={styles.carImage}
-    resizeMode="contain"
-  />
-);
-};
-
-const StarRow = ({rating = 5}) => {
-  const styles = useResponsiveStyles(baseStyles);
-  const stars = [];
-  for (let i = 1; i <= 5; i += 1) {
-    const filled = rating >= i;
-    const half = !filled && rating >= i - 0.5;
-    stars.push(
-      <View key={i} style={styles.starSlot}>
-        <Text style={styles.starEmpty}>★</Text>
-        {filled ? (
-          <Text style={styles.starFill}>★</Text>
-        ) : half ? (
-          <View style={styles.starHalfClip}>
-            <Text style={styles.starFill}>★</Text>
-          </View>
-        ) : null}
-      </View>,
-    );
+const splitExtras = extras => {
+  if (Array.isArray(extras)) {
+    return extras.map(item => String(item).trim()).filter(Boolean);
   }
-  return <View style={styles.starRow}>{stars}</View>;
+  return String(extras || '')
+    .split(',')
+    .map(item => item.trim())
+    .filter(Boolean)
+    .slice(0, 3);
 };
 
-const PriceBox = ({amount, label, hint, amountColor}) => {
-  const styles = useResponsiveStyles(baseStyles);
-  return (
-  <View style={styles.priceBox}>
-    <Text style={[styles.priceAmt, amountColor && {color: amountColor}]}>
-      {formatInr(amount)}
-    </Text>
-    <Text style={styles.priceLabel}>{label}</Text>
-    {hint ? <Text style={styles.priceHint}>{hint}</Text> : null}
-  </View>
-);
-};
+const noteParts = text =>
+  String(text || '')
+    .split(/,|→|->/)
+    .map(part => part.trim())
+    .filter(Boolean);
 
 /**
- * Market trip request card — matches Tajway marketplace booking card.
+ * Market trip request card — matches the marketplace booking screenshot.
  */
-
 const MarketBookingCard = ({
   name = 'Travel Partner',
   company,
@@ -110,47 +33,64 @@ const MarketBookingCard = ({
   time = '07:00 AM',
   from = 'Gurugram',
   to,
-  tripType = 'Round Trip',
+  pickupFrom,
+  dropTo,
+  tripType = 'One Way',
   vehicle = 'Sedan',
   vehicleType = 'sedan',
-  vehicleSpecs,
   notes,
   extras,
-  extrasChecked = false,
   totalAmount,
   driverEarning,
   commission,
-  negotiable = false,
   reviews = 0,
   rating = 5,
   partnerHidden = false,
   secured = true,
-  avatarInitials,
-  avatarSource,
   onPress,
   onQuote,
   onChat,
   onContact,
-  onMenu,
 }) => {
   const styles = useResponsiveStyles(baseStyles);
-  const isOneWay = String(tripType).toLowerCase().includes('one');
-  const initials =
-    avatarInitials ||
-    String(name)
-      .split(' ')
-      .slice(0, 2)
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
   const hasQuote = totalAmount == null || totalAmount === '';
-  const specs = vehicleSpecs || VEHICLE_SPECS[vehicleType] || VEHICLE_SPECS.sedan;
-  const handleContact = onContact || onChat;
+  const handleContact = onChat || onContact;
+  const extraItems = splitExtras(extras);
+  const noteText =
+    notes ||
+    [pickupFrom, dropTo].filter(Boolean).join(' → ') ||
+    [from, to].filter(Boolean).join(' → ');
+  const stops = noteParts(noteText);
+  const tripLabel = String(tripType || 'One Way').toUpperCase();
+  const typeLabel =
+    String(vehicleType || 'sedan').charAt(0).toUpperCase() +
+    String(vehicleType || 'sedan').slice(1);
 
   const stopAndRun = handler => e => {
     e?.stopPropagation?.();
     handler?.();
   };
+
+  const prices = [
+    {
+      key: 'total',
+      icon: 'cash',
+      label: 'Total Amount',
+      amount: formatInr(totalAmount),
+    },
+    {
+      key: 'earn',
+      icon: 'wallet',
+      label: 'Driver Earning',
+      amount: formatInr(driverEarning),
+    },
+    {
+      key: 'comm',
+      icon: 'percent',
+      label: 'Commission',
+      amount: formatInr(commission),
+    },
+  ];
 
   return (
     <TouchableOpacity
@@ -160,155 +100,174 @@ const MarketBookingCard = ({
       disabled={!onPress}
       accessibilityRole="button"
       accessibilityLabel="Open booking details">
-      <View style={styles.topRow}>
-        <Text style={styles.bagIcon}>💼</Text>
-        <Text style={styles.name} numberOfLines={1}>
-          {name}
+      <View style={styles.head}>
+        <Image source={Images.timeIcon} style={styles.timeIcon} />
+        <Text style={styles.when} numberOfLines={1}>
+          {when} at {time}
         </Text>
         {secured ? (
           <View style={styles.secured}>
-            <View style={styles.shield}>
-              <Text style={styles.shieldTick}>✓</Text>
-            </View>
+            <Ionicons name="lock-closed" size={13} color="#1F9D4E" />
             <Text style={styles.securedText}>Secured</Text>
           </View>
         ) : null}
-        <TouchableOpacity
-          style={styles.menuBtn}
-          hitSlop={8}
-          activeOpacity={0.7}
-          onPress={stopAndRun(onMenu)}
-          accessibilityRole="button"
-          accessibilityLabel="More options">
-          <Text style={styles.menuDots}>⋮</Text>
-        </TouchableOpacity>
       </View>
 
-      <Text style={styles.when}>
-        {when} @ <Text style={styles.time}>{time}</Text>
-      </Text>
+      <View style={styles.panel}>
+        <View style={styles.routeRow}>
+          <View style={styles.place}>
+            <Image source={Images.locationIcon} style={styles.pin} />
+            <Text style={styles.city} numberOfLines={1}>
+              {from}
+            </Text>
+          </View>
 
-      {isOneWay ? (
-        <View style={styles.routeRow}>
-          <MapPin />
-          <Text style={[styles.city, styles.cityPad]} numberOfLines={1}>
-            {from}
-          </Text>
-          <DottedLine withArrow />
-          <MapPin />
-          <Text style={[styles.city, styles.cityPad]} numberOfLines={1}>
-            {to}
-          </Text>
-        </View>
-      ) : (
-        <View style={styles.routeRow}>
-          <MapPin />
-          <Text style={[styles.city, styles.cityPad]}>{from}</Text>
-          <View style={styles.roundPill}>
-            <Text style={styles.roundText}>{tripType}</Text>
+          <View style={styles.routeTrack}>
+            <View style={styles.routeLine} />
+            <View style={styles.tripPill}>
+              <Text style={styles.tripPillText} numberOfLines={1}>
+                {tripLabel}
+              </Text>
+            </View>
+            <View style={styles.routeLine} />
+            <View style={styles.arrowHead} />
+          </View>
+
+          <View style={[styles.place, styles.placeEnd]}>
+            <Image source={Images.locationIcon} style={styles.pin} />
+            <Text style={styles.city} numberOfLines={1}>
+              {to || '—'}
+            </Text>
           </View>
         </View>
-      )}
-   
-      <View style={styles.vehicleRow}>
-        <VehicleThumb type={vehicleType} />
-        <View style={styles.vehicleCopy}>
-          <Text style={styles.vehicle}>{vehicle}</Text>
-          <Text style={styles.vehicleSpecs}>{specs}</Text>
-        </View>
-      </View>
 
-      {notes ? (
-        <View style={styles.notesBox}>
-          <Text style={styles.metaLine}>
-            <Text style={styles.metaLabel}>Trip Notes </Text>
-            <Text style={styles.metaValue}>{notes}</Text>
-          </Text>
+        <View style={styles.detailBox}>
+          <View style={styles.vehicleCol}>
+            <Image
+              source={Images.carImage}
+              style={styles.carImage}
+              resizeMode="contain"
+            />
+            <View style={styles.vehicleCopy}>
+              <Text style={styles.vehicle} numberOfLines={2}>
+                {vehicle}
+              </Text>
+              <View style={styles.typePill}>
+                <Text style={styles.typePillText}>{typeLabel}</Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.detailDivider} />
+          <View style={styles.notesCol}>
+            <View style={styles.notesTitleRow}>
+              <Ionicons name="document-text-outline" size={14} color="#1B2437" />
+              <Text style={styles.notesTitle}>Trip Notes</Text>
+            </View>
+            <Text style={styles.notesText} numberOfLines={3}>
+              {stops.length
+                ? stops.map((part, index) => (
+                    <Text key={`${part}-${index}`}>
+                      {index > 0 ? (
+                        <Text style={styles.noteArrow}> → </Text>
+                      ) : null}
+                      {part}
+                    </Text>
+                  ))
+                : noteText}
+            </Text>
+          </View>
         </View>
-      ) : null}
 
-      {extras ? (
-        <Text style={styles.metaLine}>
-          <Text style={styles.metaLabel}>Extra Requirements </Text>
-          <Text style={styles.metaValue}>{extras}</Text>
-          {extrasChecked ? <Text style={styles.check}> ✓</Text> : null}
-        </Text>
+      {extraItems.length ? (
+        <View style={styles.extrasBlock}>
+          <View style={styles.extrasTitleRow}>
+            <View style={styles.starBadge}>
+              <Ionicons name="star-outline" size={13} color="#1B2437" />
+            </View>
+            <Text style={styles.extrasTitle}>Extra Requirements</Text>
+          </View>
+          <View style={styles.extraList}>
+            {extraItems.map(item => (
+              <View key={item} style={styles.extraItem}>
+                <Text style={styles.extraCheck}>✓</Text>
+                <Text style={styles.extraText} numberOfLines={1}>
+                  {item}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
       ) : null}
 
       {hasQuote ? (
-        <>
-          <View style={styles.dash} />
-          <TouchableOpacity
-            onPress={stopAndRun(onQuote)}
-            activeOpacity={0.8}
-            style={styles.quoteWrap}>
-            <Text style={styles.quote}>Quote Best Price</Text>
-            <Text style={styles.totalHint}>Total Amount</Text>
-          </TouchableOpacity>
-        </>
+        <TouchableOpacity
+          onPress={stopAndRun(onQuote)}
+          activeOpacity={0.8}
+          style={styles.quoteWrap}>
+          <Text style={styles.quote}>Quote Best Price</Text>
+          <Text style={styles.totalHint}>Total Amount</Text>
+        </TouchableOpacity>
       ) : (
-        <View style={styles.priceRow}>
-          <PriceBox
-            amount={totalAmount}
-            label="Total Amount"
-            hint={negotiable ? '(Negotiable)' : undefined}
-          />
-          <PriceBox
-            amount={driverEarning}
-            label="Driver's Earning"
-            amountColor={Colors.success}
-          />
-          <PriceBox
-            amount={commission}
-            label="Commission"
-            amountColor={Colors.info}
-          />
+        <View style={styles.priceBar}>
+          {prices.map((item, index) => (
+            <View
+              key={item.key}
+              style={[styles.priceItem, index > 0 && styles.priceItemBorder]}>
+              <View style={styles.priceIcon}>
+                {item.icon === 'percent' ? (
+                  <Text style={styles.percentMark}>%</Text>
+                ) : (
+                  <Ionicons name={item.icon} size={14} color="#1B2437" />
+                )}
+              </View>
+              <View style={styles.priceCopy}>
+                <Text style={styles.priceLabel} numberOfLines={1}>
+                  {item.label}
+                </Text>
+                <Text style={styles.priceAmt} numberOfLines={1}>
+                  {item.amount}
+                </Text>
+              </View>
+            </View>
+          ))}
         </View>
       )}
 
       <View style={styles.footer}>
         {partnerHidden ? (
-          <View style={styles.hiddenCol}>
-            <Text style={styles.lock}>🔒</Text>
-            <Text style={styles.hiddenText}>Hidden</Text>
-          </View>
-        ) : avatarSource ? (
-          <Image source={avatarSource} style={styles.avatarImg} />
-        ) : (
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
+            <Ionicons name="lock-closed" size={16} color="#fff" />
           </View>
+        ) : (
+          <Image source={Images.profile} style={styles.avatarImg} />
         )}
 
         <View style={styles.partnerInfo}>
-          {partnerHidden ? (
-            <View style={styles.blurBar} />
-          ) : (
-            <>
-              <Text style={styles.partnerName} numberOfLines={1}>
-                {name}
-              </Text>
-              {company ? (
-                <Text style={styles.partnerCompany} numberOfLines={1}>
-                  {company}
-                </Text>
-              ) : null}
-            </>
-          )}
+          <Text style={styles.partnerName} numberOfLines={1}>
+            {partnerHidden ? 'Hidden' : name}
+          </Text>
+          {company && !partnerHidden ? (
+            <Text style={styles.partnerCompany} numberOfLines={1}>
+              {company}
+            </Text>
+          ) : null}
           <View style={styles.reviewRow}>
-            <StarRow rating={rating} />
-            <Text style={styles.reviewCount}>({reviews} Reviews)</Text>
+            <Ionicons name="star" size={12} color="#F5C518" />
+            <Text style={styles.ratingText}>{Number(rating).toFixed(1)}</Text>
+            <Text style={styles.reviewCount}>({reviews} reviews)</Text>
           </View>
         </View>
 
         <TouchableOpacity
-          style={styles.contactBtn}
+          style={styles.chatBtn}
           onPress={stopAndRun(handleContact)}
           activeOpacity={0.85}
           accessibilityRole="button"
-          accessibilityLabel="Contact">
-          <Text style={styles.contactIcon}>📞</Text>
+          accessibilityLabel="Chat">
+          <Ionicons name="chatbubble-ellipses" size={14} color="#1B2437" />
+          <Text style={styles.chatText}>Chat</Text>
         </TouchableOpacity>
+      </View>
       </View>
     </TouchableOpacity>
   );
@@ -316,364 +275,360 @@ const MarketBookingCard = ({
 
 const baseStyles = {
   card: {
-    backgroundColor: Colors.surface,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 12,
-    marginBottom: 8,
+    backgroundColor: '#F6CC54',
+    borderRadius: 22,
+    marginBottom: 14,
+    paddingHorizontal: 0,
+    paddingTop: 0,
+    paddingBottom: 0,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: '#F8E7A8',
+    elevation: 0,
+    shadowOpacity: 0,
   },
-  topRow: {
+  head: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 12,
+    gap: 8,
   },
-  bagIcon: {
-    fontSize: 14,
-    marginRight: 6,
+  timeIcon: {
+    width: 22,
+    height: 22,
+    resizeMode: 'contain',
   },
-  name: {
+  when: {
     flex: 1,
-    fontWeight: Typography.fontWeights.semibold,
-    color: Colors.textPrimary,
-    fontSize: 14,
-    marginRight: 8,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1A1A1A',
   },
   secured: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 4,
-  },
-  
-  shield: {
-    width: 16,
-    height: 18,
-    backgroundColor: Colors.secured,
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 5,
-  },
-  shieldTick: {
-    color: '#fff',
-    fontSize: 9,
-    fontWeight: '800',
-    lineHeight: 12,
+    backgroundColor: '#E7F8EE',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 5,
   },
   securedText: {
-    color: Colors.secured,
+    color: '#1F9D4E',
     fontSize: 13,
-    fontWeight: '600',
-  },
-  menuBtn: {
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-  },
-  menuDots: {
-    fontSize: 18,
-    color: Colors.textMuted,
     fontWeight: '700',
-    lineHeight: 20,
   },
-  when: {
-    fontSize: 14,
-    color: Colors.textPrimary,
-    fontWeight: '500',
-    marginTop: 6,
-    marginBottom: 12,
-  },
-  time: {
-    color: Colors.filterRed,
-    fontWeight: '600',
+  panel: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
+    paddingHorizontal: 12,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
   routeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
   },
-  city: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-    flexShrink: 1,
-  },
-  cityPad: {
-    marginLeft: 4,
-  },
-  dotLine: {
-    flex: 1,
+  place: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
+    flexShrink: 1,
+    flexGrow: 1,
+    gap: 4,
   },
-  dot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: Colors.primary,
-    marginHorizontal: 1.5,
+  placeEnd: {
+    justifyContent: 'flex-end',
   },
-  arrow: {
+  pin: {
+    width: 18,
+    height: 22,
+    resizeMode: 'contain',
+  },
+  city: {
+    flexShrink: 1,
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1A1A1A',
+  },
+  routeTrack: {
+    flexGrow: 0,
+    flexShrink: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  routeLine: {
+    width: 14,
+    height: 2,
+    backgroundColor: '#F6CC54',
+    borderRadius: 1,
+  },
+  tripPill: {
+    flexShrink: 0,
+    backgroundColor: '#F6CC54',
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    marginHorizontal: 4,
+  },
+  tripPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#1A1A1A',
+    letterSpacing: 0.4,
+  },
+  arrowHead: {
     width: 0,
     height: 0,
-    marginLeft: 2,
-    borderTopWidth: 5,
-    borderBottomWidth: 5,
+    marginLeft: -1,
+    borderTopWidth: 4,
+    borderBottomWidth: 4,
     borderLeftWidth: 7,
     borderTopColor: 'transparent',
     borderBottomColor: 'transparent',
-    borderLeftColor: Colors.primary,
+    borderLeftColor: '#F6CC54',
   },
-  pinWrap: {
-    alignItems: 'center',
-  },
-  pinHead: {
-    backgroundColor: '#E53935',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pinInner: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#fff',
-  },
-  pinTip: {
-    width: 0,
-    height: 0,
-    marginTop: -2,
-    borderLeftWidth: 4,
-    borderRightWidth: 4,
-    borderTopWidth: 6,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderTopColor: '#E53935',
-  },
-  roundPill: {
-    flex: 1,
-    marginLeft: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+  detailBox: {
+    flexDirection: 'row',
     borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: '#C5C5C5',
-    borderRadius: 20,
-    paddingVertical: 6,
+    borderColor: 'rgba(0, 0, 0, 0.08)',
+    borderRadius: 12,
+    paddingVertical: 8,
     paddingHorizontal: 8,
   },
-  roundText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.textSecondary,
-  },
-  vehicleRow: {
+  vehicleCol: {
+    width: 118,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
   },
   carImage: {
-    width: 100,
-    height: 56,
-    marginRight: 12,
+    width: 58,
+    height: 36,
   },
   vehicleCopy: {
     flex: 1,
+    marginLeft: 4,
   },
   vehicle: {
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    fontSize: 15,
-  },
-  vehicleSpecs: {
-    fontSize: 12,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  notesBox: {
-    backgroundColor: Colors.surfaceAlt,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginBottom: 6,
-  },
-  metaLine: {
     fontSize: 13,
-    lineHeight: 19,
+    fontWeight: '800',
+    color: '#1B2437',
+  },
+  typePill: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    backgroundColor: '#EEF3FA',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  typePillText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#5C6B80',
+  },
+  detailDivider: {
+    width: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+    marginHorizontal: 8,
+  },
+  notesCol: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  notesTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     marginBottom: 4,
   },
-  metaLabel: {
-    color: Colors.textMuted,
-    fontWeight: '400',
+  notesTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#1B2437',
   },
-  metaValue: {
-    color: Colors.textPrimary,
-    fontWeight: '500',
+  notesText: {
+    fontSize: 11,
+    lineHeight: 16,
+    color: '#3E4A59',
   },
-  check: {
-    color: '#2E7D32',
-    fontWeight: '600',
+  noteArrow: {
+    color: '#F5C518',
+    fontWeight: '800',
   },
-  dash: {
-    borderBottomWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: Colors.border,
-    marginTop: 8,
-    marginBottom: 10,
+  extrasBlock: {
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  extrasTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  starBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#F6CC54',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  extrasTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1B2437',
+  },
+  extraList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingLeft: 30,
+    gap: 12,
+  },
+  extraItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    maxWidth: '48%',
+  },
+  extraCheck: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1B2437',
+  },
+  extraText: {
+    flexShrink: 1,
+    fontSize: 12,
+    color: '#1B2437',
   },
   quoteWrap: {
     alignItems: 'center',
+    backgroundColor: '#FFF6D4',
+    borderRadius: 14,
+    paddingVertical: 12,
     marginBottom: 12,
   },
   quote: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.secondaryDark,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1B2437',
   },
   totalHint: {
     fontSize: 12,
-    color: Colors.textMuted,
+    color: '#8B919A',
     marginTop: 2,
   },
-  priceRow: {
+  priceBar: {
     flexDirection: 'row',
-    marginTop: 10,
-    marginBottom: 12,
-    gap: 8,
-  },
-  priceBox: {
-    flex: 1,
-    backgroundColor: Colors.surfaceAlt,
-    borderRadius: 12,
+    backgroundColor: '#FFF6D4',
+    borderRadius: 14,
     paddingVertical: 10,
     paddingHorizontal: 6,
-    alignItems: 'center',
+    marginBottom: 12,
   },
-  priceAmt: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textPrimary,
+  priceItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  priceItemBorder: {
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(0, 0, 0, 0.08)',
+  },
+  priceIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F6CC54',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  percentMark: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#1B2437',
+  },
+  priceCopy: {
+    flex: 1,
   },
   priceLabel: {
-    fontSize: 10,
-    color: Colors.textMuted,
-    marginTop: 3,
-    textAlign: 'center',
+    fontSize: 9,
+    color: '#3E4A59',
   },
-  priceHint: {
-    fontSize: 10,
-    color: Colors.textMuted,
+  priceAmt: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#1B2437',
+    marginTop: 1,
   },
   footer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F4F5F7',
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  hiddenCol: {
-    alignItems: 'center',
-    width: 48,
-  },
-  lock: {
-    fontSize: 18,
-  },
-  hiddenText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-    marginTop: 2,
   },
   avatarImg: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: '#3E4A40',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  avatarText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
   },
   partnerInfo: {
     flex: 1,
     marginLeft: 10,
     marginRight: 8,
   },
-  blurBar: {
-    height: 12,
-    width: '72%',
-    borderRadius: 6,
-    backgroundColor: '#E8DCC4',
-    marginBottom: 6,
-  },
   partnerName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#1B2437',
   },
   partnerCompany: {
     fontSize: 12,
-    color: Colors.textMuted,
+    color: '#8B919A',
     marginTop: 1,
   },
   reviewRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 2,
+    gap: 3,
   },
-  starRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  starSlot: {
-    width: 12,
-    height: 12,
-    marginRight: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  starEmpty: {
-    position: 'absolute',
-    color: '#D5D5D5',
-    fontSize: 11,
-  },
-  starFill: {
-    color: Colors.star,
-    fontSize: 11,
-  },
-  starHalfClip: {
-    width: 6,
-    overflow: 'hidden',
-    alignSelf: 'flex-start',
+  ratingText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#1B2437',
   },
   reviewCount: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    marginLeft: 6,
+    fontSize: 12,
+    color: '#8B919A',
   },
-  contactBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.primary,
+  chatBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#F6CC54',
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    gap: 5,
   },
-  contactIcon: {
-    fontSize: 13,
+  chatText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#1B2437',
   },
 };
 

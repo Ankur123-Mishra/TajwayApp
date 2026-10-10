@@ -44,7 +44,7 @@ const OwnerHomeScreen = ({navigation}) => {
             dispatch(logout());
             navigation.reset({
               index: 0,
-              routes: [{name: ROUTES.WELCOME}],
+              routes: [{name: ROUTES.PHONE_LOGIN}],
             });
           }}
         />

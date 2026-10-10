@@ -7,7 +7,7 @@ import {useResponsiveStyles} from '../../hooks';
 /**
  * Circular white back button with yellow chevron — flat (no elevation).
  */
-const BackButton = ({onPress, style}) => {
+const BackButton = ({onPress, style, color = Colors.primary}) => {
   const styles = useResponsiveStyles(baseStyles);
   return (
     <TouchableOpacity
@@ -16,7 +16,7 @@ const BackButton = ({onPress, style}) => {
       activeOpacity={0.85}
       onPress={onPress}
       style={[styles.btn, style]}>
-      <Ionicons name="chevron-back" size={24} color={Colors.primary} />
+      <Ionicons name="chevron-back" size={24} color={color} />
     </TouchableOpacity>
   );
 };

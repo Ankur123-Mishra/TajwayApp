@@ -30,7 +30,7 @@ const SLIDES = [
 
 /**
  * Intro carousel after splash. Artwork swipes on its own.
- * Get Started opens login / sign up.
+ * Get Started opens the phone login screen.
  */
 const OnboardingScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
@@ -75,7 +75,7 @@ const OnboardingScreen = ({navigation}) => {
   };
 
   const finish = () => {
-    navigation.replace(ROUTES.WELCOME);
+    navigation.replace(ROUTES.PHONE_LOGIN);
   };
 
   const renderSlide = ({item}) => (

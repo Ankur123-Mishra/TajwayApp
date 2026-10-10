@@ -10,6 +10,7 @@ import {useResponsiveStyles} from '../../hooks';
 /**
  * Phone login — Welcome sheet over the driver hero.
  */
+
 const PhoneLoginScreen = ({navigation, route}) => {
   const styles = useResponsiveStyles(baseStyles);
   const dispatch = useDispatch();
@@ -43,12 +44,9 @@ const PhoneLoginScreen = ({navigation, route}) => {
         placeholderTextColor="#B0B4BC"
         style={styles.input}
       />
-      <PrimaryButton
-        title="Continue"
-        onPress={onNext}
-        showArrow
-        style={styles.cta}
-      />
+      
+      <PrimaryButton title="Continue" onPress={onNext} style={styles.cta} />
+
       <Text style={styles.legal}>
         By continue, you're agreeing to our{' '}
         <Text style={styles.legalLink}>Term & Conditions</Text>
@@ -67,6 +65,7 @@ const baseStyles = {
     fontWeight: '700',
     color: '#1A1A1A',
   },
+
   subtitle: {
     marginTop: 8,
     marginBottom: 22,
@@ -76,6 +75,7 @@ const baseStyles = {
     color: '#A3A8B0',
     paddingHorizontal: 12,
   },
+
   input: {
     height: 52,
     borderWidth: 1,
@@ -89,7 +89,7 @@ const baseStyles = {
   cta: {
     marginTop: 16,
     height: 52,
-    borderRadius: 26,
+    borderRadius: 12,
     backgroundColor: '#F5C400',
     shadowOpacity: 0,
     elevation: 0,

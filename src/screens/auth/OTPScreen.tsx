@@ -22,6 +22,7 @@ const maskPhone = phone => {
 /**
  * OTP verification — boxed code, resend timer, invalid state.
  */
+
 const OTPScreen = ({navigation, route}) => {
   const styles = useResponsiveStyles(baseStyles);
   const dispatch = useDispatch();
@@ -55,7 +56,11 @@ const OTPScreen = ({navigation, route}) => {
         },
       }),
     );
-    navigation.replace(ROUTES.PREFERENCES);
+    // Preferences (location + booking type) skipped — go straight to bottom tabs
+    navigation.reset({
+      index: 0,
+      routes: [{name: ROUTES.AGENT_ROOT}],
+    });
   };
 
   const onResend = () => {
@@ -70,7 +75,11 @@ const OTPScreen = ({navigation, route}) => {
   return (
     <AuthHeroLayout>
       <Text style={styles.title}>OTP Verification</Text>
-      <Text style={styles.sent}>
+      <Text
+        style={styles.sent}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.85}>
         We have sent a verification OTP to {maskPhone(phone)}{' '}
         <Text style={styles.edit} onPress={() => navigation.goBack()}>
           Edit
@@ -121,10 +130,9 @@ const baseStyles = {
   sent: {
     marginTop: 8,
     textAlign: 'center',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 16,
     color: '#9AA0A8',
-    paddingHorizontal: 8,
   },
   edit: {
     color: '#2F6BFF',
@@ -143,7 +151,7 @@ const baseStyles = {
   verify: {
     marginTop: 22,
     height: 52,
-    borderRadius: 26,
+    borderRadius: 12,
     backgroundColor: '#F5C400',
     shadowOpacity: 0,
     elevation: 0,
@@ -157,7 +165,7 @@ const baseStyles = {
   resend: {
     marginTop: 12,
     height: 52,
-    borderRadius: 26,
+    borderRadius: 12,
     backgroundColor: '#E6E6E6',
     alignItems: 'center',
     justifyContent: 'center',

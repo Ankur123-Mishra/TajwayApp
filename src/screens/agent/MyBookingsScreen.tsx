@@ -2,6 +2,7 @@ import React, {useMemo, useState} from 'react';
 import {
   Alert,
   FlatList,
+  Image,
   Linking,
   Share,
   StyleSheet,
@@ -10,10 +11,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {MarketFilterSheet, MyBookingCard} from '../../components/booking';
 import {EMPTY_FILTERS} from '../../components/booking/MarketFilterSheet';
-import {FilterSlidersIcon} from '../../components/common';
+import BannerHeader from '../../components/common/BannerHeader';
+import Images from '../../constants/Images';
 import {ROUTES} from '../../constants/Routes';
 import {getChatByBookingId, mockMyBookings} from '../../mockData';
 import {Colors, Spacing, Typography} from '../../theme';
@@ -37,18 +39,34 @@ const openDialer = (phone = getRandomPhone()) => {
   Linking.openURL(`tel:${digits}`).catch(() => {});
 };
 
+const matchesTrip = (booking, trip) => {
+  const value = String(booking.tripType || '')
+    .toLowerCase()
+    .replace(/\s/g, '');
+  const selected = String(trip || '')
+    .toLowerCase()
+    .replace(/\s/g, '');
+  if (!selected || selected === 'both') {
+    return true;
+  }
+  if (selected === 'oneway') {
+    return value.includes('one');
+  }
+  return value.includes('round') || value.includes('two');
+};
+
 /**
- * My Bookings — posted/received list with screenshot-matching cards.
+ * My Bookings — posted and received lists matching the bookings screenshot.
  */
 const MyBookingsScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
-  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState('posted');
   const [query, setQuery] = useState('');
   const [bookingsList, setBookingsList] = useState(mockMyBookings);
   const [filterOpen, setFilterOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
   const [helpMenuOpen, setHelpMenuOpen] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const bookings = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -59,27 +77,29 @@ const MyBookingsScreen = ({navigation}) => {
       if (!q) {
         return true;
       }
-      return (
-        String(item.id).toLowerCase().includes(q) ||
-        item.from.toLowerCase().includes(q) ||
-        item.to.toLowerCase().includes(q) ||
-        item.vehicle.toLowerCase().includes(q)
-      );
+      const haystack = [
+        item.id,
+        item.code,
+        item.from,
+        item.fromState,
+        item.to,
+        item.toState,
+        item.vehicle,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(q);
     });
 
-    const trip = String(appliedFilters.tripType || '').toLowerCase();
-    if (trip && trip !== 'both') {
-      list = list.filter(b =>
-        String(b.tripType || '')
-          .toLowerCase()
-          .includes(trip.replace(' ', '') === 'oneway' ? 'one' : 'round'),
-      );
+    if (appliedFilters.tripType) {
+      list = list.filter(item => matchesTrip(item, appliedFilters.tripType));
     }
 
     if (appliedFilters.vehicleType) {
       const vehicle = appliedFilters.vehicleType.toLowerCase();
-      list = list.filter(b =>
-        String(b.vehicle || '')
+      list = list.filter(item =>
+        String(item.vehicle || '')
           .toLowerCase()
           .includes(vehicle),
       );
@@ -87,8 +107,8 @@ const MyBookingsScreen = ({navigation}) => {
 
     if (appliedFilters.pickupLocation) {
       const pickup = appliedFilters.pickupLocation.toLowerCase();
-      list = list.filter(b =>
-        String(b.from || '')
+      list = list.filter(item =>
+        String(item.from || '')
           .toLowerCase()
           .includes(pickup),
       );
@@ -96,8 +116,8 @@ const MyBookingsScreen = ({navigation}) => {
 
     if (appliedFilters.dropLocation) {
       const drop = appliedFilters.dropLocation.toLowerCase();
-      list = list.filter(b =>
-        String(b.to || '')
+      list = list.filter(item =>
+        String(item.to || '')
           .toLowerCase()
           .includes(drop),
       );
@@ -139,7 +159,7 @@ const MyBookingsScreen = ({navigation}) => {
   const handleShare = async item => {
     const amount = Number(item.amount).toLocaleString('en-IN');
     const message = [
-      `Tajway Booking #${item.id}`,
+      `Tajway Booking #${item.code || item.id}`,
       `${item.from} → ${item.to}`,
       item.dateTime,
       `${item.vehicle} | ${item.tripType}`,
@@ -153,7 +173,7 @@ const MyBookingsScreen = ({navigation}) => {
     try {
       await Share.share({
         message,
-        title: `Booking #${item.id}`,
+        title: `Booking #${item.code || item.id}`,
       });
     } catch {
       Alert.alert('Share failed', 'Unable to share this booking right now.');
@@ -163,7 +183,7 @@ const MyBookingsScreen = ({navigation}) => {
   const handleDelete = item => {
     Alert.alert(
       'Delete Booking',
-      `Are you sure you want to delete booking #${item.id}?`,
+      `Are you sure you want to delete booking #${item.code || item.id}?`,
       [
         {text: 'Cancel', style: 'cancel'},
         {
@@ -178,7 +198,7 @@ const MyBookingsScreen = ({navigation}) => {
   };
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + 8}]}>
+    <View style={styles.container}>
       {helpMenuOpen ? (
         <TouchableOpacity
           style={styles.helpBackdrop}
@@ -187,50 +207,63 @@ const MyBookingsScreen = ({navigation}) => {
         />
       ) : null}
 
-      <View style={[styles.header, helpMenuOpen && styles.headerRaised]}>
-        <View style={styles.headerSpacer} />
-        <Text style={styles.title}>My Bookings</Text>
-        <View style={styles.helpWrap}>
-          <TouchableOpacity
-            style={styles.helpBtn}
-            activeOpacity={0.85}
-            onPress={handleHelpPress}
-            accessibilityRole="button"
-            accessibilityLabel="Help">
-            <Text style={styles.helpText}>Help</Text>
-            <Text style={styles.helpIcon}>🎧</Text>
-          </TouchableOpacity>
-          {helpMenuOpen ? (
-            <View style={styles.helpPopup}>
+      <View
+        onLayout={event => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <BannerHeader raised={helpMenuOpen}>
+          <View style={styles.headerRow}>
+            <View style={styles.headerSide} />
+            <Text style={styles.title}>My Bookings</Text>
+            <View style={styles.headerSide}>
               <TouchableOpacity
-                style={styles.helpPopupItem}
+                style={styles.helpBtn}
                 activeOpacity={0.85}
-                onPress={handleHelpCall}
+                onPress={handleHelpPress}
                 accessibilityRole="button"
-                accessibilityLabel="Call support">
-                <View style={styles.helpPopupCallBadge}>
-                  <Text style={styles.helpPopupCallIcon}>📞</Text>
-                </View>
-                <Text style={styles.helpPopupText}>Call</Text>
+                accessibilityLabel="Help">
+                <Ionicons name="headset" size={14} color={Colors.textPrimary} />
+                <Text style={styles.helpText}>Help</Text>
               </TouchableOpacity>
             </View>
-          ) : null}
-        </View>
+          </View>
+        </BannerHeader>
       </View>
+
+      {helpMenuOpen ? (
+        <View style={[styles.helpPopup, {top: Math.max(headerHeight - 8, 0)}]}>
+          <TouchableOpacity
+            style={styles.helpPopupItem}
+            activeOpacity={0.85}
+            onPress={handleHelpCall}
+            accessibilityRole="button"
+            accessibilityLabel="Call support">
+            <View style={styles.helpPopupCallBadge}>
+              <Ionicons name="call" size={12} color={Colors.onPrimary} />
+            </View>
+            <Text style={styles.helpPopupText}>Call</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       <View style={styles.segment}>
         <TouchableOpacity
           style={[styles.segBtn, tab === 'posted' && styles.segBtnOn]}
+          activeOpacity={0.85}
           onPress={() => setTab('posted')}>
-          <Text style={[styles.segText, tab === 'posted' && styles.segTextOn]}>
-            Booking Posted
+          <Ionicons
+            name="calendar-outline"
+            size={16}
+            color={Colors.textPrimary}
+          />
+          <Text style={styles.segText} numberOfLines={1}>
+            Bookings Posted
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.segBtn, tab === 'received' && styles.segBtnOn]}
+          activeOpacity={0.85}
           onPress={() => setTab('received')}>
-          <Text
-            style={[styles.segText, tab === 'received' && styles.segTextOn]}>
+          <Ionicons name="car-outline" size={16} color={Colors.textPrimary} />
+          <Text style={styles.segText} numberOfLines={1}>
             Booking Received
           </Text>
         </TouchableOpacity>
@@ -238,22 +271,26 @@ const MyBookingsScreen = ({navigation}) => {
 
       <View style={styles.searchRow}>
         <View style={styles.searchBox}>
-          <Text style={styles.searchIcon}>⌕</Text>
+          <Ionicons name="search" size={18} color="rgba(110, 107, 104, 1)" />
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Search for bookings..."
-            placeholderTextColor={Colors.textPlaceholder}
+            placeholder="Search bookings..."
+            placeholderTextColor="rgba(110, 107, 104, 1)"
             style={styles.searchInput}
           />
         </View>
         <TouchableOpacity
-          style={styles.filterBtn}
+          style={styles.searchFilter}
           activeOpacity={0.85}
           onPress={() => setFilterOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Apply filters">
-          <FilterSlidersIcon />
+          <Image
+            source={Images.filterIcon}
+            style={styles.filterIcon}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
       </View>
 
@@ -272,13 +309,13 @@ const MyBookingsScreen = ({navigation}) => {
         }
         renderItem={({item}) => (
           <MyBookingCard
-            bookingId={item.id}
+            bookingId={item.code || item.id}
             dateTime={item.dateTime}
-            status={item.status}
             from={item.from}
+            fromState={item.fromState}
             to={item.to}
+            toState={item.toState}
             vehicle={item.vehicle}
-            pricingNote={item.pricingNote}
             amount={item.amount}
             tripType={item.tripType}
             onEdit={() => handleEdit(item)}
@@ -295,15 +332,6 @@ const MyBookingsScreen = ({navigation}) => {
         initial={appliedFilters}
         onSave={setAppliedFilters}
       />
-
-      {/* Support AI FAB — temporarily hidden
-      <TouchableOpacity style={styles.fab} activeOpacity={0.9}>
-        <Text style={styles.fabIcon}>🤖</Text>
-        <View style={styles.fabClose}>
-          <Text style={styles.fabCloseX}>×</Text>
-        </View>
-      </TouchableOpacity>
-      */}
     </View>
   );
 };
@@ -311,57 +339,46 @@ const MyBookingsScreen = ({navigation}) => {
 const baseStyles = {
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
-    paddingHorizontal: Spacing.screenPadding,
+    backgroundColor: '#F7F8FA',
   },
-  header: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.base,
+    minHeight: 44,
   },
-  headerRaised: {
-    zIndex: 30,
-  },
-  headerSpacer: {
-    width: 72,
+  headerSide: {
+    width: 88,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   title: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: Typography.fontWeights.bold,
-    color: Colors.textNavy,
-  },
-  helpWrap: {
-    position: 'relative',
-    zIndex: 30,
+    color: Colors.textPrimary,
   },
   helpBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ECEFF3',
+    backgroundColor: Colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
+    gap: 5,
   },
   helpText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textNavy,
-    marginRight: 4,
-  },
-  helpIcon: {
-    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.textPrimary,
   },
   helpBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 15,
+    zIndex: 20,
   },
   helpPopup: {
     position: 'absolute',
-    top: '100%',
-    right: 0,
-    marginTop: -10,
+    right: Spacing.screenPadding,
     minWidth: 128,
     backgroundColor: Colors.surface,
     borderRadius: 14,
@@ -373,7 +390,7 @@ const baseStyles = {
     shadowOffset: {width: 0, height: 3},
     shadowOpacity: 0.14,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 8,
     zIndex: 40,
   },
   helpPopupItem: {
@@ -393,9 +410,6 @@ const baseStyles = {
     justifyContent: 'center',
     marginRight: 8,
   },
-  helpPopupCallIcon: {
-    fontSize: 12,
-  },
   helpPopupText: {
     fontSize: 14,
     fontWeight: '700',
@@ -403,65 +417,74 @@ const baseStyles = {
   },
   segment: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    borderRadius: 24,
-    padding: 4,
-    marginBottom: Spacing.md,
+    alignItems: 'center',
+    backgroundColor: 'rgba(242, 244, 244, 1)',
+    borderRadius: 20,
+    height: 40,
+    marginTop: 14,
+    marginHorizontal: Spacing.screenPadding,
+    marginBottom: 12,
+    overflow: 'hidden',
   },
   segBtn: {
     flex: 1,
     height: 40,
     borderRadius: 20,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
   },
   segBtnOn: {
     backgroundColor: Colors.primary,
   },
   segText: {
     fontWeight: '700',
-    color: Colors.textNavy,
-    fontSize: 13,
-  },
-  segTextOn: {
     color: Colors.onPrimary,
+    fontSize: 14,
   },
   searchRow: {
     flexDirection: 'row',
-    marginBottom: Spacing.base,
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: Spacing.screenPadding,
+    marginBottom: Spacing.sm,
   },
   searchBox: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    borderRadius: 12,
-    height: 44,
-    paddingHorizontal: 12,
-    marginRight: 10,
-  },
-  searchIcon: {
-    fontSize: 16,
-    color: Colors.textMuted,
-    marginRight: 8,
+    borderRadius: 14,
+    height: 48,
+    paddingHorizontal: 14,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   searchInput: {
     flex: 1,
     padding: 0,
     fontSize: 14,
-    color: Colors.textPrimary,
+    color: 'rgba(110, 107, 104, 1)',
   },
-  filterBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+  searchFilter: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: Colors.borderLight,
   },
+  filterIcon: {
+    width: 20,
+    height: 20,
+  },
   list: {
+    paddingHorizontal: Spacing.screenPadding,
     paddingBottom: 90,
   },
   listEmpty: {
@@ -476,37 +499,6 @@ const baseStyles = {
   emptyText: {
     fontSize: 15,
     color: Colors.textMuted,
-  },
-  fab: {
-    position: 'absolute',
-    right: 18,
-    bottom: 18,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fabIcon: {
-    fontSize: 28,
-  },
-  fabClose: {
-    position: 'absolute',
-    top: -2,
-    right: -2,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: Colors.filterRed,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fabCloseX: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
-    lineHeight: 14,
   },
 };
 

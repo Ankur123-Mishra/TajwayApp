@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import {Modal, Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
-import {Colors, Spacing} from '../../theme';
+import {Colors, Spacing, Typography} from '../../theme';
 import CitySelectModal from '../profile/CitySelectModal';
 import {useResponsiveStyles} from '../../hooks';
 
@@ -26,7 +26,7 @@ const EMPTY_FILTERS = {
 };
 
 /**
- * Bottom sheet — Apply Filter (Market Home search / Free Vehicles).
+ * Bottom sheet — Apply Filter (Market Home / My Bookings).
  */
 const MarketFilterSheet = ({
   visible,
@@ -96,22 +96,26 @@ const MarketFilterSheet = ({
       <Modal
         visible={visible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={onClose}>
         <TouchableOpacity
           style={styles.overlay}
           activeOpacity={1}
           onPress={onClose}>
-          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => {}}
+            style={styles.sheetTouch}>
             <View style={[styles.sheet, {paddingBottom: insets.bottom + 16}]}>
               <View style={styles.head}>
                 <Text style={styles.title}>Apply Filter</Text>
                 <TouchableOpacity
+                  style={styles.closeBtn}
                   onPress={onClose}
                   hitSlop={{top: 12, bottom: 12, left: 12, right: 12}}
                   accessibilityRole="button"
                   accessibilityLabel="Close">
-                  <Text style={styles.close}>✕</Text>
+                  <Ionicons name="close" size={22} color={Colors.textPrimary} />
                 </TouchableOpacity>
               </View>
 
@@ -125,7 +129,7 @@ const MarketFilterSheet = ({
                   <Ionicons
                     name="chevron-down"
                     size={18}
-                    color={Colors.primaryDark}
+                    color={Colors.textPrimary}
                   />
                 </TouchableOpacity>
               </View>
@@ -138,17 +142,13 @@ const MarketFilterSheet = ({
                   onPress={() =>
                     openPicker(VEHICLE_TYPE_OPTIONS, setVehicleType)
                   }>
-                  <Text
-                    style={[
-                      styles.value,
-                      !vehicleType && styles.placeholder,
-                    ]}>
+                  <Text style={styles.value}>
                     {vehicleType || 'Select Vehicle Type'}
                   </Text>
                   <Ionicons
                     name="chevron-down"
                     size={18}
-                    color={Colors.primaryDark}
+                    color={Colors.textPrimary}
                   />
                 </TouchableOpacity>
               </View>
@@ -159,17 +159,11 @@ const MarketFilterSheet = ({
                   style={styles.inputWrap}
                   activeOpacity={0.75}
                   onPress={() => setCityField('pickup')}>
-                  <Text
-                    style={[
-                      styles.value,
-                      !pickupLocation && styles.placeholder,
-                    ]}>
-                    {pickupLocation || 'Add'}
-                  </Text>
+                  <Text style={styles.value}>{pickupLocation || 'Add'}</Text>
                   <Ionicons
-                    name="location-sharp"
+                    name="location-outline"
                     size={20}
-                    color={Colors.primaryDark}
+                    color={ICON_MUTED}
                   />
                 </TouchableOpacity>
               </View>
@@ -180,17 +174,11 @@ const MarketFilterSheet = ({
                   style={styles.inputWrap}
                   activeOpacity={0.75}
                   onPress={() => setCityField('drop')}>
-                  <Text
-                    style={[
-                      styles.value,
-                      !dropLocation && styles.placeholder,
-                    ]}>
-                    {dropLocation || 'Add'}
-                  </Text>
+                  <Text style={styles.value}>{dropLocation || 'Add'}</Text>
                   <Ionicons
-                    name="location-sharp"
+                    name="location-outline"
                     size={20}
-                    color={Colors.primaryDark}
+                    color={ICON_MUTED}
                   />
                 </TouchableOpacity>
               </View>
@@ -255,93 +243,100 @@ const MarketFilterSheet = ({
   );
 };
 
+const LABEL_GRAY = '#8B929E';
+const ICON_MUTED = '#8B929E';
+const FIELD_BORDER = '#E6E8EC';
+
 const baseStyles = {
   overlay: {
     flex: 1,
     backgroundColor: Colors.overlay,
     justifyContent: 'flex-end',
   },
+  sheetTouch: {
+    width: '100%',
+  },
   sheet: {
     backgroundColor: Colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingHorizontal: Spacing.screenPadding,
-    paddingTop: Spacing.lg,
+    paddingHorizontal: 18,
+    paddingTop: 20,
   },
   head: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.lg,
+    justifyContent: 'center',
+    marginBottom: 18,
+    minHeight: 28,
   },
   title: {
-    flex: 1,
     textAlign: 'center',
     fontSize: 18,
-    fontWeight: '700',
-    color: Colors.textNavy,
-    marginLeft: 24,
-  },
-  close: {
-    fontSize: 18,
+    fontWeight: Typography.fontWeights.bold,
     color: Colors.textPrimary,
-    width: 24,
-    textAlign: 'center',
+  },
+  closeBtn: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
   },
   field: {
-    marginBottom: Spacing.base,
+    marginBottom: 16,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textSlate,
+    fontSize: 15,
+    fontWeight: Typography.fontWeights.semibold,
+    color: Colors.textPrimary,
     marginBottom: 8,
   },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: Colors.surface,
     borderRadius: 12,
-    minHeight: 50,
-    paddingHorizontal: 14,
+    minHeight: 52,
+    paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: Colors.borderLight,
+    borderColor: FIELD_BORDER,
   },
   value: {
     flex: 1,
-    fontSize: 15,
-    color: Colors.textPrimary,
+    fontSize: 14,
+    fontWeight: Typography.fontWeights.medium,
+    color: LABEL_GRAY,
     paddingVertical: 14,
-  },
-  placeholder: {
-    color: Colors.textPlaceholder,
   },
   btnRow: {
     flexDirection: 'row',
-    marginTop: Spacing.sm,
+    marginTop: 2,
     gap: 12,
   },
   actionBtn: {
     flex: 1,
-    height: 52,
-    borderRadius: 14,
+    height: 50,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   clearBtn: {
-    backgroundColor: Colors.secondary,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: FIELD_BORDER,
   },
   saveBtn: {
     backgroundColor: Colors.primary,
   },
   clearLabel: {
     fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textInverse,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
   },
   saveLabel: {
     fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textInverse,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.onPrimary,
   },
   pickerOverlay: {
     flex: 1,

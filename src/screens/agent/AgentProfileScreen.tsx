@@ -238,7 +238,7 @@ const AgentProfileScreen = ({navigation}) => {
     root.dispatch(
       CommonActions.reset({
         index: 0,
-        routes: [{name: ROUTES.WELCOME}],
+        routes: [{name: ROUTES.PHONE_LOGIN}],
       }),
     );
   };

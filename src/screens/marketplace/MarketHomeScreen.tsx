@@ -1,5 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
+  Image,
+  ImageBackground,
   Linking,
   Modal,
   ScrollView,
@@ -12,10 +14,9 @@ import {
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {useIsFocused} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import BrandLogo from '../../components/brand/BrandLogo';
-import {FilterSlidersIcon} from '../../components/common';
 import FreeVehicleCard from '../../components/booking/FreeVehicleCard';
 import MarketBookingCard from '../../components/booking/MarketBookingCard';
 import MarketFilterSheet, {
@@ -32,8 +33,7 @@ import {mockFreeVehicles, mockMarketBookings} from '../../mockData';
 import {Images} from '../../constants/Images';
 import {Colors, Dimensions, Spacing} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
-
-const BOOKING_FILTERS = ['All', 'Today', 'Upcoming', 'Completed'];
+import {moderateScale} from '../../utils/responsive';
 
 const SAMPLE_PHONES = [
   '9876543210',
@@ -60,24 +60,18 @@ const openDialer = (phone = getRandomPhone()) => {
 const FEATURES = [
   {
     id: 'insurance',
-    label: 'Car Insurance',
-    icon: '🛡',
-    iconBg: '#E8F5E9',
-    iconColor: '#2E7D32',
+    label: 'Car\nInsurance',
+    icon: Images.carInsuranceIcon,
   },
   {
     id: 'videos',
-    label: 'Tutorial Videos',
-    icon: '▶',
-    iconBg: '#FFEBEE',
-    iconColor: '#E53935',
+    label: 'Tutorial\nVideos',
+    icon: Images.tutorialVideoIcon,
   },
   {
     id: 'rules',
-    label: 'Rules &\nRegulations',
-    icon: '📄',
-    iconBg: '#E3F2FD',
-    iconColor: '#1A73E8',
+    label: 'Rules &\nRegulation',
+    icon: Images.rulesRegulationIcon,
   },
 ];
 
@@ -85,121 +79,77 @@ const SETUP_FLOWS = [
   {
     id: 'personal',
     title: 'Personal Information',
-    subtitle: 'Add your basic details to get verified',
-    icon: '👤',
-    iconBg: '#FFF6D6',
-    steps: ['Profile Information', 'Update', 'Set Profile Pic'],
+    subtitle: 'Name, Contact, Address, etc.',
+    icon: 'person',
     route: ROUTES.PERSONAL_INFO,
     completed: true,
   },
   {
     id: 'vehicle',
     title: 'Add Vehicle',
-    subtitle: 'Register at least one vehicle to take rides',
-    icon: '🚗',
-    iconBg: '#E8F5E9',
-    steps: ['Manage Vehicle', 'Add Details', 'Submit'],
+    subtitle: 'Vehicle details & documents',
+    icon: 'car',
     route: ROUTES.MANAGE_VEHICLES,
     completed: false,
   },
   {
     id: 'driver',
     title: 'Add Driver',
-    subtitle: 'Add a driver linked to your vehicle',
-    icon: '🧑‍✈️',
-    iconBg: '#E3F2FD',
-    steps: ['Manage Driver', 'Add Details', 'Submit'],
+    subtitle: 'Driver details & documents',
+    icon: 'person',
     route: ROUTES.MANAGE_DRIVERS,
     completed: false,
   },
 ];
 
-const SetupMiniSteps = ({steps}) => {
+const ProgressRing = ({percent}) => {
   const styles = useResponsiveStyles(baseStyles);
-  return (
-  <View style={styles.miniSteps}>
-    {steps.map((label, index) => (
-      <React.Fragment key={label}>
-        <View style={styles.miniStepItem}>
-          <View style={styles.miniStepPlus}>
-            <Text style={styles.miniStepPlusText}>+</Text>
-          </View>
-          <Text style={styles.miniStepLabel} numberOfLines={2}>
-            {label}
-          </Text>
-        </View>
-        {index < steps.length - 1 ? <View style={styles.miniStepLine} /> : null}
-      </React.Fragment>
-    ))}
-  </View>
-);
-};
+  const {width, height} = useWindowDimensions();
+  const size = moderateScale(78, width, height);
+  const stroke = moderateScale(7, width, height);
+  const segments = 72;
+  const clamped = Math.max(0, Math.min(100, percent));
+  const active = Math.round((clamped / 100) * segments);
+  const dash = (Math.PI * (size - stroke)) / segments + 1.4;
 
-const ProfileProgressChecklist = ({flows, onItemPress}) => {
-  const styles = useResponsiveStyles(baseStyles);
   return (
-  <View style={styles.progressChecklist}>
-    {flows.map((flow, index) => {
-      const done = !!flow.completed;
-      return (
-        <TouchableOpacity
-          key={flow.id}
+    <View style={[styles.ringWrap, {width: size, height: size}]}>
+      <View
+        style={[
+          styles.ringTrack,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            borderWidth: stroke,
+          },
+        ]}
+      />
+      {Array.from({length: active}).map((_, index) => (
+        <View
+          key={index}
           style={[
-            styles.progressCheckRow,
-            index < flows.length - 1 && styles.progressCheckRowBorder,
-          ]}
-          activeOpacity={0.8}
-          onPress={() => onItemPress?.(flow)}
-          accessibilityRole="button"
-          accessibilityLabel={`${flow.title}, ${done ? 'completed' : 'pending'}`}>
+            styles.ringTick,
+            {
+              width: size,
+              height: size,
+              transform: [{rotate: `${(index / segments) * 360}deg`}],
+            },
+          ]}>
           <View
             style={[
-              styles.progressCheckIcon,
-              done ? styles.progressCheckIconDone : styles.progressCheckIconPending,
-            ]}>
-            <Text
-              style={[
-                styles.progressCheckMark,
-                done
-                  ? styles.progressCheckMarkDone
-                  : styles.progressCheckMarkPending,
-              ]}>
-              {done ? '✓' : index + 1}
-            </Text>
-          </View>
-          <View style={styles.progressCheckCopy}>
-            <Text
-              style={[
-                styles.progressCheckTitle,
-                done && styles.progressCheckTitleDone,
-              ]}
-              numberOfLines={1}>
-              {flow.title}
-            </Text>
-            <Text style={styles.progressCheckSub} numberOfLines={1}>
-              {done ? 'Completed' : 'Pending — tap to continue'}
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.progressStatusPill,
-              done ? styles.progressStatusDone : styles.progressStatusPending,
-            ]}>
-            <Text
-              style={[
-                styles.progressStatusText,
-                done
-                  ? styles.progressStatusTextDone
-                  : styles.progressStatusTextPending,
-              ]}>
-              {done ? 'Done' : 'Left'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      );
-    })}
-  </View>
-);
+              styles.ringDash,
+              {width: dash, height: stroke, borderRadius: stroke / 2},
+            ]}
+          />
+        </View>
+      ))}
+      <View style={styles.ringCenter}>
+        <Text style={styles.ringPct}>{clamped}%</Text>
+        <Text style={styles.ringLabel}>Complete</Text>
+      </View>
+    </View>
+  );
 };
 
 /**
@@ -213,8 +163,7 @@ const MarketHomeScreen = ({navigation}) => {
   const isFocused = useIsFocused();
   const [alerts, setAlerts] = useState(false);
   const [tab, setTab] = useState('bookings');
-  const [dismissed, setDismissed] = useState({});
-  const [bookingFilter, setBookingFilter] = useState('All');
+  const [query, setQuery] = useState('');
   // const [showFab, setShowFab] = useState(true);
   const [filterOpen, setFilterOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
@@ -419,11 +368,6 @@ const MarketHomeScreen = ({navigation}) => {
     );
   };
 
-  const visibleSetups = useMemo(
-    () => SETUP_FLOWS.filter(flow => !dismissed[flow.id] && !flow.completed),
-    [dismissed],
-  );
-
   const profileProgress = useMemo(() => {
     const total = SETUP_FLOWS.length;
     const completedCount = SETUP_FLOWS.filter(flow => flow.completed).length;
@@ -446,23 +390,15 @@ const MarketHomeScreen = ({navigation}) => {
     }
   };
 
-  const handleProgressCardPress = () => {
-    const target =
-      profileProgress.nextIncomplete?.route || ROUTES.PERSONAL_INFO;
-    navigation.navigate(target);
-  };
-
   const filteredBookings = useMemo(() => {
     let list = mockMarketBookings;
-
-    if (bookingFilter === 'Today') {
-      list = list.filter(b => String(b.when).toLowerCase().includes('today'));
-    } else if (bookingFilter === 'Upcoming') {
-      list = list.filter(
-        b => !String(b.when).toLowerCase().includes('today'),
+    const needle = query.trim().toLowerCase();
+    if (needle) {
+      list = list.filter(booking =>
+        [booking.name, booking.company, booking.from, booking.to, booking.vehicle, booking.id]
+          .filter(Boolean)
+          .some(value => String(value).toLowerCase().includes(needle)),
       );
-    } else if (bookingFilter === 'Completed') {
-      list = [];
     }
 
     const trip = String(appliedFilters.tripType || '').toLowerCase();
@@ -514,10 +450,25 @@ const MarketHomeScreen = ({navigation}) => {
     }
 
     return list;
-  }, [bookingFilter, appliedFilters]);
+  }, [query, appliedFilters]);
 
   const filteredVehicles = useMemo(() => {
     let list = mockFreeVehicles;
+    const needle = query.trim().toLowerCase();
+    if (needle) {
+      list = list.filter(vehicle =>
+        [
+          vehicle.vehicleName,
+          vehicle.vehicleType,
+          vehicle.location,
+          vehicle.name,
+          vehicle.company,
+          vehicle.otherDetails,
+        ]
+          .filter(Boolean)
+          .some(value => String(value).toLowerCase().includes(needle)),
+      );
+    }
 
     if (appliedFilters.vehicleType) {
       const vehicle = appliedFilters.vehicleType.toLowerCase();
@@ -538,10 +489,10 @@ const MarketHomeScreen = ({navigation}) => {
     }
 
     return list;
-  }, [appliedFilters]);
+  }, [query, appliedFilters]);
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + 8}]}>
+    <View style={styles.container}>
       {helpMenuOpen ? (
         <TouchableOpacity
           style={styles.helpBackdrop}
@@ -550,63 +501,103 @@ const MarketHomeScreen = ({navigation}) => {
         />
       ) : null}
 
-      <View style={[styles.header, helpMenuOpen && styles.headerRaised]}>
-        <View style={styles.logoBlock}>
-          <BrandLogo size="sm" stacked showDivider={false} style={styles.logo} />
-          <Text style={styles.tagline}>Your Ride, Our Priority</Text>
+      <ImageBackground
+        source={Images.headerImage}
+        style={[styles.headerBg, helpMenuOpen && styles.headerRaised]}
+        imageStyle={styles.headerImage}
+        resizeMode="cover">
+        <View style={[styles.header, {paddingTop: insets.top + 8}]}>
+          <View style={styles.logoBlock}>
+            <View style={styles.taxiBadge}>
+              <Ionicons name="car-sport" size={18} color={Colors.onPrimary} />
+            </View>
+            <View>
+              <Text style={styles.brandLine}>Tajway</Text>
+              <Text style={styles.brandLine}>Hub</Text>
+            </View>
+          </View>
+          <View style={styles.headerActions}>
+            <View
+              ref={setTargetRef('alerts')}
+              collapsable={false}
+              style={[
+                styles.alertsWrap,
+                activeTourTarget === 'alerts' && styles.tourChip,
+              ]}>
+              <Image
+                source={Images.notificationIcon}
+                style={styles.alertsIcon}
+                resizeMode="contain"
+              />
+              <Text style={styles.alertsLabel}>Alerts</Text>
+              <Switch
+                value={alerts}
+                onValueChange={handleAlertsChange}
+                trackColor={{false: '#D0D0D0', true: '#34C759'}}
+                thumbColor="#fff"
+                style={styles.alertsSwitch}
+              />
+            </View>
+            <View
+              ref={setTargetRef('help')}
+              collapsable={false}
+              style={[
+                styles.helpWrap,
+                activeTourTarget === 'help' && styles.tourChip,
+              ]}>
+              <TouchableOpacity
+                style={styles.helpBtn}
+                activeOpacity={0.85}
+                onPress={handleHelpPress}
+                accessibilityRole="button"
+                accessibilityLabel="Help">
+                <Ionicons name="headset" size={14} color={Colors.onPrimary} />
+                <Text style={styles.helpText}>Help</Text>
+              </TouchableOpacity>
+              {helpMenuOpen ? (
+                <View style={styles.helpPopup}>
+                  <TouchableOpacity
+                    style={styles.helpPopupItem}
+                    activeOpacity={0.85}
+                    onPress={handleHelpCall}
+                    accessibilityRole="button"
+                    accessibilityLabel="Call support">
+                    <View style={styles.helpPopupCallBadge}>
+                      <Ionicons name="call" size={12} color={Colors.onPrimary} />
+                    </View>
+                    <Text style={styles.helpPopupText}>Call</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
+            </View>
+          </View>
         </View>
-        <View style={styles.headerActions}>
-          <View
-            ref={setTargetRef('alerts')}
-            collapsable={false}
-            style={[
-              styles.alertsWrap,
-              activeTourTarget === 'alerts' && styles.tourChip,
-            ]}>
-            <Text style={styles.bellIcon}>🔔</Text>
-            <Text style={styles.alertsLabel}>Alerts</Text>
-            <Switch
-              value={alerts}
-              onValueChange={handleAlertsChange}
-              trackColor={{false: '#D0D0D0', true: Colors.primary}}
-              thumbColor="#fff"
-              style={styles.alertsSwitch}
+
+        <View style={styles.segment}>
+          <TouchableOpacity
+            style={[styles.segBtn, tab === 'bookings' && styles.segBtnOn]}
+            onPress={() => setTab('bookings')}
+            activeOpacity={0.85}>
+            <Image
+              source={Images.bookingIcon}
+              style={styles.segIcon}
+              resizeMode="contain"
             />
-          </View>
-          <View
-            ref={setTargetRef('help')}
-            collapsable={false}
-            style={[
-              styles.helpWrap,
-              activeTourTarget === 'help' && styles.tourChip,
-            ]}>
-            <TouchableOpacity
-              style={styles.helpBtn}
-              activeOpacity={0.85}
-              onPress={handleHelpPress}
-              accessibilityRole="button"
-              accessibilityLabel="Help">
-              <Text style={styles.helpIcon}>🎧</Text>
-              <Text style={styles.helpText}>Help</Text>
-            </TouchableOpacity>
-            {helpMenuOpen ? (
-              <View style={styles.helpPopup}>
-                <TouchableOpacity
-                  style={styles.helpPopupItem}
-                  activeOpacity={0.85}
-                  onPress={handleHelpCall}
-                  accessibilityRole="button"
-                  accessibilityLabel="Call support">
-                  <View style={styles.helpPopupCallBadge}>
-                    <Text style={styles.helpPopupCallIcon}>📞</Text>
-                  </View>
-                  <Text style={styles.helpPopupText}>Call</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null}
-          </View>
+            <Text style={styles.segText}>Bookings</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.segBtn, tab === 'vehicles' && styles.segBtnOn]}
+            onPress={() => setTab('vehicles')}
+            activeOpacity={0.85}>
+            <Image
+              source={Images.freeVehiclesIcon}
+              style={styles.segIcon}
+              resizeMode="contain"
+            />
+            <Text style={styles.segText}>Free Vehicles</Text>
+          </TouchableOpacity>
         </View>
-      </View>
+      </ImageBackground>
 
       <ScrollView
         ref={scrollRef}
@@ -617,38 +608,41 @@ const MarketHomeScreen = ({navigation}) => {
         scrollEventThrottle={16}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.segment}>
-          <TouchableOpacity
-            style={[styles.segBtn, tab === 'bookings' && styles.segBtnOn]}
-            onPress={() => setTab('bookings')}
-            activeOpacity={0.85}>
-            <Text
-              style={[styles.segText, tab === 'bookings' && styles.segTextOn]}>
-              Bookings
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.segBtn, tab === 'vehicles' && styles.segBtnOn]}
-            onPress={() => setTab('vehicles')}
-            activeOpacity={0.85}>
-            <Text
-              style={[styles.segText, tab === 'vehicles' && styles.segTextOn]}>
-              Free Vehicles
-            </Text>
-          </TouchableOpacity>
-        </View>
 
         {isVehicles ? (
           <>
-            <View style={styles.applyRow}>
-              <Text style={styles.applyText}>Apply Filters</Text>
+            <View style={styles.searchRow}>
+              <View style={styles.searchBox}>
+                <Ionicons
+                  name="search"
+                  size={18}
+                  color="rgba(110, 107, 104, 1)"
+                />
+                <TextInput
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Search bookings..."
+                  placeholderTextColor="rgba(110, 107, 104, 1)"
+                  style={styles.searchInput}
+                />
+              </View>
               <TouchableOpacity
-                style={styles.filterBtn}
+                style={styles.searchFilter}
                 activeOpacity={0.85}
-                onPress={() => setFilterOpen(true)}>
-                <FilterSlidersIcon />
+                onPress={() => setFilterOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Filter vehicles">
+                <Image
+                  source={Images.filterIcon}
+                  style={styles.filterIcon}
+                  resizeMode="contain"
+                />
               </TouchableOpacity>
             </View>
+
+            {filteredVehicles.length === 0 ? (
+              <Text style={styles.emptyText}>No vehicles found.</Text>
+            ) : null}
 
             {filteredVehicles.map(({id, hasAvatar, phone, ...vehicle}) => (
               <FreeVehicleCard
@@ -664,64 +658,64 @@ const MarketHomeScreen = ({navigation}) => {
           <>
             <View style={styles.searchRow}>
               <View style={styles.searchBox}>
-                <Text style={styles.searchIcon}>⌕</Text>
+                <Ionicons
+                  name="search"
+                  size={18}
+                  color="rgba(110, 107, 104, 1)"
+                />
                 <TextInput
-                  placeholder="Search by booking id, city, vehicle..."
-                  placeholderTextColor={Colors.textPlaceholder}
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Search bookings..."
+                  placeholderTextColor="rgba(110, 107, 104, 1)"
                   style={styles.searchInput}
                 />
-                <TouchableOpacity
-                  ref={setTargetRef('filter')}
-                  collapsable={false}
-                  style={[
-                    styles.searchFilter,
-                    activeTourTarget === 'filter' && styles.tourFilter,
-                  ]}
-                  activeOpacity={0.85}
-                  onPress={() => setFilterOpen(true)}>
-                  <FilterSlidersIcon />
-                </TouchableOpacity>
               </View>
+              <TouchableOpacity
+                ref={setTargetRef('filter')}
+                collapsable={false}
+                style={[
+                  styles.searchFilter,
+                  activeTourTarget === 'filter' && styles.tourFilter,
+                ]}
+                activeOpacity={0.85}
+                onPress={() => setFilterOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Filter bookings">
+                <Image
+                  source={Images.filterIcon}
+                  style={styles.filterIcon}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
             </View>
 
-            <View style={styles.promoCard}>
-              <View style={styles.promoCopy}>
-                <Text style={styles.promoTitle}>Drive More Earn More</Text>
-                <Text style={styles.promoSub}>
-                  More Rides. Better Earnings. Be Your Own Boss.
-                </Text>
-                <TouchableOpacity
-                  style={styles.promoBtn}
-                  activeOpacity={0.85}
-                  onPress={handleStartDriving}>
-                  <Text style={styles.promoBtnText}>Start Driving →</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.promoArt}>
-                <Text style={styles.promoTaxi}>🚕</Text>
-                <View style={styles.promoHill} />
-              </View>
-            </View>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={styles.bookingBannerWrap}
+              onPress={handleStartDriving}>
+              <Image
+                source={Images.bookingBanner}
+                style={styles.bannerImage}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
 
+            <Text style={styles.sectionTitle}>Quick Access</Text>
             <View style={styles.featureRow}>
               {FEATURES.map(f => (
                 <TouchableOpacity
                   key={f.id}
                   ref={f.id === 'videos' ? setTargetRef('videos') : undefined}
                   collapsable={false}
-                  style={[
-                    styles.featureCard,
-                    activeTourTarget === 'videos' &&
-                      f.id === 'videos' &&
-                      styles.tourLift,
-                  ]}
+                  style={styles.featureCard}
                   activeOpacity={0.85}
                   onPress={() => handleFeaturePress(f.id)}>
-                  <View style={[styles.featureIconWrap, {backgroundColor: f.iconBg}]}>
-                    <Text style={[styles.featureIcon, {color: f.iconColor}]}>
-                      {f.icon}
-                    </Text>
-                  </View>
+                  <Image
+                    source={f.icon}
+                    style={styles.featureIcon}
+                    resizeMode="contain"
+                  />
                   <Text style={styles.featureLabel}>{f.label}</Text>
                 </TouchableOpacity>
               ))}
@@ -734,126 +728,81 @@ const MarketHomeScreen = ({navigation}) => {
                 styles.progressCard,
                 activeTourTarget === 'progress' && styles.tourLift,
               ]}>
-              <TouchableOpacity
-                activeOpacity={0.9}
-                onPress={handleProgressCardPress}>
-                <View style={styles.progressTop}>
-                  <View style={styles.progressIconWrap}>
-                    <Text style={styles.progressIcon}>📋</Text>
-                  </View>
-                  <View style={styles.progressCopy}>
-                    <Text style={styles.progressTitle}>
-                      Complete Your Profile
-                    </Text>
-                    <Text style={styles.progressSub}>
-                      {profileProgress.remainingCount > 0
-                        ? `${profileProgress.completedCount} of ${profileProgress.total} done · ${profileProgress.remainingCount} left`
-                        : 'All setup steps completed'}
-                    </Text>
-                  </View>
-                  <Text style={styles.progressPct}>
-                    {profileProgress.percent}%
+              <View style={styles.progressTop}>
+                <View style={styles.progressCopy}>
+                  <Text style={styles.progressTitle}>Your Profile</Text>
+                  <Text style={styles.progressSub}>
+                    Complete your profile to start receiving bookings and unlock
+                    more opportunities.
                   </Text>
                 </View>
-                <View style={styles.progressTrack}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      {width: `${profileProgress.percent}%`},
-                    ]}
-                  />
-                </View>
-              </TouchableOpacity>
-
-              <ProfileProgressChecklist
-                flows={SETUP_FLOWS}
-                onItemPress={handleProfileSectionPress}
-              />
-            </View>
-
-            {visibleSetups.map(flow => (
-              <View
-                key={flow.id}
-                ref={
-                  flow.id === 'vehicle' ? setTargetRef('vehicle') : undefined
-                }
-                collapsable={false}
-                style={[
-                  styles.setupCard,
-                  activeTourTarget === 'vehicle' &&
-                    flow.id === 'vehicle' &&
-                    styles.tourLift,
-                ]}>
-                <TouchableOpacity
-                  activeOpacity={0.9}
-                  onPress={() => navigation.navigate(flow.route)}>
-                  <View style={styles.setupHeader}>
-                    <View
-                      style={[
-                        styles.setupIconWrap,
-                        {backgroundColor: flow.iconBg},
-                      ]}>
-                      <Text style={styles.setupIcon}>{flow.icon}</Text>
-                    </View>
-                    <View style={styles.setupCopy}>
-                      <Text style={styles.setupTitle}>{flow.title}</Text>
-                      <Text style={styles.setupSub}>{flow.subtitle}</Text>
-                    </View>
-                    <View style={styles.pendingBadge}>
-                      <Text style={styles.pendingText}>Pending</Text>
-                    </View>
-                    <TouchableOpacity
-                      style={styles.setupClose}
-                      onPress={e => {
-                        e?.stopPropagation?.();
-                        setDismissed(prev => ({...prev, [flow.id]: true}));
-                      }}
-                      hitSlop={8}>
-                      <Text style={styles.closeX}>✕</Text>
-                    </TouchableOpacity>
-                  </View>
-                  <SetupMiniSteps steps={flow.steps} />
-                </TouchableOpacity>
+                <ProgressRing percent={profileProgress.percent} />
               </View>
-            ))}
 
-            <View style={styles.communityCard}>
-              <Text style={styles.communityStars}>✦ ✦ ✦</Text>
-              <Text style={styles.communityTitle}>
-                Join the Tajway Partner Community
-              </Text>
-              <Text style={styles.communitySub}>
-                Complete your profile and start earning with verified bookings.
-              </Text>
-              <TouchableOpacity
-                style={styles.communityBtn}
-                activeOpacity={0.85}
-                onPress={handleProgressCardPress}>
-                <Text style={styles.communityBtnText}>Complete Now →</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterRow}
-              style={styles.filterScroll}>
-              {BOOKING_FILTERS.map(filter => {
-                const on = bookingFilter === filter;
+              {SETUP_FLOWS.map(flow => {
+                const done = !!flow.completed;
                 return (
                   <TouchableOpacity
-                    key={filter}
-                    style={[styles.filterChip, on && styles.filterChipOn]}
-                    onPress={() => setBookingFilter(filter)}
-                    activeOpacity={0.85}>
-                    <Text
-                      style={[styles.filterChipText, on && styles.filterChipTextOn]}>
-                      {filter}
-                    </Text>
+                    key={flow.id}
+                    ref={
+                      flow.id === 'vehicle' ? setTargetRef('vehicle') : undefined
+                    }
+                    collapsable={false}
+                    style={[
+                      styles.profileRow,
+                      activeTourTarget === 'vehicle' &&
+                        flow.id === 'vehicle' &&
+                        styles.tourLift,
+                    ]}
+                    activeOpacity={0.85}
+                    onPress={() => handleProfileSectionPress(flow)}>
+                    <View style={styles.profileIcon}>
+                      <Ionicons name={flow.icon} size={18} color="#1B2437" />
+                    </View>
+                    <View style={styles.profileCopy}>
+                      <Text style={styles.profileTitle}>{flow.title}</Text>
+                      <Text style={styles.profileSub} numberOfLines={1}>
+                        {flow.subtitle}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.statusPill,
+                        done ? styles.statusDone : styles.statusPending,
+                      ]}>
+                      {done ? (
+                        <Ionicons name="checkmark" size={12} color="#3BA55D" />
+                      ) : null}
+                      <Text
+                        style={[
+                          styles.statusText,
+                          done ? styles.statusTextDone : styles.statusTextPending,
+                        ]}>
+                        {done ? 'Done' : 'Pending'}
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={16}
+                      color="#B0B6C0"
+                      style={styles.profileChevron}
+                    />
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
+            </View>
+
+            <View style={styles.staySafeBannerWrap}>
+              <Image
+                source={Images.staySafeBanner}
+                style={styles.bannerImage}
+                resizeMode="contain"
+              />
+            </View>
+
+            {filteredBookings.length === 0 ? (
+              <Text style={styles.emptyText}>No bookings found.</Text>
+            ) : null}
 
             {filteredBookings.map(({id, hasAvatar, ...booking}, index) => (
               <View
@@ -982,11 +931,19 @@ const baseStyles = {
     shadowRadius: 6,
     elevation: 6,
   },
+  headerBg: {
+    width: '100%',
+    paddingBottom: 14,
+    overflow: 'hidden',
+  },
+  headerImage: {
+    resizeMode: 'cover',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Spacing.screenPadding,
-    marginBottom: Spacing.sm,
+    marginBottom: 12,
   },
   headerRaised: {
     zIndex: 30,
@@ -994,38 +951,47 @@ const baseStyles = {
   },
   logoBlock: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  logo: {
-    alignSelf: 'flex-start',
+  taxiBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
   },
-  tagline: {
-    fontSize: 10,
-    color: Colors.textMuted,
-    marginTop: 2,
-    marginLeft: 34,
+  brandLine: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: Colors.onPrimary,
+    lineHeight: 18,
   },
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
     zIndex: 20,
   },
   alertsWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 8,
+    gap: 8,
   },
-  bellIcon: {
-    fontSize: 12,
-    marginRight: 4,
+  alertsIcon: {
+    width: 16,
+    height: 16,
   },
   alertsLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    marginRight: 4,
-    color: Colors.textPrimary,
+    fontWeight: '700',
+    color: Colors.onPrimary,
   },
   alertsSwitch: {
     transform: [{scaleX: 0.85}, {scaleY: 0.85}],
+    marginHorizontal: -4,
   },
   helpWrap: {
     position: 'relative',
@@ -1034,19 +1000,16 @@ const baseStyles = {
   helpBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ECEFF3',
+    backgroundColor: 'rgba(255,255,255,0.55)',
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 16,
-  },
-  helpIcon: {
-    fontSize: 12,
-    marginRight: 4,
+    gap: 6,
   },
   helpText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textNavy,
+    fontWeight: '700',
+    color: Colors.onPrimary,
   },
   helpBackdrop: {
     ...StyleSheet.absoluteFillObject,
@@ -1098,16 +1061,17 @@ const baseStyles = {
   },
   scroll: {
     paddingHorizontal: Spacing.screenPadding,
+    paddingTop: 14,
     paddingBottom: 100,
   },
   segment: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    borderRadius: 24,
-    padding: 4,
-    marginBottom: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
+    alignItems: 'center',
+    backgroundColor: 'rgba(242, 244, 244, 1)',
+    borderRadius: 20,
+    height: 40,
+    marginHorizontal: Spacing.screenPadding,
+    overflow: 'hidden',
   },
   segBtn: {
     flex: 1,
@@ -1115,470 +1079,239 @@ const baseStyles = {
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  segIcon: {
+    width: 18,
+    height: 18,
   },
   segBtnOn: {
     backgroundColor: Colors.primary,
   },
   segText: {
     fontWeight: '700',
-    color: Colors.textNavy,
+    color: Colors.onPrimary,
     fontSize: 14,
   },
-  segTextOn: {
-    color: Colors.onPrimary,
-  },
   searchRow: {
-    marginBottom: Spacing.sm,
-  },
-  applyRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-    marginTop: 2,
-  },
-  applyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.textNavy,
+    gap: 10,
+    marginBottom: Spacing.sm,
   },
   searchBox: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
     borderRadius: 14,
     height: 48,
-    paddingLeft: 14,
-    paddingRight: 6,
+    paddingHorizontal: 14,
+    gap: 8,
     borderWidth: 1,
     borderColor: Colors.borderLight,
-  },
-  searchIcon: {
-    fontSize: 16,
-    color: Colors.textMuted,
-    marginRight: 8,
   },
   searchInput: {
     flex: 1,
     padding: 0,
     fontSize: 14,
-    color: Colors.textPrimary,
+    color: 'rgba(110, 107, 104, 1)',
   },
   searchFilter: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  filterBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: Colors.borderLight,
   },
-  promoCard: {
-    flexDirection: 'row',
-    backgroundColor: Colors.primary,
-    borderRadius: 18,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    marginBottom: Spacing.sm,
-    overflow: 'hidden',
-    minHeight: 120,
+  filterIcon: {
+    width: 20,
+    height: 20,
   },
-  promoCopy: {
-    flex: 1,
-    paddingRight: 8,
+  bookingBannerWrap: {
+    width: '100%',
+    aspectRatio: 512 / 179,
+    marginBottom: 16,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  promoTitle: {
-    fontSize: 18,
+  bannerImage: {
+    width: '100%',
+    height: '100%',
+  },
+  sectionTitle: {
+    fontSize: 20,
     fontWeight: '800',
-    color: Colors.onPrimary,
-    marginBottom: 4,
-  },
-  promoSub: {
-    fontSize: 12,
-    lineHeight: 17,
-    color: Colors.textSecondary,
+    color: '#1B2437',
     marginBottom: 12,
-  },
-  promoBtn: {
-    alignSelf: 'flex-start',
-    backgroundColor: Colors.secondaryDark,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  promoBtnText: {
-    color: Colors.textInverse,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  promoArt: {
-    width: 96,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  promoTaxi: {
-    fontSize: 52,
-    marginBottom: -6,
-    zIndex: 1,
-  },
-  promoHill: {
-    position: 'absolute',
-    bottom: -20,
-    right: -10,
-    width: 110,
-    height: 70,
-    borderRadius: 55,
-    backgroundColor: 'rgba(255,255,255,0.28)',
   },
   featureRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 10,
     marginBottom: Spacing.sm,
   },
   featureCard: {
-    width: '31.5%',
+    flex: 1,
     backgroundColor: Colors.surface,
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 8,
+    borderRadius: 18,
+    paddingTop: 18,
+    paddingBottom: 16,
+    paddingHorizontal: 6,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  featureIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
+    borderColor: 'rgba(0, 0, 0, 0.1)',
+    elevation: 0,
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: {width: 0, height: 0},
   },
   featureIcon: {
-    fontSize: 18,
+    width: 34,
+    height: 34,
+    marginBottom: 12,
   },
   featureLabel: {
-    fontSize: 11,
+    fontSize: 13,
     textAlign: 'center',
-    color: Colors.textSecondary,
-    fontWeight: '600',
-    lineHeight: 14,
+    color: '#1B2437',
+    fontWeight: '700',
+    lineHeight: 17,
   },
   progressCard: {
-    backgroundColor: '#FFF8E7',
-    borderRadius: 16,
+    backgroundColor: '#FFFCF5',
+    borderRadius: 18,
     padding: 14,
-    marginBottom: Spacing.sm,
-    borderWidth: 1,
-    borderColor: '#F3E4B8',
+    marginTop: 16,
+    marginBottom: 14,
+    borderWidth: 0,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   progressTop: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
   },
-  progressIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.surface,
+  ringWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
   },
-  progressIcon: {
-    fontSize: 18,
+  ringTrack: {
+    position: 'absolute',
+    borderColor: '#E6E6E6',
+  },
+  ringTick: {
+    position: 'absolute',
+    alignItems: 'center',
+  },
+  ringDash: {
+    backgroundColor: '#F5C518',
+  },
+  ringCenter: {
+    alignItems: 'center',
+  },
+  ringPct: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#1B2437',
+  },
+  ringLabel: {
+    fontSize: 10,
+    color: '#8B919A',
+    marginTop: 1,
   },
   progressCopy: {
     flex: 1,
+    paddingRight: 10,
   },
   progressTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1B2437',
   },
   progressSub: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  progressPct: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.onPrimary,
-  },
-  progressTrack: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#EDE4C8',
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 4,
-    backgroundColor: Colors.primaryDark,
-  },
-  progressChecklist: {
-    marginTop: 14,
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#F0E6C2',
-    overflow: 'hidden',
-  },
-  progressCheckRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-  },
-  progressCheckRowBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.borderLight,
-  },
-  progressCheckIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  progressCheckIconDone: {
-    backgroundColor: Colors.successSoft,
-  },
-  progressCheckIconPending: {
-    backgroundColor: Colors.primaryMuted,
-  },
-  progressCheckMark: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  progressCheckMarkDone: {
-    color: Colors.success,
-  },
-  progressCheckMarkPending: {
-    color: Colors.onPrimary,
-  },
-  progressCheckCopy: {
-    flex: 1,
-    paddingRight: 8,
-  },
-  progressCheckTitle: {
     fontSize: 13,
-    fontWeight: '700',
-    color: Colors.textPrimary,
+    color: '#8B919A',
+    marginTop: 6,
+    lineHeight: 18,
   },
-  progressCheckTitleDone: {
-    color: Colors.textSecondary,
-  },
-  progressCheckSub: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  progressStatusPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  progressStatusDone: {
-    backgroundColor: Colors.successSoft,
-  },
-  progressStatusPending: {
-    backgroundColor: Colors.errorSoft,
-  },
-  progressStatusText: {
-    fontSize: 10,
-    fontWeight: '700',
-  },
-  progressStatusTextDone: {
-    color: Colors.success,
-  },
-  progressStatusTextPending: {
-    color: Colors.error,
-  },
-  setupCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  setupHeader: {
+  profileRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 14,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    marginTop: 10,
+    elevation: 0,
+    shadowOpacity: 0,
   },
-  setupIconWrap: {
+  profileIcon: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: 20,
+    backgroundColor: '#F6CC54',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
   },
-  setupIcon: {
-    fontSize: 18,
-  },
-  setupCopy: {
+  profileCopy: {
     flex: 1,
-    paddingRight: 6,
-  },
-  setupTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  setupSub: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    marginTop: 2,
-    lineHeight: 15,
-  },
-  pendingBadge: {
-    backgroundColor: Colors.errorSoft,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    marginRight: 6,
-    marginTop: 2,
-  },
-  pendingText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: Colors.error,
-  },
-  setupClose: {
-    marginTop: 2,
-  },
-  closeX: {
-    color: Colors.dashedRed,
-    fontSize: 11,
-    fontWeight: '700',
-    width: 18,
-    height: 18,
-    textAlign: 'center',
-    borderWidth: 1.2,
-    borderColor: Colors.dashedRed,
-    borderRadius: 9,
-    overflow: 'hidden',
-    lineHeight: 15,
-    backgroundColor: Colors.surface,
-  },
-  miniSteps: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingTop: 4,
-  },
-  miniStepItem: {
-    alignItems: 'center',
-    width: 78,
-  },
-  miniStepPlus: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.primaryMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  miniStepPlusText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.onPrimary,
-    lineHeight: 16,
-  },
-  miniStepLabel: {
-    fontSize: 10,
-    textAlign: 'center',
-    color: Colors.textSecondary,
-    fontWeight: '600',
-    lineHeight: 13,
-  },
-  miniStepLine: {
-    flex: 1,
-    height: 2,
-    backgroundColor: Colors.primary,
-    marginTop: 10,
-    marginHorizontal: 2,
-    opacity: 0.7,
-  },
-  communityCard: {
-    backgroundColor: Colors.secondaryDark,
-    borderRadius: 18,
-    paddingVertical: 22,
-    paddingHorizontal: 18,
-    marginBottom: Spacing.sm,
-    alignItems: 'center',
-  },
-  communityStars: {
-    color: Colors.primary,
-    fontSize: 12,
-    letterSpacing: 6,
-    marginBottom: 8,
-  },
-  communityTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.textInverse,
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  communitySub: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.72)',
-    textAlign: 'center',
-    lineHeight: 17,
-    marginBottom: 16,
-  },
-  communityBtn: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 22,
-    paddingVertical: 11,
-    borderRadius: 22,
-  },
-  communityBtnText: {
-    color: Colors.onPrimary,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  filterScroll: {
-    marginBottom: 8,
-  },
-  filterRow: {
     paddingRight: 8,
   },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 18,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    marginRight: 8,
+  profileTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1B2437',
   },
-  filterChipOn: {
-    backgroundColor: Colors.secondaryDark,
-    borderColor: Colors.secondaryDark,
+  profileSub: {
+    fontSize: 12,
+    color: '#8B919A',
+    marginTop: 2,
   },
-  filterChipText: {
+  profileChevron: {
+    marginLeft: 6,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    gap: 3,
+  },
+  statusDone: {
+    backgroundColor: '#E5F6EA',
+  },
+  statusPending: {
+    backgroundColor: '#FFF1CC',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  statusTextDone: {
+    color: '#3BA55D',
+  },
+  statusTextPending: {
+    color: '#E29A2D',
+  },
+  staySafeBannerWrap: {
+    width: '100%',
+    aspectRatio: 512 / 90,
+    marginBottom: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: Colors.textMuted,
+    marginBottom: 12,
     fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  filterChipTextOn: {
-    color: Colors.textInverse,
   },
   fabWrap: {
     position: 'absolute',

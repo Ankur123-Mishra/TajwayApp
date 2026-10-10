@@ -32,7 +32,7 @@ const SplashScreen = ({navigation}) => {
   const rise = useRef(new Animated.Value(20)).current;
   const floatY = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0)).current;
-  const {isAuthenticated, hasPreferences, role} = useAuth();
+  const {isAuthenticated, role} = useAuth();
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -111,10 +111,11 @@ const SplashScreen = ({navigation}) => {
         navigation.replace(ROUTES.INTRO);
         return;
       }
-      if (!hasPreferences) {
-        navigation.replace(ROUTES.PREFERENCES);
-        return;
-      }
+      // Location + preferences skipped — logged-in users go straight to tabs
+      // if (!hasPreferences) {
+      //   navigation.replace(ROUTES.PREFERENCES);
+      //   return;
+      // }
       if (role === 'driver') {
         navigation.replace(ROUTES.DRIVER_ROOT);
       } else if (role === 'owner') {
@@ -125,7 +126,7 @@ const SplashScreen = ({navigation}) => {
     }, 2200);
 
     return () => clearTimeout(timer);
-  }, [hasPreferences, isAuthenticated, navigation, role]);
+  }, [isAuthenticated, navigation, role]);
 
   const rotate = spin.interpolate({
     inputRange: [0, 1],
