@@ -1,14 +1,20 @@
 import React, {useMemo, useState} from 'react';
 import {
   FlatList,
+  Image,
   Linking,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {Ionicons} from '@react-native-vector-icons/ionicons';
+import {MarketFilterSheet} from '../../components/booking';
+import {EMPTY_FILTERS} from '../../components/booking/MarketFilterSheet';
 import {ChatListCard} from '../../components/chat';
+import BannerHeader from '../../components/common/BannerHeader';
+import Images from '../../constants/Images';
 import {ROUTES} from '../../constants/Routes';
 import {mockChats} from '../../mockData';
 import {Colors, Spacing, Typography} from '../../theme';
@@ -32,19 +38,93 @@ const openDialer = (phone = getRandomPhone()) => {
   Linking.openURL(`tel:${digits}`).catch(() => {});
 };
 
+const matchesTrip = (booking, trip) => {
+  const value = String(booking?.tripType || '')
+    .toLowerCase()
+    .replace(/\s/g, '');
+  const selected = String(trip || '')
+    .toLowerCase()
+    .replace(/\s/g, '');
+  if (!selected || selected === 'both') {
+    return true;
+  }
+  if (selected === 'oneway') {
+    return value.includes('one');
+  }
+  return value.includes('round') || value.includes('two');
+};
+
 /**
- * Chats tab — Posted / Received chat list → Chat Details.
+ * Chats tab — Posted / Received list with search and filters.
  */
 const AgentMessagesScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
-  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState('posted');
+  const [query, setQuery] = useState('');
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
   const [helpMenuOpen, setHelpMenuOpen] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
-  const chats = useMemo(
-    () => mockChats.filter(item => item.tab === tab),
-    [tab],
-  );
+  const chats = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let list = mockChats.filter(item => {
+      if (item.tab !== tab) {
+        return false;
+      }
+      if (!q) {
+        return true;
+      }
+      const booking = item.booking || {};
+      const haystack = [
+        item.contactName,
+        item.lastMessage,
+        booking.from,
+        booking.to,
+        booking.vehicle,
+        booking.status,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+
+    if (appliedFilters.tripType) {
+      list = list.filter(item =>
+        matchesTrip(item.booking, appliedFilters.tripType),
+      );
+    }
+
+    if (appliedFilters.vehicleType) {
+      const vehicle = appliedFilters.vehicleType.toLowerCase();
+      list = list.filter(item =>
+        String(item.booking?.vehicle || '')
+          .toLowerCase()
+          .includes(vehicle),
+      );
+    }
+
+    if (appliedFilters.pickupLocation) {
+      const pickup = appliedFilters.pickupLocation.toLowerCase();
+      list = list.filter(item =>
+        String(item.booking?.from || '')
+          .toLowerCase()
+          .includes(pickup),
+      );
+    }
+
+    if (appliedFilters.dropLocation) {
+      const drop = appliedFilters.dropLocation.toLowerCase();
+      list = list.filter(item =>
+        String(item.booking?.to || '')
+          .toLowerCase()
+          .includes(drop),
+      );
+    }
+
+    return list;
+  }, [tab, query, appliedFilters]);
 
   const openChat = chat => {
     const parent = navigation.getParent?.();
@@ -65,7 +145,7 @@ const AgentMessagesScreen = ({navigation}) => {
   };
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + 8}]}>
+    <View style={styles.container}>
       {helpMenuOpen ? (
         <TouchableOpacity
           style={styles.helpBackdrop}
@@ -74,40 +154,47 @@ const AgentMessagesScreen = ({navigation}) => {
         />
       ) : null}
 
-      <View style={[styles.header, helpMenuOpen && styles.headerRaised]}>
-        <View style={styles.headerSpacer} />
-        <Text style={styles.title}>Chats</Text>
-        <View style={styles.helpWrap}>
-          <TouchableOpacity
-            style={styles.helpBtn}
-            activeOpacity={0.85}
-            onPress={handleHelpPress}
-            accessibilityRole="button"
-            accessibilityLabel="Help">
-            <Text style={styles.helpText}>Help</Text>
-            <Text style={styles.helpIcon}>🎧</Text>
-          </TouchableOpacity>
-          {helpMenuOpen ? (
-            <View style={styles.helpPopup}>
+      <View
+        onLayout={event => setHeaderHeight(event.nativeEvent.layout.height)}>
+        <BannerHeader raised={helpMenuOpen}>
+          <View style={styles.headerRow}>
+            <View style={styles.headerSide} />
+            <Text style={styles.title}>Chats</Text>
+            <View style={styles.headerSide}>
               <TouchableOpacity
-                style={styles.helpPopupItem}
+                style={styles.helpBtn}
                 activeOpacity={0.85}
-                onPress={handleHelpCall}
+                onPress={handleHelpPress}
                 accessibilityRole="button"
-                accessibilityLabel="Call support">
-                <View style={styles.helpPopupCallBadge}>
-                  <Text style={styles.helpPopupCallIcon}>📞</Text>
-                </View>
-                <Text style={styles.helpPopupText}>Call</Text>
+                accessibilityLabel="Help">
+                <Ionicons name="headset" size={14} color={Colors.textPrimary} />
+                <Text style={styles.helpText}>Help</Text>
               </TouchableOpacity>
             </View>
-          ) : null}
-        </View>
+          </View>
+        </BannerHeader>
       </View>
+
+      {helpMenuOpen ? (
+        <View style={[styles.helpPopup, {top: Math.max(headerHeight - 8, 0)}]}>
+          <TouchableOpacity
+            style={styles.helpPopupItem}
+            activeOpacity={0.85}
+            onPress={handleHelpCall}
+            accessibilityRole="button"
+            accessibilityLabel="Call support">
+            <View style={styles.helpPopupCallBadge}>
+              <Ionicons name="call" size={12} color={Colors.onPrimary} />
+            </View>
+            <Text style={styles.helpPopupText}>Call</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       <View style={styles.segment}>
         <TouchableOpacity
           style={[styles.segBtn, tab === 'posted' && styles.segBtnOn]}
+          activeOpacity={0.85}
           onPress={() => setTab('posted')}>
           <Text style={[styles.segText, tab === 'posted' && styles.segTextOn]}>
             Posted
@@ -115,11 +202,37 @@ const AgentMessagesScreen = ({navigation}) => {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.segBtn, tab === 'received' && styles.segBtnOn]}
+          activeOpacity={0.85}
           onPress={() => setTab('received')}>
           <Text
             style={[styles.segText, tab === 'received' && styles.segTextOn]}>
             Received
           </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.searchRow}>
+        <View style={styles.searchBox}>
+          <Ionicons name="search" size={18} color="rgba(110, 107, 104, 1)" />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search Chats..."
+            placeholderTextColor="rgba(110, 107, 104, 1)"
+            style={styles.searchInput}
+          />
+        </View>
+        <TouchableOpacity
+          style={styles.searchFilter}
+          activeOpacity={0.85}
+          onPress={() => setFilterOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Apply filters">
+          <Image
+            source={Images.filterIcon}
+            style={styles.filterIcon}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
       </View>
 
@@ -139,10 +252,8 @@ const AgentMessagesScreen = ({navigation}) => {
         renderItem={({item}) => (
           <ChatListCard
             contactName={item.contactName}
-            avatarInitials={item.avatarInitials}
             lastMessage={item.lastMessage}
             lastMessageAt={item.lastMessageAt}
-            unreadCount={item.unreadCount}
             from={item.booking?.from}
             to={item.booking?.to}
             amount={item.booking?.amount}
@@ -151,6 +262,13 @@ const AgentMessagesScreen = ({navigation}) => {
           />
         )}
       />
+
+      <MarketFilterSheet
+        visible={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        initial={appliedFilters}
+        onSave={setAppliedFilters}
+      />
     </View>
   );
 };
@@ -158,57 +276,46 @@ const AgentMessagesScreen = ({navigation}) => {
 const baseStyles = {
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
-    paddingHorizontal: Spacing.screenPadding,
+    backgroundColor: '#F7F8FA',
   },
-  header: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.base,
+    minHeight: 44,
   },
-  headerRaised: {
-    zIndex: 30,
-  },
-  headerSpacer: {
-    width: 72,
+  headerSide: {
+    width: 88,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   title: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: Typography.fontWeights.bold,
-    color: Colors.textNavy,
-  },
-  helpWrap: {
-    position: 'relative',
-    zIndex: 30,
+    color: Colors.textPrimary,
   },
   helpBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ECEFF3',
+    backgroundColor: Colors.surface,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
+    gap: 5,
   },
   helpText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textNavy,
-    marginRight: 4,
-  },
-  helpIcon: {
-    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.textPrimary,
   },
   helpBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 15,
+    zIndex: 20,
   },
   helpPopup: {
     position: 'absolute',
-    top: '100%',
-    right: 0,
-    marginTop: -10,
+    right: Spacing.screenPadding,
     minWidth: 128,
     backgroundColor: Colors.surface,
     borderRadius: 14,
@@ -220,7 +327,7 @@ const baseStyles = {
     shadowOffset: {width: 0, height: 3},
     shadowOpacity: 0.14,
     shadowRadius: 8,
-    elevation: 6,
+    elevation: 8,
     zIndex: 40,
   },
   helpPopupItem: {
@@ -240,9 +347,6 @@ const baseStyles = {
     justifyContent: 'center',
     marginRight: 8,
   },
-  helpPopupCallIcon: {
-    fontSize: 12,
-  },
   helpPopupText: {
     fontSize: 14,
     fontWeight: '700',
@@ -250,15 +354,19 @@ const baseStyles = {
   },
   segment: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    borderRadius: 24,
+    alignItems: 'center',
+    backgroundColor: 'rgba(242, 244, 244, 1)',
+    borderRadius: 22,
+    height: 44,
     padding: 4,
-    marginBottom: Spacing.md,
+    marginTop: 14,
+    marginHorizontal: Spacing.screenPadding,
+    marginBottom: 12,
   },
   segBtn: {
     flex: 1,
-    height: 40,
-    borderRadius: 20,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -267,14 +375,54 @@ const baseStyles = {
   },
   segText: {
     fontWeight: '700',
-    color: Colors.textNavy,
-    fontSize: 13,
+    color: '#8B919A',
+    fontSize: 15,
   },
   segTextOn: {
-    color: Colors.onPrimary,
+    color: Colors.textPrimary,
+  },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: Spacing.screenPadding,
+    marginBottom: Spacing.sm,
+  },
+  searchBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    height: 48,
+    paddingHorizontal: 14,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  searchInput: {
+    flex: 1,
+    padding: 0,
+    fontSize: 14,
+    color: 'rgba(110, 107, 104, 1)',
+  },
+  searchFilter: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  filterIcon: {
+    width: 20,
+    height: 20,
   },
   list: {
-    paddingBottom: 24,
+    paddingHorizontal: Spacing.screenPadding,
+    paddingBottom: 90,
   },
   listEmpty: {
     flexGrow: 1,

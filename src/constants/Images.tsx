@@ -15,6 +15,7 @@ const Images = {
   timeIcon: require('../assets/icons/TimeIcon.png'),
   bookingIcon: require('../assets/icons/bookingIcon.png'),
   freeVehiclesIcon: require('../assets/icons/FreeVehiclesIcon.png'),
+  backIcon: require('../assets/icons/backIcon.png'),
   filterIcon: require('../assets/icons/FilterIcon.png'),
   notificationIcon: require('../assets/icons/NotificationIcon.png'),
   carInsuranceIcon: require('../assets/icons/carInsuranceIcon.png'),
@@ -38,6 +39,7 @@ const Images = {
   staySafeBanner: require('../assets/images/StaySafeBanner.png'),
   uttarakhand: require('../assets/images/Uttarakhand.jpeg'),
   uttarakhand1: require('../assets/images/Uttarakhand1.jpeg'),
+  verificationBanner: require('../assets/images/VerificationImageBanner.png'),
 };
 
 export default Images;

@@ -7,7 +7,6 @@ import {
   Modal,
   Platform,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -15,8 +14,8 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
-import {MaterialDesignIcons} from '@react-native-vector-icons/material-design-icons';
 import {launchImageLibrary} from 'react-native-image-picker';
+import BannerHeader from '../../components/common/BannerHeader';
 import {
   errorCodes,
   isErrorWithCode,
@@ -29,7 +28,21 @@ import {Images} from '../../constants/Images';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
-const formatInr = value => `₹${Number(value).toLocaleString('en-IN')}*`;
+const formatInr = value => `₹${Number(value).toLocaleString('en-IN')}`;
+
+const STATUS_STYLES = {
+  Ended: {bg: '#E8F8EF', color: '#1FA971'},
+  Assigned: {bg: '#E7F0FF', color: '#3B7DFF'},
+  Pending: {bg: '#FFF6D6', color: '#C4922A'},
+};
+
+const formatContactName = name => {
+  const text = String(name || '').trim();
+  if (!text) {
+    return 'Chat';
+  }
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
 
 const GRID_IMAGES = [
   Images.partnerDeepesh,
@@ -95,42 +108,35 @@ const BookingSummaryCard = ({booking}) => {
     return null;
   }
 
+  const statusStyle = STATUS_STYLES[booking.status] || {
+    bg: '#F3F4F6',
+    color: '#6B7280',
+  };
+
   return (
     <View style={styles.summaryCard}>
-      <View style={styles.summaryTop}>
-        <Text style={styles.summaryMeta}>{booking.dateTime}</Text>
-        <Text style={styles.summaryMeta}>
-          ID:{booking.id} [{booking.status}]
-        </Text>
-      </View>
-
-      <View style={styles.summaryBody}>
-        <View style={styles.routeCol}>
-          <Text style={styles.city}>{booking.from}</Text>
-          <Text style={styles.city}>{booking.to}</Text>
-        </View>
-
-        <View style={styles.summaryRight}>
-          <Text style={styles.price}>{formatInr(booking.amount)}</Text>
-          {booking.network ? (
-            <View style={styles.networkBadge}>
-              <Ionicons name="location" size={11} color={Colors.textMuted} />
-              <Text style={styles.networkText}>{booking.network}</Text>
-            </View>
-          ) : null}
-        </View>
-      </View>
-
-      <View style={styles.pillRow}>
-        <View style={styles.pill}>
-          <Text style={styles.pillText}>{booking.vehicle}</Text>
-        </View>
-        <View style={styles.pill}>
-          <Text style={styles.pillText}>
-            {String(booking.tripType).toUpperCase()}
+      <View style={styles.summaryLeft}>
+        <View style={styles.routeRow}>
+          <Ionicons name="location" size={16} color={Colors.primaryDark} />
+          <Text style={styles.routeText} numberOfLines={1}>
+            {booking.from} → {booking.to}
           </Text>
         </View>
+        <Text style={styles.price}>{formatInr(booking.amount)}</Text>
       </View>
+      <View style={styles.summaryDivider} />
+      {booking.status ? (
+        <View style={[styles.statusPill, {backgroundColor: statusStyle.bg}]}>
+          <Ionicons
+            name="checkmark-circle"
+            size={16}
+            color={statusStyle.color}
+          />
+          <Text style={[styles.statusText, {color: statusStyle.color}]}>
+            {booking.status}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -143,7 +149,7 @@ const ImagePreview = ({uri, fileName}) => {
   if (!sourceUri || failed) {
     return (
       <View style={styles.imageFallback}>
-        <Ionicons name="image-outline" size={28} color="#FFF" />
+        <Ionicons name="image-outline" size={28} color="#6B7280" />
         <Text style={styles.imageFallbackText} numberOfLines={2}>
           {getBaseName(fileName, uri)}
         </Text>
@@ -175,11 +181,11 @@ const FilePreview = ({fileName, fileSize, mimeType, uri}) => {
   return (
     <View style={styles.fileCard}>
       <View style={styles.filePreviewBanner}>
-        <Ionicons name="document-text" size={32} color="#FFF" />
+        <Ionicons name="document-text" size={32} color="#6B7280" />
       </View>
       <View style={styles.fileRow}>
         <View style={styles.fileIconWrap}>
-          <Ionicons name="document-attach-outline" size={18} color="#FFF" />
+          <Ionicons name="document-attach-outline" size={18} color="#3E4A59" />
         </View>
         <View style={styles.fileMeta}>
           <Text style={styles.fileName} numberOfLines={2}>
@@ -192,32 +198,23 @@ const FilePreview = ({fileName, fileSize, mimeType, uri}) => {
   );
 };
 
-const MessageBubble = ({message, showAvatar}) => {
+const MessageBubble = ({message}) => {
   const styles = useResponsiveStyles(baseStyles);
   const isMe = message.sender === 'me';
   const isImage =
     message.type === 'image' ||
     (message.type === 'file' &&
       (isImageMime(message.mimeType) || isImageFileName(message.fileName)));
+  const isMedia =
+    isImage || message.type === 'file' || message.type === 'images';
 
   return (
     <View style={[styles.msgRow, isMe && styles.msgRowMe]}>
-      {!isMe ? (
-        showAvatar ? (
-          <View style={styles.msgAvatar}>
-            <Image source={Images.partnerDeepesh} style={styles.msgAvatarImg} />
-          </View>
-        ) : (
-          <View style={styles.msgAvatarSpacer} />
-        )
-      ) : null}
-
       <View
         style={[
           styles.bubble,
-          isMe && styles.bubbleMe,
-          (isImage || message.type === 'file' || message.type === 'images') &&
-            styles.bubbleMedia,
+          isMe ? styles.bubbleMe : styles.bubbleThem,
+          isMedia && styles.bubbleMedia,
         ]}>
         {message.type === 'images' ? (
           <View style={styles.imageGrid}>
@@ -239,13 +236,11 @@ const MessageBubble = ({message, showAvatar}) => {
         ) : (
           <Text style={styles.bubbleText}>{message.text}</Text>
         )}
-        <Text style={styles.bubbleTime}>{message.time}</Text>
       </View>
-
       {!isMe ? (
-        <TouchableOpacity style={styles.shareBtn} activeOpacity={0.8}>
-          <Ionicons name="share-social-outline" size={16} color="#9AA0A6" />
-        </TouchableOpacity>
+        <View style={styles.msgAvatar}>
+          <Image source={Images.profile} style={styles.msgAvatarImg} />
+        </View>
       ) : null}
     </View>
   );
@@ -357,7 +352,6 @@ const ChatDetailsScreen = ({navigation, route}) => {
     };
   }, []);
 
-  const dateLabel = chat?.lastMessageAt || 'Today';
   const composerBottom =
     keyboardHeight > 0
       ? keyboardHeight + 24
@@ -494,27 +488,33 @@ const ChatDetailsScreen = ({navigation, route}) => {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, {paddingTop: insets.top + 6}]}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Go back">
-          <Ionicons name="arrow-back" size={22} color={Colors.textNavy} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {chat?.contactName || 'Chat'}
-        </Text>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={handleCallPress}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Call contact">
-          <MaterialDesignIcons name="phone" size={20} color={Colors.textNavy} />
-        </TouchableOpacity>
-      </View>
+      <BannerHeader>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Go back">
+            <Image
+              source={Images.backIcon}
+              style={styles.backIcon}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {formatContactName(chat?.contactName)}
+          </Text>
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={handleCallPress}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Call contact">
+            <Ionicons name="call-outline" size={22} color={Colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
+      </BannerHeader>
 
       <View style={styles.summaryWrap}>
         <BookingSummaryCard booking={chat?.booking} />
@@ -526,64 +526,41 @@ const ChatDetailsScreen = ({navigation, route}) => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive">
-        <Text style={styles.dateDivider}>{dateLabel}</Text>
-
-        {messages.map((message, index) => {
-          const prev = messages[index - 1];
-          const showAvatar = !prev || prev.sender !== message.sender;
-          return (
-            <MessageBubble
-              key={message.id}
-              message={message}
-              showAvatar={showAvatar}
-            />
-          );
-        })}
-
-        {chat?.booking?.completedBy ? (
-          <Text style={styles.completedNote}>
-            * This booking is completed by {chat.booking.completedBy}
-          </Text>
-        ) : null}
+        {messages.map(message => (
+          <MessageBubble key={message.id} message={message} />
+        ))}
       </ScrollView>
 
       <View style={[styles.composerWrap, {paddingBottom: composerBottom}]}>
         <View style={styles.composer}>
-          <TouchableOpacity
-            style={styles.attachBtn}
-            activeOpacity={0.85}
-            onPress={() => {
-              Keyboard.dismiss();
-              setAttachSheetOpen(true);
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Attach image or document">
-            <Ionicons name="attach" size={22} color={Colors.textNavy} />
-          </TouchableOpacity>
           <TextInput
             value={draft}
             onChangeText={setDraft}
-            placeholder="Say something..."
+            placeholder="Write your message"
             placeholderTextColor="#B0B6BE"
             style={styles.input}
             returnKeyType="send"
             onSubmitEditing={sendMessage}
           />
           <TouchableOpacity
-            style={[
-              styles.sendBtn,
-              !draft.trim() && styles.sendBtnDisabled,
-            ]}
+            style={styles.galleryBtn}
+            activeOpacity={0.85}
+            onPress={() => {
+              Keyboard.dismiss();
+              setAttachSheetOpen(true);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Upload from gallery">
+            <Ionicons name="images-outline" size={22} color="#8E949C" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sendBtn, !draft.trim() && styles.sendBtnDisabled]}
             activeOpacity={0.85}
             onPress={sendMessage}
             disabled={!draft.trim()}
             accessibilityRole="button"
             accessibilityLabel="Send message">
-            <Ionicons
-              name="send"
-              size={18}
-              color={draft.trim() ? Colors.primary : '#B0B6BE'}
-            />
+            <Ionicons name="paper-plane" size={16} color={Colors.textPrimary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -601,16 +578,12 @@ const ChatDetailsScreen = ({navigation, route}) => {
 const baseStyles = {
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F7F8FA',
   },
-  header: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 8,
-    paddingBottom: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.borderLight,
+    minHeight: 44,
   },
   headerBtn: {
     width: 40,
@@ -618,155 +591,132 @@ const baseStyles = {
     alignItems: 'center',
     justifyContent: 'center',
   },
+  backIcon: {
+    width: 18,
+    height: 16,
+  },
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: Typography.fontWeights.bold,
-    color: Colors.textNavy,
+    color: Colors.textPrimary,
   },
   summaryWrap: {
     paddingHorizontal: Spacing.screenPadding,
-    paddingTop: 12,
-    paddingBottom: 4,
+    paddingTop: 14,
+    paddingBottom: 6,
   },
   summaryCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    paddingBottom: 12,
-  },
-  summaryTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  summaryMeta: {
-    fontSize: 12,
-    color: '#9AA0A6',
-    fontWeight: '500',
-  },
-  summaryBody: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 10,
-  },
-  routeCol: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  city: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    lineHeight: 22,
-  },
-  summaryRight: {
-    alignItems: 'flex-end',
-  },
-  price: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#28A745',
-    marginBottom: 6,
-  },
-  networkBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    backgroundColor: '#FFF8E4',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#F0E2B0',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
   },
-  networkText: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    fontWeight: '500',
+  summaryLeft: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 12,
   },
-  pillRow: {
+  routeRow: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'center',
+    gap: 6,
   },
-  pill: {
+  routeText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+  },
+  summaryDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+    backgroundColor: '#E7DDB8',
+    marginRight: 14,
+  },
+  price: {
+    marginTop: 6,
+    marginLeft: 22,
+    fontSize: 16,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: 16,
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-    backgroundColor: '#EEEEEE',
+    paddingVertical: 6,
   },
-  pillText: {
-    fontSize: 11,
+  statusText: {
+    fontSize: 13,
     fontWeight: '700',
-    color: Colors.textSecondary,
   },
   thread: {
     flex: 1,
   },
   threadContent: {
     paddingHorizontal: Spacing.screenPadding,
-    paddingTop: 8,
+    paddingTop: 16,
     paddingBottom: 16,
   },
-  dateDivider: {
-    alignSelf: 'center',
-    marginVertical: 12,
-    fontSize: 12,
-    color: Colors.textMuted,
-    fontWeight: '500',
-  },
   msgRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    marginBottom: 10,
-    maxWidth: '92%',
+    alignSelf: 'flex-start',
+    maxWidth: '78%',
+    marginBottom: 22,
   },
   msgRowMe: {
     alignSelf: 'flex-end',
   },
   msgAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     overflow: 'hidden',
-    marginRight: 8,
-    backgroundColor: '#2C3A4B',
+    marginTop: 6,
+    backgroundColor: '#E5E7EB',
   },
   msgAvatarImg: {
     width: '100%',
     height: '100%',
   },
-  msgAvatarSpacer: {
-    width: 36,
-  },
   bubble: {
-    flexShrink: 1,
-    backgroundColor: '#3A3F46',
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: 8,
-    maxWidth: '78%',
+    paddingHorizontal: 18,
+    paddingVertical: 14,
   },
   bubbleMe: {
-    backgroundColor: '#2C3A4B',
-    marginLeft: 'auto',
+    backgroundColor: '#F8E59A',
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 18,
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 4,
+  },
+  bubbleThem: {
+    backgroundColor: '#E8E8EA',
+    marginLeft: 36,
+    marginTop: 18,
+    marginBottom: -8,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 22,
+    borderBottomRightRadius: 22,
+    borderBottomLeftRadius: 4,
   },
   bubbleMedia: {
-    paddingHorizontal: 8,
-    paddingTop: 8,
-    overflow: 'hidden',
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    backgroundColor: 'transparent',
   },
   bubbleText: {
-    color: Colors.textInverse,
-    fontSize: 14,
-    lineHeight: 20,
+    color: '#1C1C1E',
+    fontSize: 15,
+    lineHeight: 21,
     fontWeight: '500',
-  },
-  bubbleTime: {
-    marginTop: 6,
-    alignSelf: 'flex-end',
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.55)',
   },
   imageGrid: {
     width: 168,
@@ -802,15 +752,15 @@ const baseStyles = {
   imageFallback: {
     width: 200,
     height: 200,
-    borderRadius: 10,
-    backgroundColor: '#5B6B7A',
+    borderRadius: 16,
+    backgroundColor: '#E8EAED',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
   },
   imageFallbackText: {
     marginTop: 8,
-    color: Colors.textInverse,
+    color: Colors.textPrimary,
     fontSize: 12,
     textAlign: 'center',
     fontWeight: '600',
@@ -818,11 +768,14 @@ const baseStyles = {
   fileCard: {
     width: 220,
     overflow: 'hidden',
+    backgroundColor: '#F3F4F6',
+    borderRadius: 16,
+    padding: 8,
   },
   filePreviewBanner: {
     height: 110,
-    borderRadius: 10,
-    backgroundColor: '#4A5563',
+    borderRadius: 12,
+    backgroundColor: '#E5E7EB',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
@@ -835,7 +788,7 @@ const baseStyles = {
     width: 36,
     height: 36,
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -844,71 +797,59 @@ const baseStyles = {
     flex: 1,
   },
   fileName: {
-    color: Colors.textInverse,
+    color: Colors.textPrimary,
     fontSize: 13,
     fontWeight: '600',
     lineHeight: 18,
   },
   fileSize: {
     marginTop: 2,
-    color: 'rgba(255,255,255,0.55)',
+    color: Colors.textMuted,
     fontSize: 11,
   },
-  shareBtn: {
-    marginLeft: 8,
-    marginBottom: 4,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#E8EAED',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  completedNote: {
-    textAlign: 'center',
-    marginTop: 18,
-    marginBottom: 8,
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#28A745',
-  },
   composerWrap: {
-    paddingHorizontal: Spacing.screenPadding,
+    paddingHorizontal: 16,
     paddingTop: 8,
-    backgroundColor: Colors.background,
+    backgroundColor: '#F7F8FA',
   },
   composer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
     borderRadius: 28,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    minHeight: 48,
-    paddingLeft: 6,
-    paddingRight: 8,
-  },
-  attachBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    minHeight: 52,
+    paddingLeft: 18,
+    paddingRight: 6,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   input: {
     flex: 1,
     fontSize: 14,
     color: Colors.textPrimary,
-    paddingVertical: 10,
-    paddingHorizontal: 4,
+    paddingVertical: 12,
+    paddingRight: 8,
   },
-  sendBtn: {
+  galleryBtn: {
     width: 36,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 4,
+  },
+  sendBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sendBtnDisabled: {
-    opacity: 0.7,
+    opacity: 0.55,
   },
   sheetOverlay: {
     flex: 1,

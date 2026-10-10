@@ -25,6 +25,7 @@ export const ROUTES = {
   CHAT: 'Chat',
   PERSONAL_INFO: 'PersonalInfo',
   AADHAAR_VERIFY: 'AadhaarVerify',
+  VERIFICATION: 'Verification',
   MANAGE_VEHICLES: 'ManageVehicles',
   MANAGE_DRIVERS: 'ManageDrivers',
   ADD_DRIVER: 'AddDriver',

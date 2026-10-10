@@ -11,6 +11,7 @@ import {
   TextInput,
   TouchableOpacity,
   useWindowDimensions,
+  AppState,
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -22,6 +23,7 @@ import MarketBookingCard from '../../components/booking/MarketBookingCard';
 import MarketFilterSheet, {
   EMPTY_FILTERS,
 } from '../../components/booking/MarketFilterSheet';
+import VerificationPromptSheet from '../../components/booking/VerificationPromptSheet';
 import MarketAppTour from '../../components/tour/MarketAppTour';
 import {
   getTourTarget,
@@ -45,6 +47,8 @@ const SAMPLE_PHONES = [
   '9897219634',
   '9389173930',
 ];
+
+const VERIFY_PROMPT_DELAY_MS = 3000;
 
 const getRandomPhone = () =>
   SAMPLE_PHONES[Math.floor(Math.random() * SAMPLE_PHONES.length)];
@@ -173,6 +177,7 @@ const MarketHomeScreen = ({navigation}) => {
   );
   const [helpMenuOpen, setHelpMenuOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
+  const [verifyPromptVisible, setVerifyPromptVisible] = useState(false);
   const [spotlight, setSpotlight] = useState(null);
   const [activeTourTarget, setActiveTourTarget] = useState(null);
   const isVehicles = tab === 'vehicles';
@@ -181,6 +186,12 @@ const MarketHomeScreen = ({navigation}) => {
   const targetRefs = useRef({});
   const revealGen = useRef(0);
   const mountedRef = useRef(true);
+  const tourPendingRef = useRef(false);
+  const resumeTourOnFocus = useRef(false);
+  const verifyDismissedRef = useRef(false);
+  const isFocusedRef = useRef(isFocused);
+  const sawBackgroundRef = useRef(false);
+  const [appForegroundId, setAppForegroundId] = useState(0);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -194,22 +205,58 @@ const MarketHomeScreen = ({navigation}) => {
   };
 
   useEffect(() => {
+    isFocusedRef.current = isFocused;
+  }, [isFocused]);
+
+  useEffect(() => {
     let mounted = true;
     AsyncStorage.getItem(STORAGE_KEYS.MARKET_TOUR)
       .then(value => {
         if (mounted && value !== 'done') {
-          setTourOpen(true);
+          tourPendingRef.current = true;
         }
       })
       .catch(() => {
         if (mounted) {
-          setTourOpen(true);
+          tourPendingRef.current = true;
         }
       });
     return () => {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextState => {
+      if (nextState === 'background') {
+        sawBackgroundRef.current = true;
+        return;
+      }
+      if (nextState === 'active' && sawBackgroundRef.current) {
+        sawBackgroundRef.current = false;
+        verifyDismissedRef.current = false;
+        setVerifyPromptVisible(false);
+        setAppForegroundId(id => id + 1);
+      }
+    });
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (verifyDismissedRef.current) {
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      if (!mountedRef.current || verifyDismissedRef.current) {
+        return;
+      }
+      if (!isFocusedRef.current) {
+        return;
+      }
+      setVerifyPromptVisible(true);
+    }, VERIFY_PROMPT_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [appForegroundId]);
 
   useEffect(() => {
     if (!tourOpen) {
@@ -327,6 +374,42 @@ const MarketHomeScreen = ({navigation}) => {
     setActiveTourTarget(null);
     AsyncStorage.setItem(STORAGE_KEYS.MARKET_TOUR, 'done').catch(() => {});
   }, []);
+
+  const openTourIfPending = useCallback(() => {
+    if (!tourPendingRef.current) {
+      return;
+    }
+    tourPendingRef.current = false;
+    setTourOpen(true);
+  }, []);
+
+  const closeVerifyPrompt = useCallback(() => {
+    verifyDismissedRef.current = true;
+    setVerifyPromptVisible(false);
+    openTourIfPending();
+  }, [openTourIfPending]);
+
+  const handleVerifyNow = useCallback(() => {
+    verifyDismissedRef.current = true;
+    setVerifyPromptVisible(false);
+    resumeTourOnFocus.current = tourPendingRef.current;
+    tourPendingRef.current = false;
+    navigation.navigate(ROUTES.VERIFICATION);
+  }, [navigation]);
+
+  useEffect(() => {
+    if (!isFocused || verifyPromptVisible || !resumeTourOnFocus.current) {
+      return undefined;
+    }
+    const timer = setTimeout(() => {
+      if (!resumeTourOnFocus.current) {
+        return;
+      }
+      resumeTourOnFocus.current = false;
+      setTourOpen(true);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [isFocused, verifyPromptVisible]);
 
   const showComingSoon = (message = 'This feature is coming soon.') => {
     setComingSoonMessage(message);
@@ -858,6 +941,12 @@ const MarketHomeScreen = ({navigation}) => {
         onClose={() => setFilterOpen(false)}
         initial={appliedFilters}
         onSave={setAppliedFilters}
+      />
+
+      <VerificationPromptSheet
+        visible={verifyPromptVisible && isFocused}
+        onClose={closeVerifyPrompt}
+        onVerify={handleVerifyNow}
       />
 
       <Modal

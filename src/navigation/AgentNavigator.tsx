@@ -22,6 +22,7 @@ import PaymentMethodsScreen from '../screens/profile/PaymentMethodsScreen';
 import PersonalInfoScreen from '../screens/profile/PersonalInfoScreen';
 import TransactionsScreen from '../screens/profile/TransactionsScreen';
 import BecomeVerifiedSupplierScreen from '../screens/profile/BecomeVerifiedSupplierScreen';
+import VerificationScreen from '../screens/profile/VerificationScreen';
 import VerifiedSupplierScreen from '../screens/profile/VerifiedSupplierScreen';
 
 const Tab = createBottomTabNavigator();
@@ -119,6 +120,7 @@ const AgentNavigator = () => {
         name={ROUTES.VERIFIED_SUPPLIER}
         component={VerifiedSupplierScreen}
       />
+      <Stack.Screen name={ROUTES.VERIFICATION} component={VerificationScreen} />
       <Stack.Screen
         name={ROUTES.BECOME_VERIFIED_SUPPLIER}
         component={BecomeVerifiedSupplierScreen}
