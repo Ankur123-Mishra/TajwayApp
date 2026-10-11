@@ -2,8 +2,8 @@ import React from 'react';
 import {Alert, ScrollView, Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
-import BackButton from '../../components/brand/BackButton';
 import PrimaryButton from '../../components/brand/PrimaryButton';
+import BannerHeader from '../../components/common/BannerHeader';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
@@ -96,10 +96,12 @@ const BecomeVerifiedSupplierScreen = ({navigation}) => {
   };
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + 6}]}>
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-      </View>
+    <View style={styles.container}>
+      <BannerHeader
+        title="Verified Supplier"
+        onBack={() => navigation.goBack()}
+        style={styles.headerGap}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -150,8 +152,7 @@ const baseStyles = {
     flex: 1,
     backgroundColor: '#F4F5F7',
   },
-  header: {
-    paddingHorizontal: Spacing.screenPadding,
+  headerGap: {
     marginBottom: 8,
   },
   scroll: {

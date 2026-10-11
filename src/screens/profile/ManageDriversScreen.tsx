@@ -1,10 +1,10 @@
 import React, {useState} from 'react';
 import {Modal, ScrollView, Text, TextInput, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import BackButton from '../../components/brand/BackButton';
 import PrimaryButton from '../../components/brand/PrimaryButton';
+import BannerHeader from '../../components/common/BannerHeader';
 import {ROUTES} from '../../constants/Routes';
-import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {Colors, Dimensions, Spacing} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
 const DRIVER_FIELDS = [
@@ -27,20 +27,22 @@ const ManageDriversScreen = ({navigation}) => {
   const [form, setForm] = useState({});
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + 8}]}>
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Manage Drivers</Text>
-        <TouchableOpacity
-          style={styles.addBtn}
-          activeOpacity={0.85}
-          onPress={() => setSheetOpen(true)}>
-          <Text style={styles.addText}>Add New</Text>
-          <View style={styles.plusCircle}>
-            <Text style={styles.plus}>+</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <BannerHeader
+        title="Manage Drivers"
+        onBack={() => navigation.goBack()}
+        right={
+          <TouchableOpacity
+            style={styles.addBtn}
+            activeOpacity={0.85}
+            onPress={() => setSheetOpen(true)}>
+            <Text style={styles.addText}>Add New</Text>
+            <View style={styles.plusCircle}>
+              <Text style={styles.plus}>+</Text>
+            </View>
+          </TouchableOpacity>
+        }
+      />
 
       <View style={styles.empty} />
 
@@ -98,19 +100,6 @@ const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.screenPadding,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.textNavy,
-    marginHorizontal: 8,
   },
   addBtn: {
     flexDirection: 'row',

@@ -1,13 +1,10 @@
-import React, {useMemo, useState} from 'react';
+import React, {useState} from 'react';
 import {CommonActions} from '@react-navigation/native';
 import {
   Alert,
   Image,
-  Linking,
   Modal,
   ScrollView,
-  StyleSheet,
-  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -17,42 +14,20 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useDispatch} from 'react-redux';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {MaterialDesignIcons} from '@react-native-vector-icons/material-design-icons';
-import LanguageSelectModal, {
-  LANGUAGES,
-} from '../../components/profile/LanguageSelectModal';
+import BannerHeader from '../../components/common/BannerHeader';
+import LanguageSelectModal from '../../components/profile/LanguageSelectModal';
+import Images from '../../constants/Images';
 import {ROUTES} from '../../constants/Routes';
 import {useAuth, useResponsiveStyles} from '../../hooks';
 import {logout} from '../../redux/slices/authSlice';
 import {Colors, Spacing, Typography} from '../../theme';
 
-const SAMPLE_PHONES = [
-  '9876543210',
-  '9123456780',
-  '9988776655',
-  '9170337201',
-  '9414653454',
-  '7390995460',
-  '9897219634',
-  '9389173930',
-];
-
-const getRandomPhone = () =>
-  SAMPLE_PHONES[Math.floor(Math.random() * SAMPLE_PHONES.length)];
-
-const openDialer = (phone = getRandomPhone()) => {
-  const digits = String(phone).replace(/[^\d+]/g, '');
-  if (!digits) {
-    return;
-  }
-  Linking.openURL(`tel:${digits}`).catch(() => {});
-};
-
-const ACCOUNT_ITEMS_BASE = [
+const ACCOUNT_ITEMS = [
   {
     id: 'personal',
     label: 'Personal Information',
-    icon: 'account-details-outline',
-    library: 'mdi',
+    icon: 'person-outline',
+    library: 'ion',
     route: ROUTES.PERSONAL_INFO,
   },
   {
@@ -92,13 +67,13 @@ const ACCOUNT_ITEMS_BASE = [
   {
     id: 'language',
     label: 'Language',
-    icon: 'chatbubbles-outline',
+    icon: 'language-outline',
     library: 'ion',
   },
   {
     id: 'transactions',
     label: 'Transactions',
-    icon: 'sync-circle-outline',
+    icon: 'receipt-outline',
     library: 'ion',
     route: ROUTES.TRANSACTIONS,
   },
@@ -108,13 +83,13 @@ const GENERAL_ITEMS = [
   {
     id: 'about',
     label: 'About us',
-    icon: 'information-circle-outline',
+    icon: 'person-outline',
     library: 'ion',
   },
   {
     id: 'privacy',
     label: 'Privacy Policy',
-    icon: 'shield-checkmark-outline',
+    icon: 'star-outline',
     library: 'ion',
   },
   {
@@ -125,75 +100,59 @@ const GENERAL_ITEMS = [
     route: ROUTES.BECOME_VERIFIED_SUPPLIER,
   },
   {
-    id: 'tutorials',
-    label: 'App Tutorials',
-    icon: 'document-text-outline',
+    id: 'logout',
+    label: 'Logout',
+    icon: 'log-out-outline',
     library: 'ion',
-    toggle: true,
   },
 ];
 
-const MenuIcon = ({library, name}) => {
-  const IconSet = library === 'mdi' ? MaterialDesignIcons : Ionicons;
-  return <IconSet name={name} size={20} color={Colors.secondaryDark} />;
+const formatPhone = raw => {
+  const digits = String(raw || '').replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `+91 ${digits}`;
+  }
+  if (digits.length === 12 && digits.startsWith('91')) {
+    return `+91 ${digits.slice(2)}`;
+  }
+  if (digits.length > 10) {
+    return `+${digits}`;
+  }
+  return raw || '';
 };
 
-const ProfileMenuRow = ({item, onPress, toggleValue, onToggle, isLast}) => {
+const MenuIcon = ({library, name}) => {
+  const IconSet = library === 'mdi' ? MaterialDesignIcons : Ionicons;
+  return <IconSet name={name} size={18} color={Colors.textPrimary} />;
+};
+
+const ProfileMenuRow = ({item, onPress}) => {
   const styles = useResponsiveStyles(baseStyles);
-  const content = (
-    <>
+  return (
+    <TouchableOpacity
+      style={styles.menuCard}
+      onPress={onPress}
+      activeOpacity={0.75}>
       <View style={styles.rowIconWrap}>
         <MenuIcon library={item.library} name={item.icon} />
       </View>
       <Text style={styles.rowLabel}>{item.label}</Text>
-      {item.toggle ? (
-        <Switch
-          value={toggleValue}
-          onValueChange={onToggle}
-          trackColor={{false: '#D8DCE3', true: Colors.primary}}
-          thumbColor={Colors.surface}
-        />
-      ) : (
-        <View style={styles.rowTrailing}>
-          {item.trailing ? (
-            <Text style={styles.trailingText}>{item.trailing}</Text>
-          ) : null}
-          <Ionicons name="chevron-forward" size={16} color={Colors.textPlaceholder} />
-        </View>
-      )}
-    </>
-  );
-
-  if (item.toggle) {
-    return (
-      <View style={[styles.row, !isLast && styles.rowBorder]}>{content}</View>
-    );
-  }
-
-  return (
-    <TouchableOpacity
-      style={[styles.row, !isLast && styles.rowBorder]}
-      onPress={onPress}
-      activeOpacity={0.7}>
-      {content}
+      <Ionicons name="chevron-forward" size={16} color="#C5C9D0" />
     </TouchableOpacity>
   );
 };
 
 /**
- * Profile tab — refined professional layout (no elevation).
+ * Profile tab — banner header and card list matching the profile design.
  */
-
 const AgentProfileScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
-  const {user, phone, role} = useAuth();
-  const [tutorialsOn, setTutorialsOn] = useState(true);
+  const {user, phone} = useAuth();
   const [language, setLanguage] = useState('en');
   const [languageModalVisible, setLanguageModalVisible] = useState(false);
   const [profileImageUri, setProfileImageUri] = useState(null);
-  const [helpMenuOpen, setHelpMenuOpen] = useState(false);
   const [comingSoonVisible, setComingSoonVisible] = useState(false);
   const [comingSoonMessage, setComingSoonMessage] = useState(
     'This feature is coming soon.',
@@ -204,32 +163,8 @@ const AgentProfileScreen = ({navigation}) => {
     setComingSoonVisible(true);
   };
 
-  const handleHelpPress = () => {
-    setHelpMenuOpen(prev => !prev);
-  };
-
-  const handleHelpCall = () => {
-    setHelpMenuOpen(false);
-    openDialer();
-  };
-
-  const displayPhone = phone || user?.phone || '8920230653';
+  const displayPhone = formatPhone(phone || user?.phone || '9555786532');
   const displayName = user?.name || user?.fullName || 'Tajway Partner';
-  const displayRole = (role || user?.role || 'Agent').toString();
-  const roleLabel =
-    displayRole.charAt(0).toUpperCase() + displayRole.slice(1).toLowerCase();
-
-  const languageLabel =
-    LANGUAGES.find(lang => lang.id === language)?.label.split(' - ')[0] ||
-    'English';
-
-  const accountItems = useMemo(
-    () =>
-      ACCOUNT_ITEMS_BASE.map(item =>
-        item.id === 'language' ? {...item, trailing: languageLabel} : item,
-      ),
-    [languageLabel],
-  );
 
   const onLogout = () => {
     dispatch(logout());
@@ -242,7 +177,11 @@ const AgentProfileScreen = ({navigation}) => {
       }),
     );
   };
- 
+
+  const onBack = () => {
+    navigation.navigate(ROUTES.AGENT_HOME);
+  };
+
   const onPickProfileImage = () => {
     launchImageLibrary(
       {
@@ -270,6 +209,10 @@ const AgentProfileScreen = ({navigation}) => {
   };
 
   const onMenuPress = item => {
+    if (item.id === 'logout') {
+      onLogout();
+      return;
+    }
     if (item.id === 'language') {
       setLanguageModalVisible(true);
       return;
@@ -291,153 +234,101 @@ const AgentProfileScreen = ({navigation}) => {
     }
   };
 
-  const renderSection = (title, items) => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.menuCard}>
-        {items.map((item, index) => (
-          <ProfileMenuRow
-            key={item.id}
-            item={item}
-            isLast={index === items.length - 1}
-            onPress={() => onMenuPress(item)}
-            toggleValue={tutorialsOn}
-            onToggle={setTutorialsOn}
-          />
-        ))}
-      </View>
-    </View>
-  );
-
   return (
     <View style={styles.container}>
-      {helpMenuOpen ? (
-        <TouchableOpacity
-          style={styles.helpBackdrop}
-          activeOpacity={1}
-          onPress={() => setHelpMenuOpen(false)}
-        />
-      ) : null}
+      <BannerHeader>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={onBack}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Go back">
+            <Image
+              source={Images.backIcon}
+              style={styles.backIcon}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            My Profile
+          </Text>
+          <View style={styles.headerBtn} />
+        </View>
+      </BannerHeader>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.scroll,
-          {paddingBottom: insets.bottom + 32},
-        ]}>
-        <View
-          style={[
-            styles.hero,
-            {paddingTop: insets.top + 10},
-            helpMenuOpen && styles.heroRaised,
-          ]}>
-          <View style={styles.heroAccent} />
-          <View style={styles.heroAccentSoft} />
-
-          <View style={styles.topActions}>
-            <TouchableOpacity
-              style={styles.pillBtn}
-              onPress={onLogout}
-              activeOpacity={0.85}>
-              <Ionicons
-                name="log-out-outline"
-                size={15}
-                color={Colors.helpRed}
-              />
-              <Text style={styles.pillText}>Logout</Text>
-            </TouchableOpacity>
-
-            <View style={styles.helpWrap}>
-              <TouchableOpacity
-                style={styles.pillBtn}
-                onPress={handleHelpPress}
-                activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel="Help">
-                <Ionicons
-                  name="headset-outline"
-                  size={15}
-                  color={Colors.secondaryDark}
-                />
-                <Text style={[styles.pillText, styles.pillTextNeutral]}>
-                  Help
-                </Text>
-              </TouchableOpacity>
-              {helpMenuOpen ? (
-                <View style={styles.helpPopup}>
-                  <TouchableOpacity
-                    style={styles.helpPopupItem}
-                    activeOpacity={0.85}
-                    onPress={handleHelpCall}
-                    accessibilityRole="button"
-                    accessibilityLabel="Call support">
-                    <View style={styles.helpPopupCallBadge}>
-                      <Text style={styles.helpPopupCallIcon}>📞</Text>
-                    </View>
-                    <Text style={styles.helpPopupText}>Call</Text>
-                  </TouchableOpacity>
-                </View>
-              ) : null}
-            </View>
-          </View>
-
+        contentContainerStyle={styles.scroll}>
+        <View style={styles.profileCard}>
           <TouchableOpacity
             style={styles.avatarWrap}
             onPress={onPickProfileImage}
-            activeOpacity={0.85}>
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Change profile photo">
             <View style={styles.avatarRing}>
-              <View style={styles.avatar}>
-                {profileImageUri ? (
-                  <Image
-                    source={{uri: profileImageUri}}
-                    style={styles.avatarImage}
-                  />
-                ) : (
-                  <Ionicons
-                    name="person"
-                    size={40}
-                    color={Colors.textSlate}
-                  />
-                )}
-              </View>
+              <Image
+                source={
+                  profileImageUri ? {uri: profileImageUri} : Images.profile
+                }
+                style={styles.avatar}
+              />
             </View>
-            <View style={styles.avatarEditBadge}>
-              <Ionicons name="camera" size={12} color={Colors.textInverse} />
+            <View style={styles.cameraBadge}>
+              <Ionicons name="camera" size={11} color={Colors.textInverse} />
             </View>
           </TouchableOpacity>
 
-          <Text style={styles.displayName}>{displayName}</Text>
-          <Text style={styles.phone}>{displayPhone}</Text>
-
-          <View style={styles.roleChip}>
-            <View style={styles.roleDot} />
-            <Text style={styles.roleText}>{roleLabel}</Text>
-          </View>
-        </View>
-
-        <View style={styles.body}>
-          <TouchableOpacity
-            style={styles.upgradeCard}
-            activeOpacity={0.85}
-            onPress={() => navigation.navigate(ROUTES.VERIFIED_SUPPLIER)}>
-            <View style={styles.upgradeIconWrap}>
-              <Ionicons name="ribbon" size={20} color={Colors.secondaryDark} />
-            </View>
-            <View style={styles.upgradeCopy}>
-              <Text style={styles.upgradeTitle}>Upgrade to Verified</Text>
-              <Text style={styles.upgradeSub}>
-                Unlock supplier badge & more bookings
+          <View style={styles.profileCopy}>
+            <Text style={styles.displayName} numberOfLines={1}>
+              {displayName}
+            </Text>
+            <View style={styles.phoneRow}>
+              <Ionicons name="call-outline" size={13} color="#8B919A" />
+              <Text style={styles.phone} numberOfLines={1}>
+                {displayPhone}
               </Text>
             </View>
-            <Ionicons
-              name="chevron-forward"
-              size={18}
-              color={Colors.secondaryDark}
-            />
-          </TouchableOpacity>
+          </View>
 
-          {renderSection('Account', accountItems)}
-          {renderSection('General', GENERAL_ITEMS)}
+          <TouchableOpacity
+            style={styles.upgradeBtn}
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate(ROUTES.VERIFIED_SUPPLIER)}>
+            <Ionicons
+              name="shield-checkmark"
+              size={16}
+              color={Colors.primaryDark}
+            />
+            <View style={styles.upgradeCopy}>
+              <Text style={styles.upgradeTitle}>Upgrade</Text>
+              <Text style={styles.upgradeSub}>To Get Verified</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={14} color="#9AA1AA" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={[styles.menuSection, {paddingBottom: insets.bottom + 28}]}>
+          <Text style={styles.sectionTitle}>ACCOUNT</Text>
+          {ACCOUNT_ITEMS.map(item => (
+            <ProfileMenuRow
+              key={item.id}
+              item={item}
+              onPress={() => onMenuPress(item)}
+            />
+          ))}
+
+          <Text style={[styles.sectionTitle, styles.sectionTitleSpaced]}>
+            GENERAL
+          </Text>
+          {GENERAL_ITEMS.map(item => (
+            <ProfileMenuRow
+              key={item.id}
+              item={item}
+              onPress={() => onMenuPress(item)}
+            />
+          ))}
         </View>
       </ScrollView>
 
@@ -478,293 +369,165 @@ const AgentProfileScreen = ({navigation}) => {
 const baseStyles = {
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundAlt,
+    backgroundColor: '#F7F8FA',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 44,
+  },
+  headerBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backIcon: {
+    width: 18,
+    height: 16,
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
   },
   scroll: {
     flexGrow: 1,
+    paddingTop: 16,
   },
-  hero: {
-    backgroundColor: '#EEF1F6',
+  profileCard: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingBottom: 28,
+    backgroundColor: 'transparent',
     paddingHorizontal: Spacing.screenPadding,
-    overflow: 'hidden',
-  },
-  heroAccent: {
-    position: 'absolute',
-    top: -40,
-    right: -50,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: Colors.primaryMuted,
-    opacity: 0.7,
-  },
-  heroAccentSoft: {
-    position: 'absolute',
-    bottom: -30,
-    left: -40,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(62, 74, 89, 0.06)',
-  },
-  heroRaised: {
-    zIndex: 30,
-    elevation: 30,
-  },
-  topActions: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 22,
-    zIndex: 20,
-  },
-  pillBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 22,
-    gap: 6,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  pillText: {
-    fontSize: 13,
-    fontWeight: Typography.fontWeights.semibold,
-    color: Colors.helpRed,
-  },
-  pillTextNeutral: {
-    color: Colors.secondaryDark,
-  },
-  helpWrap: {
-    position: 'relative',
-    zIndex: 30,
-  },
-  helpBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 15,
-  },
-  helpPopup: {
-    position: 'absolute',
-    top: '100%',
-    right: 0,
-    marginTop: 6,
-    minWidth: 128,
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    paddingVertical: 6,
-    paddingHorizontal: 6,
-    borderWidth: 1,
-    borderColor: Colors.primaryLight,
-    shadowColor: Colors.secondaryDark,
-    shadowOffset: {width: 0, height: 3},
-    shadowOpacity: 0.14,
-    shadowRadius: 8,
-    elevation: 6,
-    zIndex: 40,
-  },
-  helpPopupItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.primaryMuted,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  helpPopupCallBadge: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 8,
-  },
-  helpPopupCallIcon: {
-    fontSize: 12,
-  },
-  helpPopupText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.textNavy,
+    paddingVertical: 4,
+    marginBottom: 16,
   },
   avatarWrap: {
-    marginBottom: 14,
-    zIndex: 1,
+    width: 64,
+    height: 64,
   },
   avatarRing: {
-    padding: 3,
-    borderRadius: 48,
-    borderWidth: 2,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2.5,
     borderColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
     backgroundColor: Colors.surface,
   },
   avatar: {
-    width: 86,
-    height: 86,
-    borderRadius: 43,
-    backgroundColor: Colors.surfaceAlt,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+    width: 55,
+    height: 55,
+    borderRadius: 28,
   },
-  avatarImage: {
-    width: 86,
-    height: 86,
-  },
-  avatarEditBadge: {
+  cameraBadge: {
     position: 'absolute',
-    right: 2,
-    bottom: 2,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: Colors.secondaryDark,
+    right: 0,
+    bottom: 0,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#1A1A1B',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: Colors.surface,
+    borderColor: '#F7F8FA',
+  },
+  profileCopy: {
+    flex: 1,
+    minWidth: 0,
+    marginLeft: 10,
+    marginRight: 8,
   },
   displayName: {
-    fontSize: 20,
-    fontWeight: Typography.fontWeights.bold,
-    color: Colors.textNavy,
-    letterSpacing: 0.2,
-    marginBottom: 4,
-    zIndex: 1,
-  },
-  phone: {
-    fontSize: 14,
-    fontWeight: Typography.fontWeights.medium,
-    color: Colors.textMuted,
-    letterSpacing: 0.3,
-    marginBottom: 12,
-    zIndex: 1,
-  },
-  roleChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 6,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    zIndex: 1,
-  },
-  roleDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: Colors.primaryDark,
-  },
-  roleText: {
-    fontSize: 12,
-    fontWeight: Typography.fontWeights.semibold,
-    color: Colors.textSlate,
-    letterSpacing: 0.3,
-  },
-  body: {
-    paddingHorizontal: Spacing.screenPadding,
-    marginTop: -8,
-  },
-  upgradeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.primaryMuted,
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: Colors.primaryLight,
-    gap: 12,
-  },
-  upgradeIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.primaryLight,
-  },
-  upgradeCopy: {
-    flex: 1,
-  },
-  upgradeTitle: {
     fontSize: 15,
     fontWeight: Typography.fontWeights.bold,
-    color: Colors.textNavy,
-    marginBottom: 2,
+    color: Colors.textPrimary,
+    marginBottom: 4,
   },
-  upgradeSub: {
-    fontSize: 12,
-    color: Colors.textSlate,
-    fontWeight: Typography.fontWeights.medium,
-  },
-  section: {
-    marginTop: 18,
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: Typography.fontWeights.bold,
-    color: Colors.textMuted,
-    marginBottom: 10,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-    paddingHorizontal: 2,
-  },
-  menuCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-  },
-  row: {
+  phoneRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 15,
-    minHeight: 56,
+    gap: 4,
   },
-  rowBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.borderLight,
+  phone: {
+    fontSize: 12,
+    fontWeight: Typography.fontWeights.medium,
+    color: '#8B919A',
+  },
+  upgradeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF6D4',
+    borderRadius: 14,
+    paddingLeft: 8,
+    paddingRight: 6,
+    paddingVertical: 8,
+    gap: 4,
+  },
+  upgradeCopy: {
+    alignItems: 'flex-start',
+  },
+  upgradeTitle: {
+    fontSize: 12,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+    lineHeight: 15,
+  },
+  upgradeSub: {
+    fontSize: 9,
+    fontWeight: Typography.fontWeights.medium,
+    color: '#6E747C',
+    lineHeight: 12,
+  },
+  menuSection: {
+    flexGrow: 1,
+    backgroundColor: Colors.surface,
+    paddingHorizontal: Spacing.screenPadding,
+    paddingTop: 18,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#3A3F47',
+    letterSpacing: 0.4,
+    marginBottom: 12,
+    marginLeft: 2,
+  },
+  sectionTitleSpaced: {
+    marginTop: 8,
+  },
+  menuCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#EEF0F3',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    marginBottom: 10,
+    minHeight: 58,
   },
   rowIconWrap: {
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: Colors.surfaceAlt,
+    backgroundColor: '#FFF6D4',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
   },
   rowLabel: {
     flex: 1,
     fontSize: 15,
     fontWeight: Typography.fontWeights.medium,
     color: Colors.textPrimary,
-  },
-  rowTrailing: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  trailingText: {
-    fontSize: 13,
-    color: Colors.textSlate,
-    fontWeight: Typography.fontWeights.medium,
   },
   comingSoonOverlay: {
     flex: 1,

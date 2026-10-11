@@ -1,8 +1,7 @@
 import React, {useState} from 'react';
 import {Text, TextInput, View} from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import BackButton from '../../components/brand/BackButton';
 import PrimaryButton from '../../components/brand/PrimaryButton';
+import BannerHeader from '../../components/common/BannerHeader';
 import {ROUTES} from '../../constants/Routes';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
@@ -12,16 +11,15 @@ import {useResponsiveStyles} from '../../hooks';
  */
 const AadhaarVerifyScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
-  const insets = useSafeAreaInsets();
   const [aadhaar, setAadhaar] = useState('');
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + 8}]}>
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Verify with Aadhaar</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+    <View style={styles.container}>
+      <BannerHeader
+        title="Verify with Aadhaar"
+        onBack={() => navigation.goBack()}
+        style={styles.headerGap}
+      />
 
       <View style={styles.content}>
         <Text style={styles.heading}>Enter your 12 digit Aadhaar Number</Text>
@@ -58,21 +56,8 @@ const baseStyles = {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.screenPadding,
+  headerGap: {
     marginBottom: Spacing.xl,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.textNavy,
-  },
-  headerSpacer: {
-    width: 40,
   },
   content: {
     paddingHorizontal: Spacing.screenPadding,

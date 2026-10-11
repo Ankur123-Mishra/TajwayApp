@@ -2,7 +2,7 @@ import React from 'react';
 import {Image, ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
-import BackButton from '../../components/brand/BackButton';
+import BannerHeader from '../../components/common/BannerHeader';
 import {ROUTES} from '../../constants/Routes';
 import {Images} from '../../constants/Images';
 import {Colors, Spacing, Typography} from '../../theme';
@@ -116,15 +116,28 @@ const MarketBookingDetailScreen = ({navigation, route}) => {
   };
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + 4}]}>
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <View style={styles.headerCenter} pointerEvents="none">
-          <Text style={styles.tripType}>{tripType}</Text>
-          <Text style={styles.schedule}>{schedule}</Text>
+    <View style={styles.container}>
+      <BannerHeader>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.headerBtn}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="Go back">
+            <Image
+              source={Images.backIcon}
+              style={styles.backIcon}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+          <View style={styles.headerCenter} pointerEvents="none">
+            <Text style={styles.tripType}>{tripType}</Text>
+            <Text style={styles.schedule}>{schedule}</Text>
+          </View>
+          <View style={styles.headerBtn} />
         </View>
-        <View style={styles.headerSpacer} />
-      </View>
+      </BannerHeader>
 
       <ScrollView
         contentContainerStyle={[
@@ -257,20 +270,25 @@ const baseStyles = {
     flex: 1,
     backgroundColor: Colors.surface,
   },
-  header: {
+  headerRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingHorizontal: Spacing.screenPadding,
-    marginBottom: 4,
+    alignItems: 'center',
+    minHeight: 44,
+  },
+  headerBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backIcon: {
+    width: 18,
+    height: 16,
   },
   headerCenter: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: 4,
     paddingHorizontal: 8,
-  },
-  headerSpacer: {
-    width: 40,
   },
   tripType: {
     fontSize: 13,

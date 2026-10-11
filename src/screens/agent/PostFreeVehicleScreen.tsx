@@ -12,8 +12,8 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
-import BackButton from '../../components/brand/BackButton';
 import PrimaryButton from '../../components/brand/PrimaryButton';
+import BannerHeader from '../../components/common/BannerHeader';
 import PostFormField from '../../components/post/PostFormField';
 import {ROUTES} from '../../constants/Routes';
 import {Colors, Spacing} from '../../theme';
@@ -173,12 +173,12 @@ const PostFreeVehicleScreen = ({navigation}) => {
     activeField === 'start' ? 'Vehicle Start Time' : 'Vehicle End Time';
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + 8}]}>
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Post Free Vehicle</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+    <View style={styles.container}>
+      <BannerHeader
+        title="Post Free Vehicle"
+        onBack={() => navigation.goBack()}
+        style={styles.headerGap}
+      />
 
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -386,21 +386,8 @@ const baseStyles = {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.screenPadding,
+  headerGap: {
     marginBottom: Spacing.base,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.textSlate,
-  },
-  headerSpacer: {
-    width: 40,
   },
   scroll: {
     paddingHorizontal: Spacing.screenPadding,

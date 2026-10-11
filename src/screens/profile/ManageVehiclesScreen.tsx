@@ -1,9 +1,8 @@
 import React from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import BackButton from '../../components/brand/BackButton';
+import BannerHeader from '../../components/common/BannerHeader';
 import {ROUTES} from '../../constants/Routes';
-import {Colors, Dimensions, Spacing, Typography} from '../../theme';
+import {Colors, Dimensions, Spacing} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
 /**
@@ -11,20 +10,22 @@ import {useResponsiveStyles} from '../../hooks';
  */
 const ManageVehiclesScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
-  const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + 8}]}>
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Manage Vehicles</Text>
-        <TouchableOpacity style={styles.addBtn} activeOpacity={0.85}>
-          <Text style={styles.addText}>Add New</Text>
-          <View style={styles.plusCircle}>
-            <Text style={styles.plus}>+</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <BannerHeader
+        title="Manage Vehicles"
+        onBack={() => navigation.goBack()}
+        style={styles.headerGap}
+        right={
+          <TouchableOpacity style={styles.addBtn} activeOpacity={0.85}>
+            <Text style={styles.addText}>Add New</Text>
+            <View style={styles.plusCircle}>
+              <Text style={styles.plus}>+</Text>
+            </View>
+          </TouchableOpacity>
+        }
+      />
 
       <Text style={styles.hint}>
         Please click on plus button and add your vehicle number, details will be
@@ -50,19 +51,8 @@ const baseStyles = {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.screenPadding,
+  headerGap: {
     marginBottom: Spacing.base,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.textNavy,
-    marginHorizontal: 8,
   },
   addBtn: {
     flexDirection: 'row',

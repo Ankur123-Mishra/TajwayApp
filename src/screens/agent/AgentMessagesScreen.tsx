@@ -158,7 +158,20 @@ const AgentMessagesScreen = ({navigation}) => {
         onLayout={event => setHeaderHeight(event.nativeEvent.layout.height)}>
         <BannerHeader raised={helpMenuOpen}>
           <View style={styles.headerRow}>
-            <View style={styles.headerSide} />
+            <View style={styles.headerSideLeft}>
+              <TouchableOpacity
+                style={styles.backBtn}
+                onPress={() => navigation.navigate(ROUTES.AGENT_HOME)}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="Go back">
+                <Image
+                  source={Images.backIcon}
+                  style={styles.backIcon}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            </View>
             <Text style={styles.title}>Chats</Text>
             <View style={styles.headerSide}>
               <TouchableOpacity
@@ -283,10 +296,25 @@ const baseStyles = {
     alignItems: 'center',
     minHeight: 44,
   },
+  headerSideLeft: {
+    width: 88,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
   headerSide: {
     width: 88,
     alignItems: 'flex-end',
     justifyContent: 'center',
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backIcon: {
+    width: 18,
+    height: 16,
   },
   title: {
     flex: 1,

@@ -1,7 +1,13 @@
 import React, {useState} from 'react';
-import {Image, StatusBar, Text, View, useWindowDimensions} from 'react-native';
+import {
+  Image,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import BackButton from '../brand/BackButton';
 import Images from '../../constants/Images';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
@@ -63,7 +69,18 @@ const BannerHeader = ({
           <View style={styles.row}>
             <View style={styles.side}>
               {onBack ? (
-                <BackButton onPress={onBack} color={Colors.textPrimary} />
+                <TouchableOpacity
+                  onPress={onBack}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Go back"
+                  style={styles.backBtn}>
+                  <Image
+                    source={Images.backIcon}
+                    style={styles.backIcon}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
               ) : null}
             </View>
             <Text style={styles.title} numberOfLines={1}>
@@ -118,6 +135,16 @@ const baseStyles = {
     width: 40,
     alignItems: 'flex-start',
     justifyContent: 'center',
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backIcon: {
+    width: 18,
+    height: 16,
   },
   sideRight: {
     minWidth: 40,

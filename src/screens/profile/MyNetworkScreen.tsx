@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
+import BannerHeader from '../../components/common/BannerHeader';
 import AddNetworkContactModal from '../../components/profile/AddNetworkContactModal';
 import {mockNetworkContacts} from '../../mockData';
 import {Colors, Spacing, Typography} from '../../theme';
@@ -99,18 +100,7 @@ const MyNetworkScreen = ({navigation}) => {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, {paddingTop: insets.top + 6}]}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Go back">
-          <Ionicons name="arrow-back" size={22} color={Colors.textNavy} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Network</Text>
-        <View style={styles.headerBtn} />
-      </View>
+      <BannerHeader title="My Network" onBack={() => navigation.goBack()} />
 
       <FlatList
         data={contacts}
@@ -146,28 +136,6 @@ const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: '#F9F9F9',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 8,
-    paddingBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.borderLight,
-  },
-  headerBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: Typography.fontWeights.bold,
-    color: Colors.textPrimary,
   },
   list: {
     flexGrow: 1,

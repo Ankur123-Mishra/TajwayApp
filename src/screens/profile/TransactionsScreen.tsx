@@ -1,7 +1,7 @@
 import React from 'react';
 import {FlatList, Text, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import BackButton from '../../components/brand/BackButton';
+import BannerHeader from '../../components/common/BannerHeader';
 import {mockTransactions} from '../../mockData';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
@@ -92,12 +92,12 @@ const TransactionsScreen = ({navigation}) => {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + 8}]}>
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Transaction</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+    <View style={styles.container}>
+      <BannerHeader
+        title="Transaction"
+        onBack={() => navigation.goBack()}
+        style={styles.headerGap}
+      />
 
       <FlatList
         data={mockTransactions}
@@ -118,21 +118,8 @@ const baseStyles = {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.screenPadding,
+  headerGap: {
     marginBottom: Spacing.base,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: Typography.fontWeights.semibold,
-    color: Colors.textNavy,
-  },
-  headerSpacer: {
-    width: 40,
   },
   list: {
     paddingLeft: Spacing.screenPadding + DATE_OVERHANG,

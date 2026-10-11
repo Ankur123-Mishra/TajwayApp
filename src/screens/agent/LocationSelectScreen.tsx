@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
+import BannerHeader from '../../components/common/BannerHeader';
 import {Colors, Spacing} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
@@ -81,16 +82,12 @@ const LocationSelectScreen = ({navigation, route}) => {
   );
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + 8}]}>
+    <View style={styles.container}>
+      <BannerHeader
+        title="Select Location"
+        onBack={() => navigation.goBack()}
+      />
       <View style={styles.searchBar}>
-        <TouchableOpacity
-          style={styles.searchIconBtn}
-          onPress={() => navigation.goBack()}
-          activeOpacity={0.7}
-          hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
-          <Ionicons name="arrow-back" size={22} color={Colors.textSlate} />
-        </TouchableOpacity>
-
         <TextInput
           value={query}
           onChangeText={setQuery}
@@ -110,15 +107,7 @@ const LocationSelectScreen = ({navigation, route}) => {
             hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
             <Ionicons name="close" size={20} color={Colors.textMuted} />
           </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={styles.searchIconBtn}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.7}
-            hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
-            <Ionicons name="close" size={20} color={Colors.textMuted} />
-          </TouchableOpacity>
-        )}
+        ) : null}
       </View>
 
       <Text style={styles.hint}>Type more than 3 character</Text>
@@ -175,6 +164,7 @@ const baseStyles = {
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 12,
     marginHorizontal: Spacing.screenPadding,
     backgroundColor: Colors.surface,
     borderRadius: 12,
@@ -199,7 +189,8 @@ const baseStyles = {
     fontSize: 15,
     color: Colors.textPrimary,
     paddingVertical: 10,
-    paddingHorizontal: 4,
+    paddingLeft: 12,
+    paddingRight: 4,
   },
   hint: {
     marginTop: 14,

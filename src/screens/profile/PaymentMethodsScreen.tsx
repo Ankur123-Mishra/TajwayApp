@@ -1,8 +1,8 @@
 import React, {useState} from 'react';
 import {KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import BackButton from '../../components/brand/BackButton';
 import PrimaryButton from '../../components/brand/PrimaryButton';
+import BannerHeader from '../../components/common/BannerHeader';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
@@ -23,12 +23,12 @@ const PaymentMethodsScreen = ({navigation}) => {
   };
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + 8}]}>
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Payment Methods</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+    <View style={styles.container}>
+      <BannerHeader
+        title="Payment Methods"
+        onBack={() => navigation.goBack()}
+        style={styles.headerGap}
+      />
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -112,21 +112,8 @@ const baseStyles = {
   flex: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.screenPadding,
+  headerGap: {
     marginBottom: Spacing.lg,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: Typography.fontWeights.semibold,
-    color: Colors.textNavy,
-  },
-  headerSpacer: {
-    width: 40,
   },
   scroll: {
     paddingHorizontal: Spacing.screenPadding,

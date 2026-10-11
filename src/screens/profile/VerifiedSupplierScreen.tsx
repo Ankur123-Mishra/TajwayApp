@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
-import BackButton from '../../components/brand/BackButton';
+import BannerHeader from '../../components/common/BannerHeader';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
@@ -80,12 +80,12 @@ const VerifiedSupplierScreen = ({navigation}) => {
   };
 
   return (
-    <View style={[styles.container, {paddingTop: insets.top + 6}]}>
-      <View style={styles.header}>
-        <BackButton onPress={() => navigation.goBack()} />
-        <Text style={styles.headerTitle}>Upgrade Now</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+    <View style={styles.container}>
+      <BannerHeader
+        title="Upgrade Now"
+        onBack={() => navigation.goBack()}
+        style={styles.headerGap}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -188,21 +188,8 @@ const baseStyles = {
     flex: 1,
     backgroundColor: '#F4F5F7',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.screenPadding,
+  headerGap: {
     marginBottom: 8,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: Typography.fontWeights.semibold,
-    color: '#C9A227',
-  },
-  headerSpacer: {
-    width: 40,
   },
   scroll: {
     paddingHorizontal: Spacing.screenPadding,

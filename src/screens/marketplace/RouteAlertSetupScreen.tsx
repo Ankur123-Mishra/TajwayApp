@@ -1,111 +1,131 @@
-import React, {useMemo, useState} from 'react';
+import React, {useState} from 'react';
 import {
   Image,
   Modal,
+  Pressable,
   ScrollView,
-  StyleSheet,
-  Switch,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
+import BannerHeader from '../../components/common/BannerHeader';
 import {Images} from '../../constants/Images';
-import {Colors, Dimensions, Spacing} from '../../theme';
+import {ROUTES} from '../../constants/Routes';
+import {Colors, Spacing} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
-const TOTAL_STEPS = 3;
+const STEPS = ['Vehicle', 'One Way', 'Round Trip'];
 
-const VEHICLE_OPTIONS = [
-  {id: 'hatchback', label: 'Hatchback', image: Images.carInnova},
-  {id: 'sedan', label: 'Sedan', image: Images.carInnova},
-  {id: 'ertiga', label: 'Ertiga', image: Images.carInnova},
-  {id: 'suv', label: 'SUV', image: Images.carInnova},
-  {id: 'innova', label: 'INNOVA', image: Images.carInnova},
-  {id: 'innova_crysta', label: 'INNOVA CRYSTA', image: Images.carInnova},
-  {id: 'force', label: 'FORCE Traveller', image: Images.carInnova},
-  {id: 'bus', label: 'Bus', image: Images.carInnova},
+const VEHICLES = [
+  {id: 'hatchback', label: 'Hatchback'},
+  {id: 'sedan', label: 'Sedan'},
+  {id: 'suv', label: 'SUV'},
+  {id: 'innova', label: 'Innova'},
+  {id: 'innova_crysta', label: 'Innova Crysta'},
+  {id: 'force', label: 'Force Traveller'},
+  {id: 'bus', label: 'Bus'},
+  {id: 'other', label: 'Other'},
 ];
 
 const STATE_CHIPS = [
   {id: 'all_india', label: 'All India'},
   {id: 'delhi', label: 'Delhi'},
   {id: 'rajasthan', label: 'Rajasthan'},
+  {id: 'haryana', label: 'Haryana'},
 ];
 
 const MORE_STATES = [
   'Uttarakhand',
-  'Haryana',
   'Uttar Pradesh',
   'Punjab',
   'Gujarat',
   'Maharashtra',
+  'Himachal Pradesh',
+  'Madhya Pradesh',
+  'Bihar',
+  'West Bengal',
+  'Goa',
+  'Karnataka',
+  'Tamil Nadu',
 ];
 
-const ProgressBar = ({step}) => {
-  const styles = useResponsiveStyles(baseStyles);
-  return (
-  <View style={styles.progressRow}>
-    {Array.from({length: TOTAL_STEPS}).map((_, index) => (
-      <View
-        key={index}
-        style={[
-          styles.progressSeg,
-          index <= step ? styles.progressSegOn : styles.progressSegOff,
-        ]}
-      />
-    ))}
+const PICKUP_PIN = '#F0C43A';
+const DROP_PIN = '#F2A7B0';
+
+const Stepper = ({step, onStep, styles}) => (
+  <View style={styles.stepperRow}>
+    {STEPS.map((label, index) => {
+      const active = index === step;
+      return (
+        <React.Fragment key={label}>
+          <TouchableOpacity
+            style={styles.stepNode}
+            onPress={() => onStep(index)}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel={label}>
+            <View style={[styles.stepCircle, active && styles.stepCircleOn]}>
+              <Text style={[styles.stepNum, active && styles.stepNumOn]}>
+                {index + 1}
+              </Text>
+            </View>
+            <Text
+              style={[styles.stepLabel, active && styles.stepLabelOn]}
+              numberOfLines={1}>
+              {label}
+            </Text>
+          </TouchableOpacity>
+          {index < STEPS.length - 1 ? <View style={styles.stepLine} /> : null}
+        </React.Fragment>
+      );
+    })}
   </View>
 );
-};
 
-const SearchField = ({
+const CheckBadge = ({styles, style}) => (
+  <View style={[styles.checkBadge, style]}>
+    <Ionicons name="checkmark" size={11} color={Colors.onPrimary} />
+  </View>
+);
+
+const LocationField = ({
   placeholder,
   value,
-  onChangeText,
-  style,
-  editable = true,
-}) => {
-  const styles = useResponsiveStyles(baseStyles);
-  return (
-  <View style={[styles.searchField, style]}>
-    <TextInput
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
-      placeholderTextColor={Colors.textPlaceholder}
-      style={styles.searchInput}
-      editable={editable}
-    />
-    <Ionicons name="search-outline" size={18} color={Colors.textMuted} />
-  </View>
+  pinColor,
+  onPress,
+  styles,
+}) => (
+  <TouchableOpacity
+    style={styles.locationField}
+    onPress={onPress}
+    activeOpacity={0.85}>
+    <Ionicons name="location" size={18} color={pinColor} />
+    <Text
+      style={[styles.locationText, !value && styles.locationPlaceholder]}
+      numberOfLines={1}>
+      {value || placeholder}
+    </Text>
+    <Ionicons name="search-outline" size={18} color="#C5CCD6" />
+  </TouchableOpacity>
 );
-};
 
 /**
- * Route Alert Setup — 3-step wizard opened from Market Alerts switch.
+ * Route Alert Setup — vehicle, one-way, then round trip.
+ * Opened from the Market alerts switch.
  */
 const RouteAlertSetupScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState(0);
 
-  const allVehicleIds = useMemo(
-    () => VEHICLE_OPTIONS.map(v => v.id),
-    [],
-  );
-  const [selectedVehicles, setSelectedVehicles] = useState(allVehicleIds);
-
-  const [allOneWayAlerts, setAllOneWayAlerts] = useState(true);
-  const [selectedStates, setSelectedStates] = useState(['delhi']);
+  const [selectedVehicle, setSelectedVehicle] = useState('suv');
+  const [selectedStates, setSelectedStates] = useState(['all_india']);
   const [pickupLocation, setPickupLocation] = useState('');
   const [dropLocation, setDropLocation] = useState('');
   const [oneWayPickupOnly, setOneWayPickupOnly] = useState('');
   const [moreStatesVisible, setMoreStatesVisible] = useState(false);
-
-  const [allRoundTripAlerts, setAllRoundTripAlerts] = useState(true);
   const [pickupCities, setPickupCities] = useState('');
 
   const finishSetup = () => {
@@ -120,38 +140,26 @@ const RouteAlertSetupScreen = ({navigation}) => {
     setStep(prev => prev - 1);
   };
 
-  const handleSkip = () => {
-    finishSetup();
-  };
-
   const handleContinue = () => {
-    if (step < TOTAL_STEPS - 1) {
+    if (step < STEPS.length - 1) {
       setStep(prev => prev + 1);
       return;
     }
     finishSetup();
   };
 
-  const toggleVehicle = id => {
-    setSelectedVehicles(prev =>
-      prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id],
-    );
-  };
-
   const clearStepSelection = () => {
     if (step === 0) {
-      setSelectedVehicles([]);
+      setSelectedVehicle(null);
       return;
     }
     if (step === 1) {
-      setAllOneWayAlerts(false);
       setSelectedStates([]);
       setPickupLocation('');
       setDropLocation('');
       setOneWayPickupOnly('');
       return;
     }
-    setAllRoundTripAlerts(false);
     setPickupCities('');
   };
 
@@ -163,279 +171,223 @@ const RouteAlertSetupScreen = ({navigation}) => {
       return;
     }
     setSelectedStates(prev => {
-      const withoutAll = prev.filter(s => s !== 'all_india');
+      const withoutAll = prev.filter(item => item !== 'all_india');
       if (withoutAll.includes(id)) {
-        return withoutAll.filter(s => s !== id);
+        return withoutAll.filter(item => item !== id);
       }
       return [...withoutAll, id];
     });
   };
 
-  const toggleMoreState = name => {
-    setSelectedStates(prev => {
-      const withoutAll = prev.filter(s => s !== 'all_india');
-      if (withoutAll.includes(name)) {
-        return withoutAll.filter(s => s !== name);
-      }
-      return [...withoutAll, name];
-    });
+  const extraStates = selectedStates.filter(
+    id => !STATE_CHIPS.some(chip => chip.id === id),
+  );
+
+  const openLocation = onSelect => {
+    navigation.navigate(ROUTES.LOCATION_SELECT, {onSelect});
   };
 
-  const renderHeader = () => (
-    <View style={[styles.header, {paddingTop: insets.top + 6}]}>
-      <View style={styles.headerRow}>
-        <TouchableOpacity
-          style={styles.headerBack}
-          onPress={handleBack}
-          activeOpacity={0.85}
-          accessibilityLabel="Go back">
-          <Ionicons name="chevron-back" size={22} color={Colors.onPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Route Alert Setup</Text>
-        <TouchableOpacity onPress={handleSkip} hitSlop={8} activeOpacity={0.85}>
-          <Text style={styles.skipText}>Skip</Text>
-        </TouchableOpacity>
-      </View>
-      <ProgressBar step={step} />
-    </View>
-  );
-
-  const renderFooter = () => (
-    <View
-      style={[
-        styles.footer,
-        {paddingBottom: Math.max(insets.bottom, 12)},
-      ]}>
-      <TouchableOpacity
-        style={styles.clearBtn}
-        onPress={clearStepSelection}
-        activeOpacity={0.85}>
-        <Text style={styles.clearText}>Clear Selection</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.continueBtn}
-        onPress={handleContinue}
-        activeOpacity={0.85}>
-        <Text style={styles.continueText}>
-          {step === TOTAL_STEPS - 1 ? 'Save' : 'Continue'}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-
   const renderVehicleStep = () => (
-    <ScrollView
-      contentContainerStyle={styles.stepPad}
-      showsVerticalScrollIndicator={false}>
-      <Text style={styles.question}>Which Vehicle do you drive?</Text>
+    <View>
+      <Text style={styles.question}>Which vehicle do you drive?</Text>
       <Text style={styles.hint}>
-        Only get notified for bookings that matter{'\n'}Uncheck types you don't
-        drive.
+        Choose the vehicle type you want to receive route alerts for.
       </Text>
-
       <View style={styles.vehicleGrid}>
-        {VEHICLE_OPTIONS.map(item => {
-          const selected = selectedVehicles.includes(item.id);
+        {VEHICLES.map(item => {
+          const selected = selectedVehicle === item.id;
           return (
             <TouchableOpacity
               key={item.id}
-              style={[
-                styles.vehicleCard,
-                selected ? styles.vehicleCardOn : styles.vehicleCardOff,
-              ]}
+              style={[styles.vehicleCard, selected && styles.vehicleCardOn]}
               activeOpacity={0.9}
-              onPress={() => toggleVehicle(item.id)}>
-              <View
-                style={[
-                  styles.checkCircle,
-                  selected ? styles.checkCircleOn : styles.checkCircleOff,
-                ]}>
-                {selected ? (
-                  <Ionicons name="checkmark" size={12} color={Colors.onPrimary} />
-                ) : null}
-              </View>
-              <View style={styles.vehicleImageWrap}>
-                <Image
-                  source={item.image}
-                  style={styles.vehicleImage}
-                  resizeMode="contain"
-                />
-              </View>
-              <Text
-                style={[
-                  styles.vehicleLabel,
-                  !selected && styles.vehicleLabelOff,
-                ]}
-                numberOfLines={1}>
-                {item.label}
-              </Text>
+              onPress={() =>
+                setSelectedVehicle(prev => (prev === item.id ? null : item.id))
+              }>
+              {selected ? <CheckBadge styles={styles} /> : null}
+              <Image
+                source={Images.carImage}
+                style={styles.vehicleImage}
+                resizeMode="contain"
+              />
+              <Text style={styles.vehicleLabel}>{item.label}</Text>
             </TouchableOpacity>
           );
         })}
       </View>
-    </ScrollView>
+    </View>
   );
 
+  const renderStateChip = chip => {
+    const active = selectedStates.includes(chip.id);
+    return (
+      <TouchableOpacity
+        key={chip.id}
+        style={[styles.chip, active && styles.chipOn]}
+        onPress={() => toggleState(chip.id)}
+        activeOpacity={0.85}>
+        <Text style={styles.chipText}>{chip.label}</Text>
+        {active ? (
+          <CheckBadge styles={styles} style={styles.chipCheck} />
+        ) : null}
+      </TouchableOpacity>
+    );
+  };
+
   const renderOneWayStep = () => (
-    <ScrollView
-      contentContainerStyle={styles.stepPadAlt}
-      showsVerticalScrollIndicator={false}>
-      <View style={styles.alertCard}>
-        <View style={styles.alertTextWrap}>
-          <Text style={styles.alertTitle}>
-            You will receive all one way alerts
-          </Text>
-          <Text style={styles.alertHintGreen}>
-            Its suggested to keep it off and select preferred routes below
-          </Text>
-        </View>
-        <Switch
-          value={allOneWayAlerts}
-          onValueChange={setAllOneWayAlerts}
-          trackColor={{false: '#D0D0D0', true: Colors.primary}}
-          thumbColor="#fff"
-        />
+    <View>
+      <Text style={styles.question}>Select your preferred states</Text>
+      <Text style={styles.hint}>
+        Choose the states from where you want to receive one-way alerts.
+      </Text>
+      <View style={styles.chipWrap}>
+        {STATE_CHIPS.map(renderStateChip)}
+        {extraStates.map(name =>
+          renderStateChip({id: name, label: name}),
+        )}
       </View>
+      <TouchableOpacity
+        style={styles.moreChip}
+        onPress={() => setMoreStatesVisible(true)}
+        activeOpacity={0.85}>
+        <Ionicons name="add" size={16} color={Colors.textPrimary} />
+        <Text style={styles.moreText}>More</Text>
+      </TouchableOpacity>
 
-      <Text style={styles.redNote}>
-        Select your preferred states from which you want to receive all one way
-        notifications, to get notifications from around the country select 'All
-        India'
+      <Text style={[styles.question, styles.sectionGap]}>
+        Select your preferred one-way routes
       </Text>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipRow}>
-        {STATE_CHIPS.map(chip => {
-          const active = selectedStates.includes(chip.id);
-          return (
-            <TouchableOpacity
-              key={chip.id}
-              style={[styles.chip, active && styles.chipOn]}
-              onPress={() => toggleState(chip.id)}
-              activeOpacity={0.85}>
-              <Text style={[styles.chipText, active && styles.chipTextOn]}>
-                {chip.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-        <TouchableOpacity
-          style={styles.chip}
-          onPress={() => setMoreStatesVisible(true)}
-          activeOpacity={0.85}>
-          <Text style={styles.chipText}>More</Text>
-          <Ionicons
-            name="chevron-down"
-            size={14}
-            color={Colors.textSecondary}
-            style={styles.chipIcon}
-          />
-        </TouchableOpacity>
-      </ScrollView>
-
-      <Text style={styles.sectionTitle}>Select your preferred one way routes</Text>
-      <View style={styles.routeRow}>
-        <SearchField
-          placeholder="Pickup Location"
-          value={pickupLocation}
-          onChangeText={setPickupLocation}
-          style={styles.routeHalf}
-        />
-        <SearchField
-          placeholder="Drop To"
-          value={dropLocation}
-          onChangeText={setDropLocation}
-          style={styles.routeHalf}
-        />
-      </View>
-
-      <Text style={styles.sectionTitle}>
-        Or select only a one way pickup location
+      <Text style={styles.hint}>
+        Set your pickup and drop locations to receive one-way alerts
       </Text>
-      <Text style={styles.redNoteTight}>
-        You will receive notification of all one way bookings from selected
-        cities
+      <LocationField
+        placeholder="Pickup Location"
+        value={pickupLocation}
+        pinColor={PICKUP_PIN}
+        onPress={() => openLocation(setPickupLocation)}
+        styles={styles}
+      />
+      <LocationField
+        placeholder="Drop To"
+        value={dropLocation}
+        pinColor={DROP_PIN}
+        onPress={() => openLocation(setDropLocation)}
+        styles={styles}
+      />
+
+      <Text style={[styles.question, styles.sectionGap]}>
+        Select your a one-way pickup location
       </Text>
-      <SearchField
+      <Text style={styles.hint}>
+        You will receive alerts only for the selected pickup location.
+      </Text>
+      <LocationField
         placeholder="Pickup Location"
         value={oneWayPickupOnly}
-        onChangeText={setOneWayPickupOnly}
+        pinColor={PICKUP_PIN}
+        onPress={() => openLocation(setOneWayPickupOnly)}
+        styles={styles}
       />
-    </ScrollView>
+    </View>
   );
 
   const renderRoundTripStep = () => (
-    <ScrollView
-      contentContainerStyle={styles.stepPadAlt}
-      showsVerticalScrollIndicator={false}>
-      <View style={styles.alertCard}>
-        <View style={styles.alertTextWrap}>
-          <Text style={styles.alertTitle}>
-            You will receive all round trip alerts
-          </Text>
-          <Text style={styles.alertHintRed}>
-            Oneway notifications are disabled now
-          </Text>
-        </View>
-        <Switch
-          value={allRoundTripAlerts}
-          onValueChange={setAllRoundTripAlerts}
-          trackColor={{false: '#D0D0D0', true: Colors.primary}}
-          thumbColor="#fff"
-        />
-      </View>
-
-      <Text style={styles.sectionTitle}>Select your preferred pickup cities</Text>
-      <SearchField
-        placeholder="Select Pickup Cities"
+    <View>
+      <Text style={styles.question}>Select your preferred pickup cities</Text>
+      <Text style={styles.hint}>
+        Choose the cities from where you want to receive round trip alerts.
+      </Text>
+      <LocationField
+        placeholder="Pickup Location"
         value={pickupCities}
-        onChangeText={setPickupCities}
+        pinColor={PICKUP_PIN}
+        onPress={() => openLocation(setPickupCities)}
+        styles={styles}
       />
-    </ScrollView>
+    </View>
   );
 
   return (
     <View style={styles.container}>
-      {renderHeader()}
-      <View style={styles.body}>
+      <BannerHeader
+        title="Route Alert Setup"
+        onBack={handleBack}
+        right={
+          <TouchableOpacity onPress={finishSetup} hitSlop={8} activeOpacity={0.85}>
+            <Text style={styles.skipText}>Skip</Text>
+          </TouchableOpacity>
+        }
+      />
+      <Stepper step={step} onStep={setStep} styles={styles} />
+      <ScrollView
+        key={step}
+        style={styles.body}
+        contentContainerStyle={styles.stepPad}
+        showsVerticalScrollIndicator={false}>
         {step === 0
           ? renderVehicleStep()
           : step === 1
             ? renderOneWayStep()
             : renderRoundTripStep()}
+      </ScrollView>
+      <View
+        style={[styles.footer, {paddingBottom: Math.max(insets.bottom, 16)}]}>
+        <TouchableOpacity
+          style={styles.clearBtn}
+          onPress={clearStepSelection}
+          activeOpacity={0.85}>
+          <Text style={styles.clearText}>Clear Selection</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.continueBtn}
+          onPress={handleContinue}
+          activeOpacity={0.85}>
+          <Text style={styles.continueText}>Continue</Text>
+        </TouchableOpacity>
       </View>
-      {renderFooter()}
 
       <Modal
         visible={moreStatesVisible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setMoreStatesVisible(false)}>
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setMoreStatesVisible(false)}>
-          <View style={styles.modalCard}>
+        <View style={styles.modalOverlay}>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setMoreStatesVisible(false)}
+          />
+          <View
+            style={[
+              styles.modalCard,
+              {paddingBottom: Math.max(insets.bottom, 16)},
+            ]}>
             <Text style={styles.modalTitle}>Select more states</Text>
-            {MORE_STATES.map(name => {
-              const active = selectedStates.includes(name);
-              return (
-                <TouchableOpacity
-                  key={name}
-                  style={styles.modalRow}
-                  onPress={() => toggleMoreState(name)}
-                  activeOpacity={0.85}>
-                  <Text style={styles.modalRowText}>{name}</Text>
-                  <Ionicons
-                    name={active ? 'checkbox' : 'square-outline'}
-                    size={22}
-                    color={active ? Colors.primary : Colors.textMuted}
-                  />
-                </TouchableOpacity>
-              );
-            })}
+            <ScrollView
+              style={styles.modalList}
+              showsVerticalScrollIndicator={false}>
+              {MORE_STATES.map(name => {
+                const active = selectedStates.includes(name);
+                return (
+                  <TouchableOpacity
+                    key={name}
+                    style={styles.modalRow}
+                    onPress={() => toggleState(name)}
+                    activeOpacity={0.85}>
+                    <Text style={styles.modalRowText}>{name}</Text>
+                    <View
+                      style={[styles.modalBox, active && styles.modalBoxOn]}>
+                      {active ? (
+                        <Ionicons
+                          name="checkmark"
+                          size={13}
+                          color={Colors.onPrimary}
+                        />
+                      ) : null}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
             <TouchableOpacity
               style={styles.modalDone}
               onPress={() => setMoreStatesVisible(false)}
@@ -443,7 +395,7 @@ const RouteAlertSetupScreen = ({navigation}) => {
               <Text style={styles.modalDoneText}>Done</Text>
             </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        </View>
       </Modal>
     </View>
   );
@@ -452,81 +404,92 @@ const RouteAlertSetupScreen = ({navigation}) => {
 const baseStyles = {
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.surface,
   },
-  header: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing.screenPadding,
-    paddingBottom: 10,
+  skipText: {
+    color: Colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '500',
+    textAlign: 'right',
   },
-  headerRow: {
+  stepperRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    paddingHorizontal: Spacing.screenPadding,
+    paddingTop: 16,
+    paddingBottom: 4,
   },
-  headerBack: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  stepNode: {
+    alignItems: 'center',
+    width: 32,
+    paddingBottom: 22,
+  },
+  stepCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     borderWidth: 1.5,
-    borderColor: Colors.onPrimary,
+    borderColor: '#E4E4E4',
+    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
+  stepCircleOn: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  stepNum: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#C5C5C5',
+  },
+  stepNumOn: {
     color: Colors.onPrimary,
-    fontSize: 18,
     fontWeight: '700',
   },
-  skipText: {
-    color: Colors.onPrimary,
-    fontSize: 15,
-    fontWeight: '600',
-    minWidth: 34,
-    textAlign: 'right',
+  stepLabel: {
+    position: 'absolute',
+    top: 36,
+    width: 78,
+    left: -23,
+    textAlign: 'center',
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#B0B0B0',
   },
-  progressRow: {
-    flexDirection: 'row',
-    gap: 5,
+  stepLabelOn: {
+    color: Colors.textPrimary,
+    fontWeight: '700',
   },
-  progressSeg: {
+  stepLine: {
     flex: 1,
-    height: 4,
-    borderRadius: 2,
-  },
-  progressSegOn: {
-    backgroundColor: Colors.onPrimary,
-  },
-  progressSegOff: {
-    backgroundColor: 'rgba(26,26,27,0.28)',
+    height: 1.5,
+    backgroundColor: '#E6E6E6',
+    marginTop: 14,
+    marginHorizontal: 8,
   },
   body: {
     flex: 1,
   },
   stepPad: {
     paddingHorizontal: Spacing.screenPadding,
-    paddingTop: 18,
-    paddingBottom: 24,
-    backgroundColor: Colors.surface,
-  },
-  stepPadAlt: {
-    paddingHorizontal: Spacing.screenPadding,
-    paddingTop: 16,
+    paddingTop: 14,
     paddingBottom: 24,
   },
   question: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
-    color: Colors.textNavy,
-    marginBottom: 6,
+    color: Colors.textPrimary,
   },
   hint: {
     fontSize: 13,
     lineHeight: 18,
-    color: Colors.textMuted,
-    marginBottom: 16,
+    color: '#9A9A9A',
+    marginTop: 4,
+    marginBottom: 14,
+  },
+  sectionGap: {
+    marginTop: 22,
   },
   vehicleGrid: {
     flexDirection: 'row',
@@ -534,235 +497,205 @@ const baseStyles = {
     justifyContent: 'space-between',
   },
   vehicleCard: {
-    width: '47.5%',
-    borderRadius: 12,
-    paddingTop: 6,
-    paddingBottom: 8,
-    paddingHorizontal: 6,
-    marginBottom: 10,
+    width: '48%',
+    minHeight: 128,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#E6E8EE',
+    backgroundColor: Colors.surface,
+    paddingTop: 16,
+    paddingBottom: 12,
+    paddingHorizontal: 8,
+    marginBottom: 12,
     alignItems: 'center',
-    overflow: 'hidden',
+    justifyContent: 'center',
   },
   vehicleCardOn: {
-    backgroundColor: Colors.primary,
+    backgroundColor: '#FFF8DE',
+    borderColor: Colors.primary,
   },
-  vehicleCardOff: {
-    backgroundColor: Colors.primaryLight,
+  vehicleImage: {
+    width: '100%',
+    height: 64,
   },
-  checkCircle: {
+  vehicleLabel: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    textAlign: 'center',
+  },
+  checkBadge: {
     position: 'absolute',
-    top: 6,
-    right: 6,
+    top: 8,
+    right: 8,
     zIndex: 2,
     width: 18,
     height: 18,
     borderRadius: 9,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkCircleOn: {
-    backgroundColor: '#fff',
-  },
-  checkCircleOff: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: Colors.onPrimary,
-  },
-  vehicleImageWrap: {
-    width: '100%',
-    height: 54,
-    marginTop: 10,
-    marginBottom: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  vehicleImage: {
-    width: '100%',
-    height: '100%',
-  },
-  vehicleLabel: {
-    color: Colors.onPrimary,
-    fontWeight: '800',
-    fontSize: 11,
-    textAlign: 'center',
-    textTransform: 'uppercase',
-    paddingHorizontal: 2,
-  },
-  vehicleLabelOff: {
-    color: Colors.textNavy,
-  },
-  alertCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+  chipWrap: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 14,
-    ...Dimensions.shadow.soft,
-  },
-  alertTextWrap: {
-    flex: 1,
-    paddingRight: 10,
-  },
-  alertTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textPrimary,
-    marginBottom: 4,
-  },
-  alertHintGreen: {
-    fontSize: 12,
-    lineHeight: 16,
-    color: '#2E7D32',
-  },
-  alertHintRed: {
-    fontSize: 12,
-    lineHeight: 16,
-    color: '#E57373',
-  },
-  redNote: {
-    fontSize: 12,
-    lineHeight: 17,
-    color: Colors.filterRed,
-    marginBottom: 12,
-  },
-  redNoteTight: {
-    fontSize: 12,
-    lineHeight: 16,
-    color: Colors.filterRed,
-    marginBottom: 10,
-    marginTop: -4,
-  },
-  chipRow: {
-    paddingBottom: 4,
-    marginBottom: 18,
+    flexWrap: 'wrap',
+    paddingTop: 6,
   },
   chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.borderStrong,
-    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#E4E6EA',
+    borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    backgroundColor: Colors.surface,
     marginRight: 8,
+    marginBottom: 8,
   },
   chipOn: {
-    backgroundColor: Colors.primary,
     borderColor: Colors.primary,
+    backgroundColor: '#FFF8DE',
   },
   chipText: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '600',
-    color: Colors.textSecondary,
+    color: Colors.textPrimary,
   },
-  chipTextOn: {
-    color: Colors.onPrimary,
+  chipCheck: {
+    top: -7,
+    right: -4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
-  chipIcon: {
-    marginLeft: 4,
-  },
-  sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textSlate,
-    marginBottom: 10,
-  },
-  routeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 18,
-  },
-  routeHalf: {
-    width: '48.5%',
-  },
-  searchField: {
+  moreChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
+    alignSelf: 'flex-start',
+    borderWidth: 1.5,
+    borderColor: '#E4E6EA',
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    height: 46,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: Colors.surface,
+    marginTop: 2,
   },
-  searchInput: {
-    flex: 1,
-    padding: 0,
+  moreText: {
+    marginLeft: 4,
     fontSize: 14,
+    fontWeight: '600',
     color: Colors.textPrimary,
-    marginRight: 6,
+  },
+  locationField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 54,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#ECEEF2',
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+  },
+  locationText: {
+    flex: 1,
+    marginHorizontal: 10,
+    fontSize: 15,
+    color: Colors.textPrimary,
+  },
+  locationPlaceholder: {
+    color: '#B7BEC8',
   },
   footer: {
     flexDirection: 'row',
     paddingHorizontal: Spacing.screenPadding,
-    paddingTop: 12,
+    paddingTop: 8,
     backgroundColor: Colors.surface,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: Colors.borderLight,
-    gap: 10,
+    gap: 12,
   },
   clearBtn: {
     flex: 1,
-    height: 50,
-    borderRadius: 12,
+    height: 52,
+    borderRadius: 14,
     backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E4E4E4',
     alignItems: 'center',
     justifyContent: 'center',
   },
   clearText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
     color: Colors.textPrimary,
   },
   continueBtn: {
     flex: 1,
-    height: 50,
-    borderRadius: 12,
+    height: 52,
+    borderRadius: 14,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   continueText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: Colors.onPrimary,
   },
   modalOverlay: {
     flex: 1,
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: Colors.overlay,
-    justifyContent: 'center',
-    paddingHorizontal: 28,
   },
   modalCard: {
     backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: 18,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 20,
+    paddingTop: 18,
   },
   modalTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: Colors.textNavy,
-    marginBottom: 12,
+    color: Colors.textPrimary,
+    marginBottom: 8,
+  },
+  modalList: {
+    maxHeight: 360,
   },
   modalRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
   modalRowText: {
     fontSize: 15,
     color: Colors.textPrimary,
   },
+  modalBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#D5D8DE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalBoxOn: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
   modalDone: {
-    marginTop: 12,
-    height: 44,
-    borderRadius: 10,
+    marginTop: 8,
+    height: 48,
+    borderRadius: 12,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
