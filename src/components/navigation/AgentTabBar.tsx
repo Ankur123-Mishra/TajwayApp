@@ -171,62 +171,63 @@ const AgentTabBar = ({
   return (
     <View style={[styles.wrap, {paddingBottom: bottomPad}]}>
       {menuMounted ? (
-        <>
-          <Animated.View
-            pointerEvents={menuOpen ? 'auto' : 'none'}
-            style={[styles.backdrop, {height: windowHeight, opacity: backdropOpacity}]}>
-            <Pressable
-              style={StyleSheet.absoluteFill}
-              onPress={closeMenu}
-              accessibilityLabel="Dismiss create menu"
-            />
-          </Animated.View>
+        <Animated.View
+          pointerEvents={menuOpen ? 'auto' : 'none'}
+          style={[styles.backdrop, {height: windowHeight, opacity: backdropOpacity}]}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={closeMenu}
+            accessibilityLabel="Dismiss create menu"
+          />
+        </Animated.View>
+      ) : null}
 
-          <Animated.View
-            pointerEvents={menuOpen ? 'auto' : 'none'}
-            style={[
-              styles.speedDial,
-              {
-                opacity: menuOpacity,
-                transform: [
-                  {translateY: menuTranslateY},
-                  {scale: menuScale},
-                ],
-              },
-            ]}>
-            <TouchableOpacity
-              style={styles.actionChip}
-              activeOpacity={0.85}
-              onPress={handleNewBooking}
-              accessibilityRole="button"
-              accessibilityLabel="New Booking">
-              <View style={[styles.actionIcon, styles.bookingIcon]}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={18}
-                  color={Colors.onPrimary}
-                />
-              </View>
-              <Text style={styles.actionText}>New Booking</Text>
-            </TouchableOpacity>
+      <View style={styles.barRow}>
+      {menuMounted ? (
+        <Animated.View
+          pointerEvents={menuOpen ? 'auto' : 'none'}
+          style={[
+            styles.speedDial,
+            {
+              opacity: menuOpacity,
+              transform: [
+                {translateY: menuTranslateY},
+                {scale: menuScale},
+              ],
+            },
+          ]}>
+          <TouchableOpacity
+            style={styles.actionChip}
+            activeOpacity={0.85}
+            onPress={handleNewBooking}
+            accessibilityRole="button"
+            accessibilityLabel="New Booking">
+            <View style={[styles.actionIcon, styles.bookingIcon]}>
+              <Ionicons
+                name="calendar-outline"
+                size={18}
+                color={Colors.onPrimary}
+              />
+            </View>
+            <Text style={styles.actionText}>New Booking</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.actionChip}
-              activeOpacity={0.85}
-              onPress={handleFreeVehicle}
-              accessibilityRole="button"
-              accessibilityLabel="Free Vehicle">
-              <View style={[styles.actionIcon, styles.vehicleIcon]}>
-                <Ionicons
-                  name="car-outline"
-                  size={18}
-                  color={Colors.textInverse}
-                />
-              </View>
-              <Text style={styles.actionText}>Free Vehicle</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </>
+          <TouchableOpacity
+            style={styles.actionChip}
+            activeOpacity={0.85}
+            onPress={handleFreeVehicle}
+            accessibilityRole="button"
+            accessibilityLabel="Free Vehicle">
+            <View style={[styles.actionIcon, styles.vehicleIcon]}>
+              <Ionicons
+                name="car-outline"
+                size={18}
+                color={Colors.textInverse}
+              />
+            </View>
+            <Text style={styles.actionText}>Free Vehicle</Text>
+          </TouchableOpacity>
+        </Animated.View>
       ) : null}
 
       {state.routes.map((route, index) => {
@@ -297,18 +298,16 @@ const AgentTabBar = ({
           </TouchableOpacity>
         );
       })}
+      </View>
     </View>
   );
 };
 
 const baseStyles = {
   wrap: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
     backgroundColor: Colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingHorizontal: 4,
     zIndex: 20,
     overflow: 'visible',
     ...Platform.select({
@@ -322,6 +321,12 @@ const baseStyles = {
         elevation: 16,
       },
     }),
+  },
+  barRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: 4,
+    overflow: 'visible',
   },
   backdrop: {
     position: 'absolute',
@@ -341,7 +346,7 @@ const baseStyles = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 22,
-    zIndex: 2,
+    zIndex: 4,
     paddingHorizontal: 8,
   },
   actionChip: {

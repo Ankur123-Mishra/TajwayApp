@@ -145,6 +145,7 @@ const ProfileMenuRow = ({item, onPress}) => {
 /**
  * Profile tab — banner header and card list matching the profile design.
  */
+
 const AgentProfileScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
@@ -157,6 +158,7 @@ const AgentProfileScreen = ({navigation}) => {
   const [comingSoonMessage, setComingSoonMessage] = useState(
     'This feature is coming soon.',
   );
+  const [logoutConfirmVisible, setLogoutConfirmVisible] = useState(false);
 
   const showComingSoon = (message = 'This feature is coming soon.') => {
     setComingSoonMessage(message);
@@ -210,7 +212,7 @@ const AgentProfileScreen = ({navigation}) => {
 
   const onMenuPress = item => {
     if (item.id === 'logout') {
-      onLogout();
+      setLogoutConfirmVisible(true);
       return;
     }
     if (item.id === 'language') {
@@ -285,7 +287,11 @@ const AgentProfileScreen = ({navigation}) => {
               {displayName}
             </Text>
             <View style={styles.phoneRow}>
-              <Ionicons name="call-outline" size={13} color="#8B919A" />
+              <Image
+                source={Images.phoneIcon}
+                style={styles.phoneIcon}
+                resizeMode="contain"
+              />
               <Text style={styles.phone} numberOfLines={1}>
                 {displayPhone}
               </Text>
@@ -301,6 +307,7 @@ const AgentProfileScreen = ({navigation}) => {
               size={16}
               color={Colors.primaryDark}
             />
+            
             <View style={styles.upgradeCopy}>
               <Text style={styles.upgradeTitle}>Upgrade</Text>
               <Text style={styles.upgradeSub}>To Get Verified</Text>
@@ -338,6 +345,43 @@ const AgentProfileScreen = ({navigation}) => {
         onClose={() => setLanguageModalVisible(false)}
         onSave={setLanguage}
       />
+
+      <Modal
+        visible={logoutConfirmVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLogoutConfirmVisible(false)}>
+        <TouchableOpacity
+          style={styles.comingSoonOverlay}
+          activeOpacity={1}
+          onPress={() => setLogoutConfirmVisible(false)}>
+          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+            <View style={styles.comingSoonCard}>
+              <Text style={styles.comingSoonTitle}>Logout</Text>
+              <Text style={styles.comingSoonMsg}>
+                Are you sure you want to logout?
+              </Text>
+              <View style={styles.confirmActions}>
+                <TouchableOpacity
+                  style={styles.confirmNoBtn}
+                  activeOpacity={0.85}
+                  onPress={() => setLogoutConfirmVisible(false)}>
+                  <Text style={styles.confirmNoText}>No</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.comingSoonBtn}
+                  activeOpacity={0.85}
+                  onPress={() => {
+                    setLogoutConfirmVisible(false);
+                    onLogout();
+                  }}>
+                  <Text style={styles.comingSoonBtnText}>Yes</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
 
       <Modal
         visible={comingSoonVisible}
@@ -455,6 +499,10 @@ const baseStyles = {
     alignItems: 'center',
     gap: 4,
   },
+  phoneIcon: {
+    width: 13,
+    height: 13,
+  },
   phone: {
     fontSize: 12,
     fontWeight: Typography.fontWeights.medium,
@@ -558,6 +606,26 @@ const baseStyles = {
     color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: 20,
+  },
+  confirmActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  confirmNoBtn: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: '#E2E5EA',
+    paddingHorizontal: 36,
+    paddingVertical: 11,
+    borderRadius: 22,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  confirmNoText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.textPrimary,
   },
   comingSoonBtn: {
     backgroundColor: Colors.primary,

@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {Modal, ScrollView, Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import PrimaryButton from '../../components/brand/PrimaryButton';
 import BannerHeader from '../../components/common/BannerHeader';
@@ -50,14 +51,20 @@ const ManageDriversScreen = ({navigation}) => {
         <View style={styles.overlay}>
           <View style={[styles.sheet, {paddingBottom: insets.bottom + 12}]}>
             <View style={styles.sheetHead}>
+              <View style={styles.headSide} />
               <Text style={styles.sheetTitle}>Add Driver</Text>
-              <TouchableOpacity onPress={() => setSheetOpen(false)}>
-                <Text style={styles.sheetClose}>✕</Text>
+              <TouchableOpacity
+                style={styles.headSide}
+                activeOpacity={0.7}
+                hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                onPress={() => setSheetOpen(false)}>
+                <Ionicons name="close" size={22} color={Colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.avatar}>
-              <Text style={styles.avatarIcon}>👤</Text>
+            <View style={styles.avatarRing}>
+              <View style={styles.avatarHead} />
+              <View style={styles.avatarBody} />
             </View>
 
             <ScrollView
@@ -83,11 +90,12 @@ const ManageDriversScreen = ({navigation}) => {
 
             <PrimaryButton
               title="Add"
+              darkText
               onPress={() => {
                 setSheetOpen(false);
                 navigation.navigate(ROUTES.AGENT_TABS);
               }}
-              style={{marginTop: 12}}
+              style={styles.addButton}
             />
           </View>
         </View>
@@ -144,55 +152,72 @@ const baseStyles = {
     backgroundColor: Colors.surface,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    paddingHorizontal: Spacing.screenPadding,
-    paddingTop: Spacing.base,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: 18,
     maxHeight: '92%',
   },
   sheetHead: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.base,
+    marginBottom: 6,
+  },
+  headSide: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sheetTitle: {
     flex: 1,
     textAlign: 'center',
     fontSize: 18,
     fontWeight: '700',
-    color: Colors.textNavy,
-    marginLeft: 24,
+    color: Colors.textPrimary,
   },
-  sheetClose: {
-    fontSize: 18,
-    color: Colors.textMuted,
-    width: 24,
-    textAlign: 'center',
-  },
-  avatar: {
+  avatarRing: {
     alignSelf: 'center',
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: '#E8EAED',
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: '#E2E5EA',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.lg,
+    marginTop: 8,
+    marginBottom: 22,
   },
-  avatarIcon: {
-    fontSize: 40,
+  avatarHead: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: Colors.primary,
+  },
+  avatarBody: {
+    width: 46,
+    height: 24,
+    marginTop: 5,
+    backgroundColor: Colors.primary,
+    borderTopLeftRadius: 23,
+    borderTopRightRadius: 23,
+    borderBottomLeftRadius: 14,
+    borderBottomRightRadius: 14,
   },
   field: {
-    marginBottom: 12,
+    marginBottom: 14,
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textNavy,
-    marginBottom: 6,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: 8,
   },
   inputWrap: {
-    backgroundColor: Colors.surfaceAlt,
-    borderRadius: 24,
-    height: 50,
+    backgroundColor: '#F4F6F8',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#EEF1F4',
+    height: 48,
     justifyContent: 'center',
     paddingHorizontal: 16,
   },
@@ -200,6 +225,13 @@ const baseStyles = {
     fontSize: 14,
     color: Colors.textPrimary,
     padding: 0,
+  },
+  addButton: {
+    marginTop: 8,
+    height: 52,
+    borderRadius: 12,
+    shadowOpacity: 0,
+    elevation: 0,
   },
 };
 

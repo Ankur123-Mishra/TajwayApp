@@ -12,7 +12,11 @@ import {
   View,
 } from 'react-native';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
-import {MarketFilterSheet, MyBookingCard} from '../../components/booking';
+import {
+  BookingDecisionModal,
+  MarketFilterSheet,
+  MyBookingCard,
+} from '../../components/booking';
 import {EMPTY_FILTERS} from '../../components/booking/MarketFilterSheet';
 import BannerHeader from '../../components/common/BannerHeader';
 import Images from '../../constants/Images';
@@ -37,6 +41,25 @@ const openDialer = (phone = getRandomPhone()) => {
     return;
   }
   Linking.openURL(`tel:${digits}`).catch(() => {});
+};
+
+const toDetailBooking = item => {
+  const raw = String(item.dateTime || '');
+  const [datePart, timePart] = raw.split('@');
+  const pickup = [item.from, item.fromState].filter(Boolean).join(', ');
+  const drop = [item.to, item.toState].filter(Boolean).join(', ');
+
+  return {
+    ...item,
+    when: (datePart || '').trim() || item.when,
+    time: (timePart || '').trim() || item.time,
+    pickupFrom: pickup || item.from,
+    dropTo: drop || item.to,
+    extras: item.pricingNote || item.extras,
+    totalAmount: item.amount ?? item.totalAmount,
+    bookingType:
+      item.tab === 'received' ? 'Received Booking' : 'Posted Booking',
+  };
 };
 
 const matchesTrip = (booking, trip) => {
@@ -67,6 +90,7 @@ const MyBookingsScreen = ({navigation}) => {
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
   const [helpMenuOpen, setHelpMenuOpen] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [decision, setDecision] = useState(null);
 
   const bookings = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -144,8 +168,28 @@ const MyBookingsScreen = ({navigation}) => {
     openDialer();
   };
 
-  const handleEdit = item => {
-    navigateRoot(ROUTES.POST_BOOKING, {booking: item, mode: 'edit'});
+  const handleOpenDetail = item => {
+    navigateRoot(ROUTES.MARKET_BOOKING_DETAIL, {
+      booking: toDetailBooking(item),
+    });
+  };
+
+  const updateBookingStatus = (item, status) => {
+    setBookingsList(prev =>
+      prev.map(booking =>
+        booking.id === item.id ? {...booking, status} : booking,
+      ),
+    );
+  };
+
+  const handleAccept = item => {
+    updateBookingStatus(item, 'Accepted');
+    setDecision({variant: 'accept', booking: item});
+  };
+
+  const handleReject = item => {
+    updateBookingStatus(item, 'Rejected');
+    setDecision({variant: 'reject', booking: item});
   };
 
   const handleChat = item => {
@@ -178,23 +222,6 @@ const MyBookingsScreen = ({navigation}) => {
     } catch {
       Alert.alert('Share failed', 'Unable to share this booking right now.');
     }
-  };
-
-  const handleDelete = item => {
-    Alert.alert(
-      'Delete Booking',
-      `Are you sure you want to delete booking #${item.code || item.id}?`,
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            setBookingsList(prev => prev.filter(b => b.id !== item.id));
-          },
-        },
-      ],
-    );
   };
 
   return (
@@ -250,7 +277,11 @@ const MyBookingsScreen = ({navigation}) => {
             accessibilityRole="button"
             accessibilityLabel="Call support">
             <View style={styles.helpPopupCallBadge}>
-              <Ionicons name="call" size={12} color={Colors.onPrimary} />
+              <Image
+                source={Images.phoneIcon}
+                style={styles.helpPopupCallIcon}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.helpPopupText}>Call</Text>
           </TouchableOpacity>
@@ -331,10 +362,11 @@ const MyBookingsScreen = ({navigation}) => {
             vehicle={item.vehicle}
             amount={item.amount}
             tripType={item.tripType}
-            onEdit={() => handleEdit(item)}
+            onPress={() => handleOpenDetail(item)}
+            onAccept={() => handleAccept(item)}
+            onReject={() => handleReject(item)}
             onChat={() => handleChat(item)}
             onShare={() => handleShare(item)}
-            onDelete={() => handleDelete(item)}
           />
         )}
       />
@@ -344,6 +376,13 @@ const MyBookingsScreen = ({navigation}) => {
         onClose={() => setFilterOpen(false)}
         initial={appliedFilters}
         onSave={setAppliedFilters}
+      />
+
+      <BookingDecisionModal
+        visible={Boolean(decision)}
+        variant={decision?.variant}
+        booking={decision?.booking}
+        onClose={() => setDecision(null)}
       />
     </View>
   );
@@ -437,6 +476,10 @@ const baseStyles = {
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
+  },
+  helpPopupCallIcon: {
+    width: 14,
+    height: 14,
   },
   helpPopupText: {
     fontSize: 14,

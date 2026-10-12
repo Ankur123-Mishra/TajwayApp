@@ -22,7 +22,7 @@ import {USER_ROLES} from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
 import {updateUser} from '../../redux/slices/authSlice';
 import {Colors, Spacing, Typography} from '../../theme';
-import {useResponsiveStyles} from '../../hooks';
+import {useAuth, useResponsiveStyles} from '../../hooks';
 
 const EMPTY_GST_DOCS = [null, null, null];
 
@@ -40,15 +40,21 @@ const VERIFICATION_ITEMS = [
 /**
  * Personal Information — profile edit (screenshot match).
  */
+
 const PersonalInfoScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
+  const {user} = useAuth();
   const [fullName, setFullName] = useState('');
   const [city, setCity] = useState('');
   const [company, setCompany] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState(USER_ROLES.AGENT);
+  const [profileImageUri, setProfileImageUri] = useState(
+    user?.profileImage || null,
+  );
+  
   const [gstVisible, setGstVisible] = useState(false);
   const [gstDocs, setGstDocs] = useState(EMPTY_GST_DOCS);
   const [gstSubmitted, setGstSubmitted] = useState(false);
@@ -62,9 +68,36 @@ const PersonalInfoScreen = ({navigation}) => {
         company,
         email,
         role,
+        profileImage: profileImageUri,
       }),
     );
     navigation.goBack();
+  };
+
+  const pickProfileImage = () => {
+    launchImageLibrary(
+      {
+        mediaType: 'photo',
+        selectionLimit: 1,
+        quality: 0.8,
+      },
+      response => {
+        if (response.didCancel) {
+          return;
+        }
+        if (response.errorCode) {
+          Alert.alert(
+            'Unable to open gallery',
+            response.errorMessage || 'Please try again.',
+          );
+          return;
+        }
+        const uri = response.assets?.[0]?.uri;
+        if (uri) {
+          setProfileImageUri(uri);
+        }
+      },
+    );
   };
 
   const onVerify = itemId => {
@@ -155,10 +188,25 @@ const PersonalInfoScreen = ({navigation}) => {
         contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
-        <View style={styles.avatarBox}>
-          <View style={styles.avatarHead} />
-          <View style={styles.avatarBody} />
-        </View>
+        <TouchableOpacity
+          style={styles.avatarBox}
+          onPress={pickProfileImage}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Upload profile photo">
+          {profileImageUri ? (
+            <Image
+              source={{uri: profileImageUri}}
+              style={styles.avatarImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <>
+              <View style={styles.avatarHead} />
+              <View style={styles.avatarBody} />
+            </>
+          )}
+        </TouchableOpacity>
 
         <Field
           label="Full Name"
@@ -360,32 +408,37 @@ const baseStyles = {
   },
   avatarBox: {
     alignSelf: 'center',
-    width: 108,
-    height: 108,
-    borderRadius: 54,
+    width: 82,
+    height: 82,
+    borderRadius: 41,
     backgroundColor: Colors.surface,
     borderWidth: 1.5,
     borderColor: '#E3E3E3',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 18,
-    marginBottom: Spacing.xl,
+    overflow: 'hidden',
+    marginTop: 12,
+    marginBottom: Spacing.lg,
   },
   avatarHead: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: '#F6C431',
-    marginBottom: 5,
+    marginBottom: 4,
   },
   avatarBody: {
-    width: 54,
-    height: 28,
+    width: 40,
+    height: 20,
     backgroundColor: '#F6C431',
-    borderTopLeftRadius: 27,
-    borderTopRightRadius: 27,
-    borderBottomLeftRadius: 14,
-    borderBottomRightRadius: 14,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   field: {
     marginBottom: Spacing.base,

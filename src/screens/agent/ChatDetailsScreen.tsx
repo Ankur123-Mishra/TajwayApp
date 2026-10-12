@@ -511,7 +511,11 @@ const ChatDetailsScreen = ({navigation, route}) => {
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel="Call contact">
-            <Ionicons name="call-outline" size={22} color={Colors.textPrimary} />
+            <Image
+              source={Images.phoneIcon}
+              style={styles.callIcon}
+              resizeMode="contain"
+            />
           </TouchableOpacity>
         </View>
       </BannerHeader>
@@ -594,6 +598,10 @@ const baseStyles = {
   backIcon: {
     width: 18,
     height: 16,
+  },
+  callIcon: {
+    width: 22,
+    height: 22,
   },
   headerTitle: {
     flex: 1,

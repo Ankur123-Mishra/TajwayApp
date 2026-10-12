@@ -197,7 +197,11 @@ const AgentMessagesScreen = ({navigation}) => {
             accessibilityRole="button"
             accessibilityLabel="Call support">
             <View style={styles.helpPopupCallBadge}>
-              <Ionicons name="call" size={12} color={Colors.onPrimary} />
+              <Image
+                source={Images.phoneIcon}
+                style={styles.helpPopupCallIcon}
+                resizeMode="contain"
+              />
             </View>
             <Text style={styles.helpPopupText}>Call</Text>
           </TouchableOpacity>
@@ -374,6 +378,10 @@ const baseStyles = {
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
+  },
+  helpPopupCallIcon: {
+    width: 14,
+    height: 14,
   },
   helpPopupText: {
     fontSize: 14,

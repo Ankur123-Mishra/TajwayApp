@@ -35,7 +35,7 @@ const PostFormField = ({
         </Text>
         {rightElement ||
           (icon ? (
-            <Ionicons name={icon} size={20} color={Colors.primary} />
+            <Ionicons name={icon} size={18} color={Colors.textMuted} />
           ) : null)}
       </TouchableOpacity>
     </View>
@@ -47,9 +47,9 @@ const baseStyles = {
     marginBottom: Spacing.base,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
-    color: Colors.textSlate,
+    color: Colors.textPrimary,
     marginBottom: 8,
   },
   inputWrap: {
@@ -57,8 +57,10 @@ const baseStyles = {
     alignItems: 'center',
     backgroundColor: Colors.surface,
     borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
     minHeight: 52,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 14,
   },
   inputWrapMulti: {

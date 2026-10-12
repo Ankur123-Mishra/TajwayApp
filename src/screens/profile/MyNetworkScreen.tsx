@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {
   FlatList,
-  StyleSheet,
+  Image,
   Text,
   TouchableOpacity,
   View,
@@ -10,8 +10,9 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import BannerHeader from '../../components/common/BannerHeader';
 import AddNetworkContactModal from '../../components/profile/AddNetworkContactModal';
+import Images from '../../constants/Images';
 import {mockNetworkContacts} from '../../mockData';
-import {Colors, Spacing, Typography} from '../../theme';
+import {Colors, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
 const MONTHS = [
@@ -35,50 +36,121 @@ const formatInviteStatus = () => {
   return `Invitation Sent On ${MONTHS[now.getMonth()]} ${day}, ${now.getFullYear()}`;
 };
 
-const NetworkSlidersIcon = () => {
-  const styles = useResponsiveStyles(baseStyles);
-  return (
-  <View style={styles.sliders}>
-    <View style={styles.sliderLine}>
-      <View style={[styles.sliderKnob, styles.sliderKnobRight]} />
-    </View>
-    <View style={styles.sliderLineSecond}>
-      <View style={[styles.sliderKnob, styles.sliderKnobLeft]} />
-    </View>
-    <View style={styles.sliderLineThird}>
-      <View style={[styles.sliderKnob, styles.sliderKnobMid]} />
-    </View>
-  </View>
-);
+const formatPhone = phone => {
+  const raw = String(phone || '').trim();
+  if (!raw) {
+    return '';
+  }
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `+91 ${digits}`;
+  }
+  if (digits.length === 12 && digits.startsWith('91')) {
+    return `+91 ${digits.slice(2)}`;
+  }
+  return raw.startsWith('+') ? raw : `+91 ${raw}`;
+};
+
+const tripBadge = tripType => {
+  const value = String(tripType || '').trim();
+  if (!value) {
+    return null;
+  }
+  const roundTrip = /round/i.test(value);
+  return {
+    label: roundTrip ? 'Round Trip' : 'ONE WAY',
+    roundTrip,
+  };
 };
 
 const NetworkRow = ({item}) => {
   const styles = useResponsiveStyles(baseStyles);
+  const phone = formatPhone(item.phones?.[0]);
+  const badge = tripBadge(item.tripType);
+  const vehicle = String(item.vehicleType || '').trim();
+
   return (
-  <View style={styles.row}>
-    <View style={styles.rowContent}>
-      {item.name ? <Text style={styles.name}>{item.name}</Text> : null}
-      {item.phones.map(phone => (
-        <Text key={phone} style={styles.phone}>
-          {phone}
-        </Text>
-      ))}
-      <Text style={styles.status}>{item.status}</Text>
+    <View style={styles.card}>
+      <Image source={Images.profile} style={styles.avatar} />
+
+      <View style={styles.copy}>
+        {item.name ? (
+          <Text style={styles.name} numberOfLines={1}>
+            {item.name}
+          </Text>
+        ) : null}
+        {phone ? (
+          <View style={styles.metaRow}>
+            <Image
+              source={Images.phoneIcon}
+              style={styles.phoneIcon}
+              resizeMode="contain"
+            />
+            <Text style={styles.metaText} numberOfLines={1}>
+              {phone}
+            </Text>
+          </View>
+        ) : null}
+        {item.company ? (
+          <View style={styles.metaRow}>
+            <Ionicons
+              name="business-outline"
+              size={14}
+              color={Colors.textMuted}
+            />
+            <Text style={styles.metaText} numberOfLines={1}>
+              {item.company}
+            </Text>
+          </View>
+        ) : null}
+        {item.status && !item.company ? (
+          <Text style={styles.status} numberOfLines={2}>
+            {item.status}
+          </Text>
+        ) : null}
+      </View>
+
+      <View style={styles.side}>
+        {badge ? (
+          <View
+            style={[
+              styles.badge,
+              badge.roundTrip ? styles.badgeRound : styles.badgeOneWay,
+            ]}>
+            <Text
+              style={[
+                styles.badgeText,
+                badge.roundTrip ? styles.badgeTextRound : styles.badgeTextOneWay,
+              ]}>
+              {badge.label}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.badgeSpacer} />
+        )}
+        {vehicle ? (
+          <View style={styles.vehicle}>
+            <View style={styles.carClip}>
+              <Image
+                source={Images.carImage}
+                style={styles.carImage}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={styles.vehicleLabel} numberOfLines={1}>
+              {vehicle}
+            </Text>
+          </View>
+        ) : null}
+      </View>
     </View>
-    <TouchableOpacity
-      style={styles.actionBtn}
-      activeOpacity={0.75}
-      accessibilityRole="button"
-      accessibilityLabel={`Manage ${item.name || 'contact'}`}>
-      <NetworkSlidersIcon />
-    </TouchableOpacity>
-  </View>
-);
+  );
 };
 
 /**
- * My Network — contact list with FAB (screenshot match).
+ * My Network — contact cards with trip type and vehicle.
  */
+
 const MyNetworkScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
@@ -106,7 +178,6 @@ const MyNetworkScreen = ({navigation}) => {
         data={contacts}
         keyExtractor={item => item.id}
         renderItem={({item}) => <NetworkRow item={item} />}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
         contentContainerStyle={[
           styles.list,
           {paddingBottom: insets.bottom + 88},
@@ -135,95 +206,115 @@ const MyNetworkScreen = ({navigation}) => {
 const baseStyles = {
   container: {
     flex: 1,
-    backgroundColor: '#F9F9F9',
+    backgroundColor: Colors.surface,
   },
   list: {
     flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
-  row: {
+  card: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.screenPadding,
-    paddingVertical: 16,
-    backgroundColor: '#FFFFFF',
+    alignItems: 'flex-start',
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E6E8EC',
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    marginBottom: 12,
   },
-  rowContent: {
+  avatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#E5E7EB',
+    marginRight: 12,
+    marginTop: 2,
+  },
+  copy: {
     flex: 1,
-    paddingRight: 12,
+    minWidth: 0,
+    paddingRight: 8,
+    paddingTop: 1,
   },
   name: {
     fontSize: 16,
     fontWeight: Typography.fontWeights.bold,
     color: Colors.textPrimary,
-    marginBottom: 2,
+    marginBottom: 6,
   },
-  phone: {
-    fontSize: 15,
-    fontWeight: Typography.fontWeights.regular,
-    color: Colors.textPrimary,
-    lineHeight: 22,
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  phoneIcon: {
+    width: 14,
+    height: 14,
+  },
+  metaText: {
+    flex: 1,
+    marginLeft: 6,
+    fontSize: 13,
+    fontWeight: Typography.fontWeights.medium,
+    color: '#3A4250',
   },
   status: {
-    marginTop: 4,
-    fontSize: 13,
+    marginTop: 6,
+    fontSize: 12,
     fontWeight: Typography.fontWeights.regular,
     color: Colors.textMuted,
   },
-  actionBtn: {
-    width: 36,
-    height: 36,
+  side: {
+    width: 92,
+    alignItems: 'flex-end',
+  },
+  badge: {
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  badgeSpacer: {
+    height: 22,
+  },
+  badgeOneWay: {
+    backgroundColor: '#E5F6EA',
+  },
+  badgeRound: {
+    backgroundColor: '#E7F0FF',
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: Typography.fontWeights.bold,
+  },
+  badgeTextOneWay: {
+    color: '#3EAE62',
+  },
+  badgeTextRound: {
+    color: '#4C8DFF',
+  },
+  vehicle: {
+    marginTop: 8,
+    width: 84,
+    alignItems: 'center',
+  },
+  carClip: {
+    width: 84,
+    height: 52,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sliders: {
-    width: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+  carImage: {
+    width: 84,
+    height: 52,
   },
-  sliderLine: {
-    width: 18,
-    height: 2,
-    backgroundColor: Colors.textSlate,
-    borderRadius: 1,
-    justifyContent: 'center',
-  },
-  sliderLineSecond: {
-    width: 18,
-    height: 2,
-    backgroundColor: Colors.textSlate,
-    borderRadius: 1,
-    justifyContent: 'center',
-    marginTop: 5,
-  },
-  sliderLineThird: {
-    width: 18,
-    height: 2,
-    backgroundColor: Colors.textSlate,
-    borderRadius: 1,
-    justifyContent: 'center',
-    marginTop: 5,
-  },
-  sliderKnob: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.textSlate,
-    position: 'absolute',
-    top: -2,
-  },
-  sliderKnobRight: {
-    right: 1,
-  },
-  sliderKnobLeft: {
-    left: 1,
-  },
-  sliderKnobMid: {
-    left: 6,
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.border,
-    marginLeft: Spacing.screenPadding,
+  vehicleLabel: {
+    marginTop: 1,
+    fontSize: 12,
+    fontWeight: Typography.fontWeights.bold,
+    color: '#1E293B',
+    textAlign: 'center',
   },
   fab: {
     position: 'absolute',

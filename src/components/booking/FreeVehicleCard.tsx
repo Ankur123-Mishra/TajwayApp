@@ -24,6 +24,7 @@ const FreeVehicleCard = ({
   phone,
   avatarSource,
   onCall,
+  onPress,
   // onMenu,
 }) => {
   const styles = useResponsiveStyles(baseStyles);
@@ -54,7 +55,13 @@ const FreeVehicleCard = ({
   };
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.92}
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${title} free vehicle`}>
         <View style={styles.decor} />
 
         <View style={styles.topRow}>
@@ -144,11 +151,15 @@ const FreeVehicleCard = ({
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel={`Call ${name}`}>
-            <Ionicons name="call-outline" size={16} color="#1A1A1A" />
+            <Image
+              source={Images.phoneIcon}
+              style={styles.callIcon}
+              resizeMode="contain"
+            />
             <Text style={styles.callText}>Call</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </TouchableOpacity>
   );
 };
 
@@ -311,6 +322,10 @@ const baseStyles = {
     fontSize: 12,
     color: '#8B919A',
     marginTop: 1,
+  },
+  callIcon: {
+    width: 16,
+    height: 16,
   },
   callBtn: {
     flexDirection: 'row',

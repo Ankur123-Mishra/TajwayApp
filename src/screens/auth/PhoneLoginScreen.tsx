@@ -3,6 +3,7 @@ import {Text, TextInput} from 'react-native';
 import {useDispatch} from 'react-redux';
 import AuthHeroLayout from '../../components/brand/AuthHeroLayout';
 import PrimaryButton from '../../components/brand/PrimaryButton';
+import NoticeModal from '../../components/common/NoticeModal';
 import {ROUTES} from '../../constants/Routes';
 import {setPhone} from '../../redux/slices/authSlice';
 import {useResponsiveStyles} from '../../hooks';
@@ -16,11 +17,13 @@ const PhoneLoginScreen = ({navigation, route}) => {
   const dispatch = useDispatch();
   const mode = route?.params?.mode || 'login';
   const [phone, setPhoneLocal] = useState('');
+  const [noticeVisible, setNoticeVisible] = useState(false);
 
   const digits = phone.replace(/\D/g, '');
 
   const onNext = () => {
     if (digits.length < 10) {
+      setNoticeVisible(true);
       return;
     }
     dispatch(setPhone(phone));
@@ -28,6 +31,7 @@ const PhoneLoginScreen = ({navigation, route}) => {
   };
 
   return (
+    <>
     <AuthHeroLayout>
       <Text style={styles.welcome}>Welcome!</Text>
       <Text style={styles.subtitle}>
@@ -54,6 +58,13 @@ const PhoneLoginScreen = ({navigation, route}) => {
         <Text style={styles.legalLink}>Privacy Policy</Text>
       </Text>
     </AuthHeroLayout>
+    <NoticeModal
+      visible={noticeVisible}
+      title="Mobile number"
+      message="Please add a 10 digit mobile number."
+      onClose={() => setNoticeVisible(false)}
+    />
+    </>
   );
 };
 

@@ -1,5 +1,7 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
+  Animated,
+  Easing,
   Image,
   ImageBackground,
   Linking,
@@ -192,11 +194,59 @@ const MarketHomeScreen = ({navigation}) => {
   const isFocusedRef = useRef(isFocused);
   const sawBackgroundRef = useRef(false);
   const [appForegroundId, setAppForegroundId] = useState(0);
+  const vehicleToastTimer = useRef(null);
+  const vehicleToastY = useRef(new Animated.Value(120)).current;
+  const vehicleToastOpacity = useRef(new Animated.Value(0)).current;
+
+  const hideVehicleToast = () => {
+    Animated.parallel([
+      Animated.timing(vehicleToastY, {
+        toValue: 120,
+        duration: 240,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(vehicleToastOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const showVehicleToast = () => {
+    if (vehicleToastTimer.current) {
+      clearTimeout(vehicleToastTimer.current);
+    }
+    vehicleToastY.setValue(120);
+    vehicleToastOpacity.setValue(0);
+    Animated.parallel([
+      Animated.timing(vehicleToastY, {
+        toValue: 0,
+        duration: 360,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(vehicleToastOpacity, {
+        toValue: 1,
+        duration: 280,
+        useNativeDriver: true,
+      }),
+    ]).start();
+    vehicleToastTimer.current = setTimeout(() => {
+      if (mountedRef.current) {
+        hideVehicleToast();
+      }
+    }, 2800);
+  };
 
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      if (vehicleToastTimer.current) {
+        clearTimeout(vehicleToastTimer.current);
+      }
     };
   }, []);
 
@@ -646,7 +696,11 @@ const MarketHomeScreen = ({navigation}) => {
                     accessibilityRole="button"
                     accessibilityLabel="Call support">
                     <View style={styles.helpPopupCallBadge}>
-                      <Ionicons name="call" size={12} color={Colors.onPrimary} />
+                      <Image
+                        source={Images.phoneIcon}
+                        style={styles.helpPopupCallIcon}
+                        resizeMode="contain"
+                      />
                     </View>
                     <Text style={styles.helpPopupText}>Call</Text>
                   </TouchableOpacity>
@@ -733,6 +787,7 @@ const MarketHomeScreen = ({navigation}) => {
                 {...vehicle}
                 phone={phone}
                 avatarSource={hasAvatar ? Images.partnerDeepesh : undefined}
+                onPress={showVehicleToast}
                 onCall={() => handleOpenDialer(getRandomPhone())}
               />
             ))}
@@ -902,7 +957,7 @@ const MarketHomeScreen = ({navigation}) => {
                   avatarSource={hasAvatar ? Images.partnerDeepesh : undefined}
                   onPress={() =>
                     navigation.navigate(ROUTES.MARKET_BOOKING_DETAIL, {
-                      booking: {id, ...booking},
+                      booking: {id, hasAvatar, ...booking},
                     })
                   }
                   onMenu={() =>
@@ -979,6 +1034,21 @@ const MarketHomeScreen = ({navigation}) => {
         onStepChange={revealTourStep}
         onFinish={finishTour}
       />
+
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.vehicleToast,
+          {
+            opacity: vehicleToastOpacity,
+            transform: [{translateY: vehicleToastY}],
+          },
+        ]}>
+        <Ionicons name="call-outline" size={18} color={Colors.textInverse} />
+        <Text style={styles.vehicleToastText}>
+          Please call the driver for more details regarding this free vehicle.
+        </Text>
+      </Animated.View>
     </View>
   );
 };
@@ -987,6 +1057,31 @@ const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  vehicleToast: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Colors.secondary,
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  vehicleToastText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
+    color: Colors.textInverse,
   },
   tourChip: {
     backgroundColor: '#FFFFFF',
@@ -1141,7 +1236,8 @@ const baseStyles = {
     marginRight: 8,
   },
   helpPopupCallIcon: {
-    fontSize: 12,
+    width: 14,
+    height: 14,
   },
   helpPopupText: {
     fontSize: 14,

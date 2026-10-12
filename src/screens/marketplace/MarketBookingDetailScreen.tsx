@@ -8,69 +8,44 @@ import {Images} from '../../constants/Images';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
-const VEHICLE_IMAGES = {
-  innova: Images.carInnova,
-  ertiga: Images.carInnova,
-  sedan: Images.carInnova,
-};
+const NAVY = '#1B2A4A';
+const MUTED = '#8A93A6';
+const GREEN = '#1FA85A';
+const RED = '#E23B3B';
+const GOLD = '#E0B43A';
 
 const formatInr = value => `₹${Number(value).toLocaleString('en-IN')}`;
 
-const DashedDivider = () => {
-  const styles = useResponsiveStyles(baseStyles);
-  return (
-  <View style={styles.dashRow}>
-    {Array.from({length: 28}).map((_, i) => (
-      <View key={i} style={styles.dashSeg} />
-    ))}
-  </View>
-);
-};
+const tripBadge = tripType =>
+  String(tripType || 'One Way')
+    .trim()
+    .replace(/\s+/g, '-')
+    .toUpperCase();
 
-const DetailField = ({label, value}) => {
+const initialsOf = name =>
+  String(name || 'D')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0])
+    .join('')
+    .toUpperCase();
+
+const RouteDash = () => {
   const styles = useResponsiveStyles(baseStyles);
-  if (!value) {
-    return null;
-  }
   return (
-    <View style={styles.field}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      <Text style={styles.fieldValue}>{value}</Text>
+    <View style={styles.routeDash}>
+      {Array.from({length: 5}).map((_, index) => (
+        <View key={index} style={styles.routeDashSeg} />
+      ))}
     </View>
   );
 };
 
-const PriceCard = ({amount, label, amountColor}) => {
-  const styles = useResponsiveStyles(baseStyles);
-  return (
-  <View style={styles.priceCard}>
-    <Text style={[styles.priceAmt, amountColor ? {color: amountColor} : null]}>
-      {formatInr(amount)}
-    </Text>
-    <Text style={styles.priceLabel}>{label}</Text>
-  </View>
-);
-};
-
-const StarRow = ({rating = 5}) => {
-  const styles = useResponsiveStyles(baseStyles);
-  const stars = [];
-  for (let i = 1; i <= 5; i += 1) {
-    const filled = rating >= i;
-    stars.push(
-      <Text
-        key={i}
-        style={[styles.star, filled ? styles.starOn : styles.starOff]}>
-        ★
-      </Text>,
-    );
-  }
-  return <View style={styles.starRow}>{stars}</View>;
-};
-
 /**
- * Market booking detail — matches Tajway trip detail screenshots.
+ * Market booking detail — Trip Details layout from the product screenshot.
  */
+
 const MarketBookingDetailScreen = ({navigation, route}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
@@ -86,167 +61,171 @@ const MarketBookingDetailScreen = ({navigation, route}) => {
     dropTo,
     tripType = 'One Way',
     vehicle = 'Sedan',
-    vehicleType = 'sedan',
     notes,
     extras,
     bookingType = 'Public Booking',
-    secured = true,
     totalAmount,
     driverEarning,
     commission,
     reviews = 0,
     rating = 5,
-    partnerHidden = true,
     name = 'Travel Partner',
-    company,
+    hasAvatar = false,
   } = booking;
 
-  const isOneWay = String(tripType).toLowerCase().includes('one');
   const hasQuote = totalAmount == null || totalAmount === '';
-  const schedule = duration
-    ? `${when} @ ${time} (${duration})`
-    : `${when} @ ${time}`;
-  const routeTitle = isOneWay && to ? `${from} - ${to}` : from;
   const pickupValue = pickupFrom || from;
   const dropValue = dropTo || to;
-  const carImage = VEHICLE_IMAGES[vehicleType] || VEHICLE_IMAGES.sedan;
+  const extraText = extras || notes;
+  const schedule = duration ? `${when}, ${time} · ${duration}` : `${when}, ${time}`;
+  const ratingLabel = Number(rating).toFixed(1);
 
   const handleChat = () => {
     navigation.navigate(ROUTES.CHAT, {chatId: 'chat-001'});
   };
 
+  const amounts = [
+    {key: 'total', icon: 'cash-outline', label: 'Total Amount', value: totalAmount},
+    {key: 'earn', icon: 'person-outline', label: 'Driver Earning', value: driverEarning},
+    {key: 'comm', icon: 'percent', label: 'Commission', value: commission},
+  ].filter(item => item.value != null && item.value !== '');
+
   return (
     <View style={styles.container}>
-      <BannerHeader>
-        <View style={styles.headerRow}>
-          <TouchableOpacity
-            style={styles.headerBtn}
-            onPress={() => navigation.goBack()}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel="Go back">
-            <Image
-              source={Images.backIcon}
-              style={styles.backIcon}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-          <View style={styles.headerCenter} pointerEvents="none">
-            <Text style={styles.tripType}>{tripType}</Text>
-            <Text style={styles.schedule}>{schedule}</Text>
-          </View>
-          <View style={styles.headerBtn} />
-        </View>
-      </BannerHeader>
+      <BannerHeader title="Trip Details" onBack={() => navigation.goBack()} />
 
       <ScrollView
         contentContainerStyle={[
           styles.scroll,
-          {paddingBottom: insets.bottom + 24},
+          {paddingBottom: insets.bottom + 28},
         ]}
         showsVerticalScrollIndicator={false}>
-        {secured ? (
-          <View style={styles.securedRow}>
-            <View style={styles.securedBadge}>
-              <Ionicons name="shield-checkmark" size={12} color="#fff" />
-              <Text style={styles.securedText}>Secured</Text>
+        <View style={styles.card}>
+          <View style={styles.vehicleRow}>
+            <View style={styles.carWrap}>
+              <View style={styles.carHalo} />
+              <Image
+                source={Images.carImage}
+                style={styles.carImage}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={styles.vehicleCopy}>
+              <Text style={styles.vehicleName} numberOfLines={2}>
+                {vehicle}
+              </Text>
+              <View style={styles.tripPill}>
+                <Text style={styles.tripPillText}>{tripBadge(tripType)}</Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.scheduleBar}>
+            <Ionicons name="calendar-outline" size={18} color={GOLD} />
+            <Text style={styles.scheduleText} numberOfLines={1}>
+              {schedule}
+            </Text>
+            <Ionicons name="time-outline" size={18} color={GOLD} />
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.stopBlock}>
+            <View style={styles.stopRail}>
+              <View style={styles.pickupRing}>
+                <View style={styles.pickupDot} />
+              </View>
+              {dropValue ? <RouteDash /> : null}
+            </View>
+            <View style={styles.stopCopy}>
+              <Text style={styles.pickupLabel}>PICKUP</Text>
+              <Text style={styles.stopAddress}>{pickupValue}</Text>
+            </View>
+          </View>
+
+          {dropValue ? (
+            <View style={styles.stopBlock}>
+              <View style={styles.stopRail}>
+                <Ionicons name="location" size={22} color={RED} />
+              </View>
+              <View style={styles.stopCopy}>
+                <Text style={styles.dropLabel}>DROP</Text>
+                <Text style={styles.stopAddress}>{dropValue}</Text>
+              </View>
+            </View>
+          ) : null}
+        </View>
+
+        {extraText ? (
+          <View style={[styles.card, styles.rowCard]}>
+            <View style={styles.iconTile}>
+              <Ionicons name="document-text-outline" size={22} color={GOLD} />
+            </View>
+            <View style={styles.rowCopy}>
+              <Text style={styles.rowTitle}>Extra Requirement</Text>
+              <Text style={styles.rowBody}>{extraText}</Text>
             </View>
           </View>
         ) : null}
 
-        <View style={styles.vehicleRow}>
-          <Image source={carImage} style={styles.carImage} resizeMode="contain" />
-          <View style={styles.vehiclePill}>
-            <Text style={styles.vehiclePillText}>{vehicle}</Text>
+        <View style={[styles.card, styles.typeCard]}>
+          <View style={styles.iconTile}>
+            <Ionicons name="pricetag" size={20} color={GOLD} />
+          </View>
+          <Text style={styles.typeTitle}>Booking Type</Text>
+          <View style={styles.typePill}>
+            <Text style={styles.typePillText}>{bookingType}</Text>
           </View>
         </View>
 
-        <View style={styles.routeTitleRow}>
-          <Text style={styles.routeTitle}>{routeTitle}</Text>
-          {/* <View style={styles.navIcon}>
-            <Ionicons name="navigate" size={12} color="#fff" />
-          </View> */}
-        </View>
-
-        <DetailField label="Pick Up from" value={pickupValue} />
-        {isOneWay ? (
-          <DetailField label="Drop To" value={dropValue} />
-        ) : (
-          <DetailField label="Trip Details" value={notes} />
-        )}
-        {isOneWay && notes ? (
-          <DetailField label="Trip Details" value={notes} />
-        ) : null}
-        <DetailField label="Extra Requirements" value={extras} />
-        <DetailField label="Type" value={bookingType} />
-
-        <DashedDivider />
-
-        {hasQuote ? (
-          <View style={styles.quoteBlock}>
-            <Text style={styles.quoteText}>Quote Best Price</Text>
-            <Text style={styles.quoteHint}>Total Amount</Text>
-          </View>
-        ) : (
-          <View style={styles.priceRow}>
-            <PriceCard amount={totalAmount} label="Total Amount" />
-            <PriceCard
-              amount={driverEarning}
-              label="Driver's Earning"
-              amountColor={Colors.error}
-            />
-            <PriceCard amount={commission} label="Commission" />
-          </View>
-        )}
-
-        <DashedDivider />
-
-        <View style={styles.footerCard}>
-          <View style={styles.partnerRow}>
-            {partnerHidden ? (
-              <View style={styles.hiddenCol}>
-                <Ionicons
-                  name="lock-closed"
-                  size={22}
-                  color={Colors.textPrimary}
-                />
-                <Text style={styles.hiddenText}>Hidden</Text>
+        <View style={styles.amountCard}>
+          {hasQuote ? (
+            <View style={styles.quoteBlock}>
+              <Text style={styles.quoteText}>Quote Best Price</Text>
+              <Text style={styles.quoteHint}>Total Amount</Text>
+            </View>
+          ) : (
+            amounts.map(item => (
+              <View key={item.key} style={styles.amountCol}>
+                {item.icon === 'percent' ? (
+                  <View style={styles.percentBadge}>
+                    <Text style={styles.percentMark}>%</Text>
+                  </View>
+                ) : (
+                  <Ionicons name={item.icon} size={22} color={GOLD} />
+                )}
+                <Text style={styles.amountLabel}>{item.label}</Text>
+                <Text style={styles.amountValue}>{formatInr(item.value)}</Text>
               </View>
+            ))
+          )}
+        </View>
+
+        <View style={[styles.card, styles.driverCard]}>
+          <View style={styles.avatarWrap}>
+            {hasAvatar ? (
+              <Image
+                source={Images.partnerDeepesh}
+                style={styles.avatar}
+                resizeMode="cover"
+              />
             ) : (
-              <View style={styles.avatar}>
-                <Text style={styles.avatarText}>
-                  {String(name)
-                    .split(' ')
-                    .slice(0, 2)
-                    .map(p => p[0])
-                    .join('')
-                    .toUpperCase()}
-                </Text>
+              <View style={styles.avatarFallback}>
+                <Text style={styles.avatarText}>{initialsOf(name)}</Text>
               </View>
             )}
+            <View style={styles.onlineDot} />
+          </View>
 
-            <View style={styles.partnerInfo}>
-              {partnerHidden ? (
-                <View style={styles.blurCol}>
-                  <View style={[styles.blurBar, styles.blurWide]} />
-                  <View style={[styles.blurBar, styles.blurNarrow]} />
-                </View>
-              ) : (
-                <>
-                  <Text style={styles.partnerName} numberOfLines={1}>
-                    {name}
-                  </Text>
-                  {company ? (
-                    <Text style={styles.partnerCompany} numberOfLines={1}>
-                      {company}
-                    </Text>
-                  ) : null}
-                </>
-              )}
-              <View style={styles.reviewRow}>
-                <StarRow rating={rating} />
-                <Text style={styles.reviewCount}>({reviews} Reviews)</Text>
-              </View>
+          <View style={styles.driverCopy}>
+            <Text style={styles.driverName} numberOfLines={1}>
+              {name}
+            </Text>
+            <Text style={styles.driverRole}>Driver</Text>
+            <View style={styles.ratingRow}>
+              <Text style={styles.ratingStar}>★</Text>
+              <Text style={styles.ratingValue}>{ratingLabel}</Text>
+              <Text style={styles.ratingCount}>({reviews} reviews)</Text>
             </View>
           </View>
 
@@ -256,8 +235,8 @@ const MarketBookingDetailScreen = ({navigation, route}) => {
             onPress={handleChat}
             accessibilityRole="button"
             accessibilityLabel="Chat">
-            <Ionicons name="chatbubble" size={18} color="#fff" />
-            <Text style={styles.chatBtnText}>CHAT</Text>
+            <Ionicons name="chatbubble-ellipses" size={16} color={NAVY} />
+            <Text style={styles.chatBtnText}>Chat</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -270,271 +249,339 @@ const baseStyles = {
     flex: 1,
     backgroundColor: Colors.surface,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 44,
-  },
-  headerBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backIcon: {
-    width: 18,
-    height: 16,
-  },
-  headerCenter: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 8,
-  },
-  tripType: {
-    fontSize: 13,
-    color: Colors.textMuted,
-    fontWeight: Typography.fontWeights.regular,
-  },
-  schedule: {
-    marginTop: 4,
-    fontSize: 15,
-    color: Colors.textNavy,
-    fontWeight: Typography.fontWeights.semibold,
-    textAlign: 'center',
-  },
   scroll: {
-    paddingHorizontal: Spacing.screenPadding,
+    paddingHorizontal: Spacing.base,
+    paddingTop: 14,
+    gap: 12,
   },
-  securedRow: {
-    alignItems: 'flex-end',
-    marginBottom: 8,
-  },
-  securedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.secured,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
-    gap: 4,
-  },
-  securedText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: Typography.fontWeights.medium,
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
   },
   vehicleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 18,
+  },
+  carWrap: {
+    width: 118,
+    height: 78,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  carHalo: {
+    position: 'absolute',
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#FFF3C4',
+    left: 10,
+    top: 3,
   },
   carImage: {
-    width: 118,
-    height: 70,
+    width: 112,
+    height: 64,
   },
-  vehiclePill: {
-    marginLeft: -6,
-    backgroundColor: '#EEF0F3',
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 10,
+  vehicleCopy: {
+    flex: 1,
+    paddingTop: 4,
   },
-  vehiclePillText: {
-    fontSize: 13,
-    color: Colors.textSlate,
-    fontWeight: Typography.fontWeights.medium,
+  vehicleName: {
+    fontSize: 22,
+    lineHeight: 28,
+    color: NAVY,
+    fontWeight: Typography.fontWeights.bold,
   },
-  routeTitleRow: {
+  tripPill: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    backgroundColor: Colors.primary,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  tripPillText: {
+    fontSize: 11,
+    letterSpacing: 0.4,
+    color: NAVY,
+    fontWeight: Typography.fontWeights.bold,
+  },
+  scheduleBar: {
+    marginTop: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    backgroundColor: '#FFF8E6',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
   },
-  routeTitle: {
+  scheduleText: {
     flex: 1,
-    fontSize: 17,
-    color: Colors.textNavy,
-    fontWeight: Typography.fontWeights.semibold,
+    fontSize: 14,
+    color: '#5C6578',
+    fontWeight: Typography.fontWeights.medium,
+  },
+  stopBlock: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  stopRail: {
+    width: 28,
+    alignItems: 'center',
     marginRight: 10,
   },
-  navIcon: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: Colors.dashedRed,
+  pickupRing: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: GREEN,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.surface,
+  },
+  pickupDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: GREEN,
+  },
+  routeDash: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    paddingVertical: 4,
+    minHeight: 16,
+  },
+  routeDashSeg: {
+    width: 2,
+    height: 5,
+    borderRadius: 1,
+    backgroundColor: '#C5CAD3',
+  },
+  stopCopy: {
+    flex: 1,
+    paddingBottom: 4,
+  },
+  pickupLabel: {
+    fontSize: 11,
+    letterSpacing: 0.6,
+    color: GREEN,
+    fontWeight: Typography.fontWeights.bold,
+    marginBottom: 3,
+  },
+  dropLabel: {
+    fontSize: 11,
+    letterSpacing: 0.6,
+    color: RED,
+    fontWeight: Typography.fontWeights.bold,
+    marginBottom: 3,
+    marginTop: 2,
+  },
+  stopAddress: {
+    fontSize: 16,
+    lineHeight: 22,
+    color: NAVY,
+    fontWeight: Typography.fontWeights.bold,
+  },
+  rowCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  iconTile: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#FFF4CC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  rowCopy: {
+    flex: 1,
+    paddingTop: 2,
+  },
+  rowTitle: {
+    fontSize: 16,
+    color: NAVY,
+    fontWeight: Typography.fontWeights.bold,
+  },
+  rowBody: {
+    marginTop: 4,
+    fontSize: 13,
+    lineHeight: 19,
+    color: MUTED,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  typeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  typeTitle: {
+    flex: 1,
+    fontSize: 16,
+    color: NAVY,
+    fontWeight: Typography.fontWeights.bold,
+  },
+  typePill: {
+    backgroundColor: Colors.primary,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  typePillText: {
+    fontSize: 12,
+    color: NAVY,
+    fontWeight: Typography.fontWeights.bold,
+  },
+  amountCard: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF9EE',
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
+  },
+  amountCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  percentBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: GOLD,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  field: {
-    marginBottom: 14,
-  },
-  fieldLabel: {
+  percentMark: {
     fontSize: 12,
-    color: Colors.textMuted,
-    marginBottom: 4,
+    color: GOLD,
+    fontWeight: Typography.fontWeights.bold,
+    marginTop: -1,
   },
-  fieldValue: {
-    fontSize: 13,
-    color: Colors.textNavy,
+  amountLabel: {
+    marginTop: 8,
+    fontSize: 11,
+    color: MUTED,
+    textAlign: 'center',
     fontWeight: Typography.fontWeights.medium,
-    lineHeight: 20,
   },
-  dashRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginVertical: 14,
-    overflow: 'hidden',
-  },
-  dashSeg: {
-    width: 6,
-    height: 1.5,
-    backgroundColor: Colors.borderStrong,
-    borderRadius: 1,
+  amountValue: {
+    marginTop: 4,
+    fontSize: 16,
+    color: NAVY,
+    fontWeight: Typography.fontWeights.bold,
   },
   quoteBlock: {
+    flex: 1,
     alignItems: 'center',
     paddingVertical: 8,
   },
   quoteText: {
-    fontSize: 20,
-    color: Colors.primary,
-    fontWeight: Typography.fontWeights.semibold,
+    fontSize: 18,
+    color: NAVY,
+    fontWeight: Typography.fontWeights.bold,
   },
   quoteHint: {
     marginTop: 4,
     fontSize: 12,
-    color: Colors.textMuted,
+    color: MUTED,
   },
-  priceRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  priceCard: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    paddingVertical: 14,
-    paddingHorizontal: 6,
-    alignItems: 'center',
-    shadowColor: Colors.shadow,
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 1,
-  },
-  priceAmt: {
-    fontSize: 14,
-    color: Colors.textPrimary,
-    fontWeight: Typography.fontWeights.semibold,
-  },
-  priceLabel: {
-    marginTop: 6,
-    fontSize: 10,
-    color: Colors.textMuted,
-    textAlign: 'center',
-  },
-  footerCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.borderLight,
-    padding: 14,
-  },
-  partnerRow: {
+  driverCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    paddingVertical: 12,
   },
-  hiddenCol: {
-    width: 52,
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  hiddenText: {
-    marginTop: 4,
-    fontSize: 12,
-    color: Colors.textPrimary,
-    fontWeight: Typography.fontWeights.medium,
+  avatarWrap: {
+    width: 58,
+    height: 58,
+    marginRight: 12,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.primaryMuted,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#EEF1F6',
+  },
+  avatarFallback: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#EEF1F6',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
   },
   avatarText: {
-    fontSize: 16,
+    fontSize: 18,
+    color: NAVY,
     fontWeight: Typography.fontWeights.bold,
-    color: Colors.textNavy,
   },
-  partnerInfo: {
+  onlineDot: {
+    position: 'absolute',
+    right: 2,
+    bottom: 2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#22C55E',
+    borderWidth: 2,
+    borderColor: Colors.surface,
+  },
+  driverCopy: {
     flex: 1,
+    marginRight: 8,
   },
-  blurCol: {
-    marginBottom: 6,
+  driverName: {
+    fontSize: 16,
+    color: NAVY,
+    fontWeight: Typography.fontWeights.bold,
   },
-  blurBar: {
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#D8DCE3',
-    marginBottom: 6,
-  },
-  blurWide: {
-    width: '78%',
-  },
-  blurNarrow: {
-    width: '52%',
-  },
-  partnerName: {
-    fontSize: 13,
+  driverRole: {
+    marginTop: 1,
+    fontSize: 12,
+    color: MUTED,
     fontWeight: Typography.fontWeights.medium,
-    color: Colors.textPrimary,
   },
-  partnerCompany: {
-    fontSize: 11,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  reviewRow: {
+  ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 4,
   },
-  starRow: {
-    flexDirection: 'row',
-    marginRight: 6,
+  ratingStar: {
+    fontSize: 13,
+    color: Colors.primary,
+    marginRight: 4,
   },
-  star: {
-    fontSize: 14,
-    marginRight: 1,
+  ratingValue: {
+    fontSize: 13,
+    color: NAVY,
+    fontWeight: Typography.fontWeights.bold,
+    marginRight: 4,
   },
-  starOn: {
-    color: Colors.star,
-  },
-  starOff: {
-    color: Colors.borderStrong,
-  },
-  reviewCount: {
+  ratingCount: {
     fontSize: 12,
-    color: Colors.textMuted,
+    color: MUTED,
   },
   chatBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: Colors.primary,
-    borderRadius: 10,
-    paddingVertical: 14,
-    gap: 8,
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 6,
   },
   chatBtnText: {
-    color: '#fff',
     fontSize: 14,
-    fontWeight: Typography.fontWeights.semibold,
-    letterSpacing: 0.6,
+    color: NAVY,
+    fontWeight: Typography.fontWeights.bold,
   },
 };
 

@@ -13,7 +13,7 @@ const ROUND_BG = '#E7F0FF';
 const ROUND_TEXT = '#3B6FD8';
 const FRAME_RADIUS = 22;
 const EDGE = 1.5;
-const LEFT_EDGE = 10;
+const LEFT_EDGE = 6;
 
 const splitDateTime = value => {
   const raw = String(value || '');
@@ -75,10 +75,10 @@ const MyBookingCard = ({
   vehicle = 'Sedan',
   amount = 1500,
   tripType = 'ONE WAY',
-  onEdit,
+  onAccept,
+  onReject,
   onChat,
   onShare,
-  onDelete,
   onPress,
 }) => {
   const styles = useResponsiveStyles(baseStyles);
@@ -161,13 +161,24 @@ const MyBookingCard = ({
 
       <View style={styles.actions}>
         <TouchableOpacity
-          style={styles.actionBtn}
+          style={[styles.actionBtn, styles.actionBtnAccept]}
           activeOpacity={0.85}
-          onPress={stop(onEdit)}
+          onPress={stop(onAccept)}
           accessibilityRole="button"
-          accessibilityLabel="Edit">
-          <Ionicons name="pencil" size={15} color="#8A7340" />
-          <Text style={styles.actionLabel}>Edit</Text>
+          accessibilityLabel="Accept">
+          <Text style={[styles.actionLabel, styles.actionLabelAccept]}>
+            Accept
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.actionBtnReject]}
+          activeOpacity={0.85}
+          onPress={stop(onReject)}
+          accessibilityRole="button"
+          accessibilityLabel="Reject">
+          <Text style={[styles.actionLabel, styles.actionLabelReject]}>
+            Reject
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionBtn}
@@ -181,17 +192,6 @@ const MyBookingCard = ({
             color="#C4922A"
           />
           <Text style={styles.actionLabel}>Chat</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.actionBtnDelete]}
-          activeOpacity={0.85}
-          onPress={stop(onDelete)}
-          accessibilityRole="button"
-          accessibilityLabel="Delete">
-          <Ionicons name="trash" size={15} color="#F07178" />
-          <Text style={[styles.actionLabel, styles.actionLabelDelete]}>
-            Delete
-          </Text>
         </TouchableOpacity>
       </View>
       </View>
@@ -371,7 +371,11 @@ const baseStyles = {
     borderWidth: 1,
     borderColor: '#F6D56A',
   },
-  actionBtnDelete: {
+  actionBtnAccept: {
+    backgroundColor: '#E5F8EE',
+    borderColor: '#B7E8C9',
+  },
+  actionBtnReject: {
     backgroundColor: '#FFF1F2',
     borderColor: '#FFD0D4',
   },
@@ -380,7 +384,10 @@ const baseStyles = {
     fontWeight: '700',
     color: Colors.textPrimary,
   },
-  actionLabelDelete: {
+  actionLabelAccept: {
+    color: '#1E9B55',
+  },
+  actionLabelReject: {
     color: '#F07178',
   },
 };

@@ -3,6 +3,7 @@ import {Text, TouchableOpacity} from 'react-native';
 import {useDispatch} from 'react-redux';
 import AuthHeroLayout from '../../components/brand/AuthHeroLayout';
 import PrimaryButton from '../../components/brand/PrimaryButton';
+import NoticeModal from '../../components/common/NoticeModal';
 import OTPInput from '../../components/common/OTPInput';
 import {ROUTES} from '../../constants/Routes';
 import {loginSuccess} from '../../redux/slices/authSlice';
@@ -30,6 +31,7 @@ const OTPScreen = ({navigation, route}) => {
   const [otp, setOtp] = useState('');
   const [seconds, setSeconds] = useState(RESEND_SECONDS);
   const [invalid, setInvalid] = useState(false);
+  const [noticeVisible, setNoticeVisible] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -41,6 +43,7 @@ const OTPScreen = ({navigation, route}) => {
   const onVerify = () => {
     if (otp.length < 4) {
       setInvalid(true);
+      setNoticeVisible(true);
       return;
     }
     dispatch(
@@ -73,6 +76,7 @@ const OTPScreen = ({navigation, route}) => {
   };
 
   return (
+    <>
     <AuthHeroLayout>
       <Text style={styles.title}>OTP Verification</Text>
       <Text
@@ -116,6 +120,13 @@ const OTPScreen = ({navigation, route}) => {
         </Text>
       </TouchableOpacity>
     </AuthHeroLayout>
+    <NoticeModal
+      visible={noticeVisible}
+      title="OTP"
+      message="Please enter a 4 digit OTP."
+      onClose={() => setNoticeVisible(false)}
+    />
+    </>
   );
 };
 

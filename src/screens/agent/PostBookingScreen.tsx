@@ -263,7 +263,7 @@ const PostBookingScreen = ({navigation, route}) => {
           placeholder="Set date"
           value={pickupDate}
           onPress={openDatePicker}
-          icon="calendar-outline"
+          icon="chevron-down"
         />
 
         <PostFormField
@@ -271,7 +271,7 @@ const PostBookingScreen = ({navigation, route}) => {
           placeholder="Set time"
           value={pickupTime}
           onPress={openTimePicker}
-          icon="time-outline"
+          icon="chevron-down"
         />
 
         <PostFormField
@@ -279,7 +279,7 @@ const PostBookingScreen = ({navigation, route}) => {
           placeholder="Add"
           value={pickupLocation}
           onPress={() => openLocationSelect('pickup')}
-          icon="location-outline"
+          icon="chevron-down"
         />
 
         {tripType === 'One Way' ? (
@@ -288,7 +288,7 @@ const PostBookingScreen = ({navigation, route}) => {
             placeholder="Add"
             value={dropLocation}
             onPress={() => openLocationSelect('drop')}
-            icon="location-outline"
+            icon="chevron-down"
           />
         ) : (
           <>
@@ -465,8 +465,9 @@ const PostBookingScreen = ({navigation, route}) => {
 
       <View style={[styles.footer, {paddingBottom: insets.bottom + 12}]}>
         <PrimaryButton
-          title={isEdit ? 'Update Booking' : 'Post Booking'}
+          title={isEdit ? 'Update' : 'Post Booking'}
           onPress={onPost}
+          style={styles.submitBtn}
         />
       </View>
 
@@ -623,43 +624,46 @@ const baseStyles = {
   },
   segment: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
+    backgroundColor: 'rgba(242, 244, 244, 1)',
+    borderRadius: 28,
     padding: 4,
     marginBottom: Spacing.lg,
   },
   segmentBtn: {
     flex: 1,
-    height: 40,
-    borderRadius: 10,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
   segmentBtnOn: {
     backgroundColor: Colors.primary,
   },
   segmentText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textMuted,
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.textPrimary,
   },
   segmentTextOn: {
-    color: Colors.onPrimary,
+    color: Colors.textPrimary,
   },
   field: {
     marginBottom: Spacing.base,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
-    color: Colors.textSlate,
+    color: Colors.textPrimary,
     marginBottom: 8,
   },
   inputWrap: {
     backgroundColor: Colors.surface,
     borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.borderLight,
     minHeight: 52,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     paddingVertical: 14,
   },
   textInput: {
@@ -785,6 +789,10 @@ const baseStyles = {
     paddingHorizontal: Spacing.screenPadding,
     paddingTop: 8,
     backgroundColor: Colors.backgroundAlt,
+  },
+  submitBtn: {
+    height: 52,
+    borderRadius: 14,
   },
   pickerOverlay: {
     flex: 1,

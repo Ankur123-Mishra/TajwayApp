@@ -97,8 +97,20 @@ const AddNetworkContactModal = ({visible, onClose, onAdd}) => {
             activeOpacity={1}
             onPress={onClose}
           />
-          <View style={[styles.sheet, {paddingBottom: insets.bottom + 16}]}>
-            <Text style={styles.title}>Add Network Contacts</Text>
+          <View style={[styles.sheet, {paddingBottom: insets.bottom + 12}]}>
+            <View style={styles.sheetHead}>
+              <View style={styles.headSide} />
+              <Text style={styles.title}>Add Network Contacts</Text>
+              <TouchableOpacity
+                style={styles.headSide}
+                activeOpacity={0.7}
+                hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                onPress={onClose}
+                accessibilityRole="button"
+                accessibilityLabel="Close">
+                <Ionicons name="close" size={22} color={Colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
 
             <ScrollView
               showsVerticalScrollIndicator={false}
@@ -198,34 +210,45 @@ const baseStyles = {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: Spacing.screenPadding,
-    paddingTop: Spacing.xl,
-    maxHeight: '94%',
+    paddingTop: Spacing.base,
+    maxHeight: '82%',
+  },
+  sheetHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  headSide: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   title: {
+    flex: 1,
     textAlign: 'center',
     fontSize: 20,
     fontWeight: Typography.fontWeights.bold,
     color: Colors.textPrimary,
-    marginBottom: Spacing.lg,
   },
   scrollContent: {
-    paddingBottom: Spacing.sm,
+    paddingBottom: Spacing.xs,
   },
   label: {
     fontSize: 15,
     fontWeight: Typography.fontWeights.semibold,
     color: Colors.textPrimary,
-    marginBottom: 10,
-    marginTop: 6,
+    marginBottom: 6,
+    marginTop: 2,
   },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.surface,
     borderRadius: 28,
-    height: 52,
+    height: 46,
     paddingHorizontal: 18,
-    marginBottom: Spacing.base,
+    marginBottom: 10,
   },
   input: {
     flex: 1,
@@ -236,13 +259,13 @@ const baseStyles = {
   radioGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: Spacing.sm,
+    marginBottom: 2,
   },
   radioItem: {
     width: '50%',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 5,
     paddingRight: 8,
   },
   radioOuter: {
@@ -272,12 +295,12 @@ const baseStyles = {
     color: Colors.textSlate,
   },
   addBtn: {
-    height: 52,
+    height: 48,
     borderRadius: 14,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: Spacing.md,
+    marginTop: Spacing.sm,
   },
   addBtnText: {
     fontSize: 17,
