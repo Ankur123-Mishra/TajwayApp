@@ -487,7 +487,7 @@ const MarketHomeScreen = ({navigation}) => {
   };
 
   const handleStartDriving = () => {
-    navigation.navigate(ROUTES.PERSONAL_INFO);
+    navigation.navigate(ROUTES.VERIFICATION);
   };
 
   const handleFeaturePress = featureId => {

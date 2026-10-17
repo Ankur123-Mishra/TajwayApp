@@ -2,11 +2,13 @@ import React, {useEffect, useRef, useState} from 'react';
 import {
   Alert,
   BackHandler,
+  Dimensions,
   Image,
-  KeyboardAvoidingView,
+  Keyboard,
   Modal,
   Platform,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -22,12 +24,21 @@ import {
   pick,
   types as documentTypes,
 } from '@react-native-documents/picker';
+import PrimaryButton from '../../components/brand/PrimaryButton';
 import BannerHeader from '../../components/common/BannerHeader';
 import CitySelectModal from '../../components/profile/CitySelectModal';
 import {USER_ROLES} from '../../constants/AppConstants';
 import {Images} from '../../constants/Images';
+import {ROUTES} from '../../constants/Routes';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
+
+const EMPTY_GST_DOCS = [null, null, null];
+
+const VERIFY_ITEMS = [
+  {id: 'gst', title: 'GST ID', status: 'Document unverified'},
+  {id: 'aadhaar', title: 'Aadhaar', status: 'Document unverified'},
+];
 
 const STEPS = [
   {id: 'profile', label: 'Profile'},
@@ -80,8 +91,9 @@ const INK = '#1A1A1B';
 const MUTED = '#8B93A3';
 const FIELD_ICON = '#9AA3B2';
 const PLACEHOLDER = '#B0B7C3';
-const AADHAAR_ICON = '#E25B4A';
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
+/** Keep focused inputs a bit above the keyboard. */
+const FIELD_KEYBOARD_GAP = 24;
 
 const EMPTY_FORM = {
   photo: null,
@@ -91,7 +103,8 @@ const EMPTY_FORM = {
   city: '',
   email: '',
   aadhaar: '',
-  otpSent: false,
+  aadhaarVerified: false,
+  gstSubmitted: false,
   gstNumber: '',
   gstCertificate: null,
   accountName: '',
@@ -200,11 +213,13 @@ const TextField = ({
   autoCapitalize = 'sentences',
   maxLength,
   onPress,
+  onFocus,
   rightIcon,
+  containerRef,
 }) => {
   const styles = useResponsiveStyles(baseStyles);
   const box = (
-    <View style={styles.input}>
+    <View ref={containerRef} collapsable={false} style={styles.input}>
       <Ionicons name={icon} size={18} color={iconColor} />
       {onPress ? (
         <Text
@@ -223,6 +238,7 @@ const TextField = ({
           autoCapitalize={autoCapitalize}
           autoCorrect={false}
           maxLength={maxLength}
+          onFocus={onFocus}
         />
       )}
       {rightIcon ? (
@@ -364,27 +380,164 @@ const Stepper = ({step}) => {
  * Four-step partner verification opened from Verify Now.
  * Header uses the same yellow banner as My Bookings.
  */
-const VerificationScreen = ({navigation}) => {
+const VerificationScreen = ({navigation, route}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
+  const {height: windowHeight} = useWindowDimensions();
   const scrollRef = useRef(null);
+  const scrollY = useRef(0);
+  const keyboardTopRef = useRef(0);
+  const fullHeightRef = useRef(windowHeight);
+  const emailFieldRef = useRef(null);
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(EMPTY_FORM);
   const [cityOpen, setCityOpen] = useState(false);
   const [picker, setPicker] = useState(null);
+  const [gstVisible, setGstVisible] = useState(false);
+  const [gstDocs, setGstDocs] = useState(EMPTY_GST_DOCS);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  if (keyboardHeight === 0) {
+    fullHeightRef.current = windowHeight;
+  }
+  // Android adjustResize already shrinks the window; only add leftover inset.
+  const alreadyResized = Math.max(0, fullHeightRef.current - windowHeight);
+  const keyboardInset = Math.max(0, keyboardHeight - alreadyResized);
 
   const setField = (key, value) => {
     setForm(prev => ({...prev, [key]: value}));
   };
 
+  const scrollFocusedFieldIntoView = (attempt = 0) => {
+    const focused = TextInput.State.currentlyFocusedInput?.();
+    const target = focused?.measureInWindow
+      ? focused
+      : emailFieldRef.current?.measureInWindow
+        ? emailFieldRef.current
+        : null;
+
+    if (!target?.measureInWindow) {
+      if (attempt < 8) {
+        setTimeout(() => scrollFocusedFieldIntoView(attempt + 1), 50);
+      }
+      return;
+    }
+
+    target.measureInWindow((_x, y, _w, h) => {
+      if (!h) {
+        return;
+      }
+
+      const visibleBottom =
+        keyboardTopRef.current > 0
+          ? keyboardTopRef.current
+          : Dimensions.get('window').height;
+      const overlap = y + h + FIELD_KEYBOARD_GAP - visibleBottom;
+      if (overlap <= 4) {
+        return;
+      }
+
+      const nextY = Math.max(0, scrollY.current + overlap);
+      scrollY.current = nextY;
+      scrollRef.current?.scrollTo({y: nextY, animated: true});
+    });
+  };
+
+  const onFieldFocus = (scrollToEnd = false) => {
+    // Wait for keyboard animation / window resize, then lift the field.
+    setTimeout(() => {
+      if (scrollToEnd) {
+        scrollRef.current?.scrollToEnd({animated: true});
+      }
+      scrollFocusedFieldIntoView();
+    }, Platform.OS === 'ios' ? 80 : 120);
+    setTimeout(() => scrollFocusedFieldIntoView(), Platform.OS === 'ios' ? 280 : 350);
+  };
+
   useEffect(() => {
     scrollRef.current?.scrollTo({y: 0, animated: false});
+    scrollY.current = 0;
   }, [step]);
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent =
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, event => {
+      const coords = event?.endCoordinates || {};
+      const winH = Dimensions.get('window').height;
+      keyboardTopRef.current =
+        typeof coords.screenY === 'number' && coords.screenY > 0
+          ? coords.screenY
+          : winH - (coords.height || 0);
+      setKeyboardHeight(coords.height || 0);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      keyboardTopRef.current = 0;
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (keyboardHeight <= 0) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    const run = delay =>
+      setTimeout(() => {
+        if (!cancelled) {
+          scrollFocusedFieldIntoView();
+        }
+      }, delay);
+
+    const t1 = run(80);
+    const t2 = run(250);
+    const t3 = run(420);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [keyboardHeight, keyboardInset]);
+
+  useEffect(() => {
+    if (!route?.params?.aadhaarVerified) {
+      return;
+    }
+    setStep(1);
+    setForm(prev => ({
+      ...prev,
+      aadhaarVerified: true,
+      aadhaar: route.params.aadhaarNumber || prev.aadhaar,
+    }));
+    navigation.setParams({
+      aadhaarVerified: undefined,
+      aadhaarNumber: undefined,
+    });
+  }, [
+    navigation,
+    route?.params?.aadhaarNumber,
+    route?.params?.aadhaarVerified,
+  ]);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener(
       'hardwareBackPress',
       () => {
+        if (gstVisible) {
+          setGstVisible(false);
+          return true;
+        }
         if (cityOpen) {
           setCityOpen(false);
           return true;
@@ -401,9 +554,13 @@ const VerificationScreen = ({navigation}) => {
       },
     );
     return () => subscription.remove();
-  }, [cityOpen, picker, step]);
+  }, [cityOpen, gstVisible, picker, step]);
 
   const handleBack = () => {
+    if (gstVisible) {
+      setGstVisible(false);
+      return;
+    }
     if (step > 0) {
       setStep(current => current - 1);
       return;
@@ -415,15 +572,83 @@ const VerificationScreen = ({navigation}) => {
     setPicker({title, options, key});
   };
 
-  const onSendOtp = () => {
-    if (form.aadhaar.length !== 12) {
+  const onVerifyItem = itemId => {
+    if (itemId === 'gst') {
+      setGstVisible(true);
+      return;
+    }
+    navigation.navigate(ROUTES.AADHAAR_VERIFY, {
+      returnRoute: ROUTES.VERIFICATION,
+    });
+  };
+
+  const pickGstDocument = index => {
+    const openPicker = () => {
+      launchImageLibrary(
+        {
+          mediaType: 'photo',
+          selectionLimit: 1,
+          quality: 0.8,
+        },
+        response => {
+          if (Platform.OS === 'ios') {
+            setGstVisible(true);
+          }
+          if (response.didCancel) {
+            return;
+          }
+          if (response.errorCode) {
+            Alert.alert(
+              'Unable to open gallery',
+              response.errorMessage || 'Please try again.',
+            );
+            return;
+          }
+          const uri = response.assets?.[0]?.uri;
+          if (!uri) {
+            return;
+          }
+          setGstDocs(prev => {
+            const next = [...prev];
+            next[index] = uri;
+            return next;
+          });
+        },
+      );
+    };
+
+    if (Platform.OS === 'ios') {
+      setGstVisible(false);
+      setTimeout(openPicker, 350);
+      return;
+    }
+
+    openPicker();
+  };
+
+  const clearGstDocument = index => {
+    setGstDocs(prev => {
+      const next = [...prev];
+      next[index] = null;
+      return next;
+    });
+  };
+
+  const onGstUpload = () => {
+    const selected = gstDocs.filter(Boolean);
+    if (!selected.length) {
       Alert.alert(
-        'Aadhaar number',
-        'Enter a 12 digit Aadhaar number to send OTP.',
+        'Select documents',
+        'Please upload at least one GST document from gallery.',
       );
       return;
     }
-    setField('otpSent', true);
+    setForm(prev => ({
+      ...prev,
+      gstSubmitted: true,
+      gstCertificate: {name: 'GST Document', uri: selected[0]},
+    }));
+    setGstVisible(false);
   };
 
   const onContinue = () => {
@@ -448,23 +673,11 @@ const VerificationScreen = ({navigation}) => {
     }
 
     if (step === 1) {
-      if (form.aadhaar.length !== 12) {
+      if (!form.aadhaarVerified) {
         Alert.alert(
-          'Aadhaar number',
-          'Enter a 12 digit Aadhaar number to continue.',
+          'Aadhaar verification',
+          'Verify your Aadhaar with OTP before continuing.',
         );
-        return;
-      }
-      if (!form.otpSent) {
-        Alert.alert(
-          'Send OTP',
-          'Send OTP to your Aadhaar linked mobile number before continuing.',
-        );
-        return;
-      }
-      const gst = form.gstNumber.trim();
-      if (gst && !/^[0-9A-Z]{15}$/.test(gst)) {
-        Alert.alert('GST number', 'Enter a valid 15 character GST number.');
         return;
       }
       setStep(2);
@@ -539,17 +752,31 @@ const VerificationScreen = ({navigation}) => {
 
       <Stepper step={step} />
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={styles.flex}>
         <ScrollView
           ref={scrollRef}
           style={styles.flex}
           contentContainerStyle={[
             styles.scroll,
-            {paddingBottom: step === 0 ? 12 : insets.bottom + 28},
+            {
+              paddingBottom:
+                insets.bottom +
+                28 +
+                (keyboardHeight > 0
+                  ? Math.max(
+                      keyboardInset,
+                      Platform.OS === 'android' ? 180 : 48,
+                    ) + FIELD_KEYBOARD_GAP
+                  : 16),
+            },
           ]}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+          scrollEventThrottle={16}
+          onScroll={event => {
+            scrollY.current = event.nativeEvent.contentOffset.y;
+          }}
           showsVerticalScrollIndicator={false}>
           {step === 0 ? (
             <View style={styles.profileBody}>
@@ -626,6 +853,7 @@ const VerificationScreen = ({navigation}) => {
                 onChangeText={value => setField('fullName', value)}
                 placeholder="Enter full name"
                 autoCapitalize="words"
+                onFocus={() => onFieldFocus(false)}
               />
 
               <FieldLabel>Company Name</FieldLabel>
@@ -635,6 +863,7 @@ const VerificationScreen = ({navigation}) => {
                 onChangeText={value => setField('company', value)}
                 placeholder="Enter company name"
                 autoCapitalize="words"
+                onFocus={() => onFieldFocus(false)}
               />
 
               <FieldLabel>City</FieldLabel>
@@ -647,107 +876,76 @@ const VerificationScreen = ({navigation}) => {
 
               <FieldLabel>Email</FieldLabel>
               <TextField
+                containerRef={emailFieldRef}
                 icon="mail-outline"
                 value={form.email}
                 onChangeText={value => setField('email', value)}
                 placeholder="Enter email address"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                onFocus={() => onFieldFocus(true)}
               />
+
+              <ContinueButton onPress={onContinue} />
             </View>
           ) : null}
 
           {step === 1 ? (
-            <View>
-              <View style={styles.card}>
-                <View style={styles.cardHead}>
-                  <View style={styles.cardIcon}>
-                    <Ionicons
-                      name="document-text-outline"
-                      size={18}
-                      color="#5B7CFF"
-                    />
-                  </View>
-                  <View style={styles.cardCopy}>
-                    <Text style={styles.cardTitle}>
-                      Aadhaar / GST Verification
-                    </Text>
-                    <Text style={styles.cardSub}>
-                      We will send OTP to your Aadhaar linked mobile number.
-                    </Text>
-                  </View>
-                </View>
+            <View style={styles.verifyBody}>
+              <Text style={styles.sectionTitle}>Aadhaar / GST Verification</Text>
+              <Text style={styles.sectionSub}>
+                Complete GST and Aadhaar verification to continue.
+              </Text>
 
-                <FieldLabel>Aadhaar Number</FieldLabel>
-                <TextField
-                  icon="finger-print"
-                  iconColor={AADHAAR_ICON}
-                  value={form.aadhaar}
-                  onChangeText={value => {
-                    const digits = value.replace(/\D/g, '').slice(0, 12);
-                    setForm(prev => ({
-                      ...prev,
-                      aadhaar: digits,
-                      otpSent: digits === prev.aadhaar ? prev.otpSent : false,
-                    }));
-                  }}
-                  placeholder="Enter 12 digit Aadhaar number"
-                  keyboardType="number-pad"
-                  maxLength={12}
-                />
-                {form.otpSent ? (
-                  <Text style={styles.otpNote}>
-                    OTP sent to your Aadhaar linked mobile number.
-                  </Text>
-                ) : null}
-                <ContinueButton
-                  title={form.otpSent ? 'OTP Sent' : 'Send OTP'}
-                  onPress={onSendOtp}
-                />
-              </View>
-
-              <View style={styles.card}>
-                <View style={styles.cardHead}>
-                  <View style={styles.cardIcon}>
-                    <Ionicons
-                      name="document-outline"
-                      size={18}
-                      color="#5B7CFF"
-                    />
+              <Text style={styles.verifyHeading}>Verification</Text>
+              {VERIFY_ITEMS.map(item => {
+                const isGst = item.id === 'gst';
+                const isDone = isGst
+                  ? form.gstSubmitted
+                  : form.aadhaarVerified;
+                const status = isDone
+                  ? isGst
+                    ? 'Verification pending'
+                    : 'Verified'
+                  : item.status;
+                return (
+                  <View key={item.id} style={styles.verifyCard}>
+                    <View style={styles.verifyCopy}>
+                      <Text style={styles.verifyTitle}>{item.title}</Text>
+                      <Text
+                        style={[
+                          styles.verifyStatus,
+                          isDone && styles.verifyStatusDone,
+                        ]}>
+                        {status}
+                      </Text>
+                    </View>
+                    {isDone ? (
+                      <View
+                        style={styles.verifyTick}
+                        accessibilityRole="image"
+                        accessibilityLabel={`${item.title} verified`}>
+                        <Ionicons
+                          name="checkmark"
+                          size={16}
+                          color={Colors.surface}
+                        />
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.verifyBtn}
+                        onPress={() => onVerifyItem(item.id)}
+                        activeOpacity={0.85}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Verify ${item.title}`}>
+                        <Text style={styles.verifyBtnText}>Verify Now</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
-                  <View style={styles.cardCopy}>
-                    <Text style={styles.cardTitle}>GST Details</Text>
-                    <Text style={styles.cardSub}>
-                      Provide your GST number and upload GST certificate.
-                    </Text>
-                  </View>
-                </View>
+                );
+              })}
 
-                <FieldLabel>GST Number</FieldLabel>
-                <TextField
-                  icon="document-text-outline"
-                  value={form.gstNumber}
-                  onChangeText={value =>
-                    setField(
-                      'gstNumber',
-                      value.toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 15),
-                    )
-                  }
-                  placeholder="Enter GST number"
-                  autoCapitalize="characters"
-                  maxLength={15}
-                />
-
-                <FieldLabel optional>Upload GST Certificate</FieldLabel>
-                <UploadZone
-                  actionLabel="Choose file"
-                  file={form.gstCertificate}
-                  onPress={() =>
-                    pickDocument(file => setField('gstCertificate', file))
-                  }
-                />
-                <ContinueButton onPress={onContinue} />
-              </View>
+              <ContinueButton onPress={onContinue} />
             </View>
           ) : null}
 
@@ -773,6 +971,7 @@ const VerificationScreen = ({navigation}) => {
                 onChangeText={value => setField('accountName', value)}
                 placeholder="Enter account holder name"
                 autoCapitalize="words"
+                onFocus={() => onFieldFocus(false)}
               />
 
               <FieldLabel>Account Number</FieldLabel>
@@ -785,6 +984,7 @@ const VerificationScreen = ({navigation}) => {
                 placeholder="Enter account number"
                 keyboardType="number-pad"
                 maxLength={18}
+                onFocus={() => onFieldFocus(false)}
               />
 
               <FieldLabel>IFSC Code</FieldLabel>
@@ -800,6 +1000,7 @@ const VerificationScreen = ({navigation}) => {
                 placeholder="Enter IFSC code"
                 autoCapitalize="characters"
                 maxLength={11}
+                onFocus={() => onFieldFocus(false)}
               />
 
               <FieldLabel>Bank Name</FieldLabel>
@@ -849,6 +1050,7 @@ const VerificationScreen = ({navigation}) => {
                 }
                 placeholder="Enter registration number"
                 autoCapitalize="characters"
+                onFocus={() => onFieldFocus(false)}
               />
 
               <FieldLabel>Driver License Number</FieldLabel>
@@ -858,6 +1060,7 @@ const VerificationScreen = ({navigation}) => {
                 onChangeText={value => setField('license', value.toUpperCase())}
                 placeholder="Enter driver license number"
                 autoCapitalize="characters"
+                onFocus={() => onFieldFocus(true)}
               />
 
               <FieldLabel optional>Vehicle RC</FieldLabel>
@@ -892,13 +1095,7 @@ const VerificationScreen = ({navigation}) => {
             </View>
           ) : null}
         </ScrollView>
-
-        {step === 0 ? (
-          <View style={[styles.footer, {paddingBottom: insets.bottom + 12}]}>
-            <ContinueButton onPress={onContinue} />
-          </View>
-        ) : null}
-      </KeyboardAvoidingView>
+      </View>
 
       <CitySelectModal
         visible={cityOpen}
@@ -918,6 +1115,67 @@ const VerificationScreen = ({navigation}) => {
           setPicker(null);
         }}
       />
+
+      <Modal
+        visible={gstVisible}
+        transparent
+        animationType="slide"
+        presentationStyle="overFullScreen"
+        onRequestClose={() => setGstVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.verifySheet, {paddingBottom: insets.bottom + 16}]}>
+            <View style={styles.verifySheetHead}>
+              <Text style={styles.verifySheetTitle}>Upload GST Documents</Text>
+              <TouchableOpacity onPress={() => setGstVisible(false)}>
+                <Text style={styles.verifySheetClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.gstUploadRow}>
+              {gstDocs.map((uri, index) => (
+                <View key={index} style={styles.gstUploadBox}>
+                  {uri ? (
+                    <Image
+                      source={{uri}}
+                      style={styles.gstUploadPreview}
+                      resizeMode="cover"
+                    />
+                  ) : null}
+                  <TouchableOpacity
+                    style={styles.gstUploadInner}
+                    onPress={() => pickGstDocument(index)}
+                    activeOpacity={0.85}
+                    accessibilityLabel={`Upload GST document ${index + 1}`}>
+                    {uri ? null : (
+                      <>
+                        <Ionicons
+                          name="camera-outline"
+                          size={28}
+                          color={Colors.primary}
+                        />
+                        <Text style={styles.gstClickHere}>Click here</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                  {uri ? (
+                    <TouchableOpacity
+                      style={styles.gstUploadClear}
+                      onPress={() => clearGstDocument(index)}
+                      hitSlop={{top: 8, right: 8, bottom: 8, left: 8}}
+                      accessibilityLabel={`Remove GST document ${index + 1}`}>
+                      <Ionicons
+                        name="close-circle"
+                        size={22}
+                        color={Colors.textNavy}
+                      />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+            <PrimaryButton title="Upload" onPress={onGstUpload} />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -1223,11 +1481,131 @@ const baseStyles = {
     lineHeight: 16,
     color: '#A0A8B5',
   },
-  otpNote: {
-    marginTop: 8,
-    fontSize: 12,
-    lineHeight: 16,
+  verifyBody: {
+    paddingHorizontal: Spacing.screenPadding,
+    paddingTop: 8,
+  },
+  verifyHeading: {
+    fontSize: 16,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+    marginBottom: 12,
+  },
+  verifyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E8EAED',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+  },
+  verifyCopy: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  verifyTitle: {
+    fontSize: 15,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textPrimary,
+    marginBottom: 2,
+  },
+  verifyStatus: {
+    fontSize: 13,
+    color: Colors.textMuted,
+  },
+  verifyStatusDone: {
     color: '#1FA85A',
+  },
+  verifyBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  verifyBtnText: {
+    fontSize: 12,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.onPrimary,
+  },
+  verifyTick: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#1FA85A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: Colors.overlay,
+    justifyContent: 'flex-end',
+  },
+  verifySheet: {
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: Spacing.screenPadding,
+  },
+  verifySheetHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  verifySheetTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 17,
+    fontWeight: Typography.fontWeights.bold,
+    color: Colors.textNavy,
+    marginLeft: 24,
+  },
+  verifySheetClose: {
+    fontSize: 18,
+    color: Colors.textPrimary,
+    width: 24,
+    textAlign: 'center',
+  },
+  gstUploadRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.xl,
+  },
+  gstUploadBox: {
+    width: '30%',
+    aspectRatio: 1,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: Colors.primary,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: Colors.surfaceAlt,
+  },
+  gstUploadInner: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    zIndex: 1,
+  },
+  gstUploadPreview: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  gstUploadClear: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    zIndex: 2,
+    backgroundColor: Colors.surface,
+    borderRadius: 11,
+  },
+  gstClickHere: {
+    fontSize: 12,
+    color: Colors.textSecondary,
   },
   continueBtn: {
     marginTop: 16,

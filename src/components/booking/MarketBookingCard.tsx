@@ -6,6 +6,21 @@ import {useResponsiveStyles} from '../../hooks';
 
 const formatInr = value => `₹${Number(value).toLocaleString('en-IN')}`;
 
+const isRoundTrip = tripType => /round|two/i.test(String(tripType || ''));
+
+const tripTypeLabel = tripType =>
+  isRoundTrip(tripType) ? 'Round Trip' : 'One Way';
+
+/** Short city label from "City, State, Country" style strings. */
+
+const shortCity = value => {
+  const raw = String(value || '').trim();
+  if (!raw) {
+    return '';
+  }
+  return raw.split(',')[0].trim();
+};
+
 const splitExtras = extras => {
   if (Array.isArray(extras)) {
     return extras.map(item => String(item).trim()).filter(Boolean);
@@ -26,6 +41,7 @@ const noteParts = text =>
 /**
  * Market trip request card — matches the marketplace booking screenshot.
  */
+
 const MarketBookingCard = ({
   name = 'Travel Partner',
   company,
@@ -46,7 +62,6 @@ const MarketBookingCard = ({
   reviews = 0,
   rating = 5,
   partnerHidden = false,
-  secured = true,
   onPress,
   onQuote,
   onChat,
@@ -56,12 +71,15 @@ const MarketBookingCard = ({
   const hasQuote = totalAmount == null || totalAmount === '';
   const handleContact = onChat || onContact;
   const extraItems = splitExtras(extras);
+  const origin = shortCity(from) || shortCity(pickupFrom) || '—';
+  const destination = shortCity(to) || shortCity(dropTo) || '—';
   const noteText =
     notes ||
     [pickupFrom, dropTo].filter(Boolean).join(' → ') ||
     [from, to].filter(Boolean).join(' → ');
   const stops = noteParts(noteText);
-  const tripLabel = String(tripType || 'One Way').toUpperCase();
+  const roundTrip = isRoundTrip(tripType);
+  const tripLabel = tripTypeLabel(tripType);
   const typeLabel =
     String(vehicleType || 'sedan').charAt(0).toUpperCase() +
     String(vehicleType || 'sedan').slice(1);
@@ -101,46 +119,52 @@ const MarketBookingCard = ({
       accessibilityRole="button"
       accessibilityLabel="Open booking details">
       <View style={styles.head}>
-        <Image source={Images.timeIcon} style={styles.timeIcon} />
-        <Text style={styles.when} numberOfLines={1}>
-          {when} at {time}
-        </Text>
-        {secured ? (
-          <View style={styles.secured}>
-            <Ionicons name="lock-closed" size={13} color="#1F9D4E" />
-            <Text style={styles.securedText}>Secured</Text>
-          </View>
-        ) : null}
-      </View>
-
-      <View style={styles.panel}>
-        <View style={styles.routeRow}>
-          <View style={styles.place}>
-            <Image source={Images.locationIcon} style={styles.pin} />
-            <Text style={styles.city} numberOfLines={1}>
-              {from}
-            </Text>
-          </View>
-
-          <View style={styles.routeTrack}>
-            <View style={styles.routeLine} />
-            <View style={styles.tripPill}>
-              <Text style={styles.tripPillText} numberOfLines={1}>
-                {tripLabel}
-              </Text>
-            </View>
-            <View style={styles.routeLine} />
-            <View style={styles.arrowHead} />
-          </View>
-
-          <View style={[styles.place, styles.placeEnd]}>
-            <Image source={Images.locationIcon} style={styles.pin} />
-            <Text style={styles.city} numberOfLines={1}>
-              {to || '—'}
+        <View style={styles.timeRow}>
+          <Image source={Images.timeIcon} style={styles.timeIcon} />
+          <Text style={styles.when} numberOfLines={1}>
+            {when} at {time}
+          </Text>
+          <View style={styles.tripBadge}>
+            <Text style={styles.tripBadgeText} numberOfLines={1}>
+              {tripLabel}
             </Text>
           </View>
         </View>
 
+        <View style={styles.locationBar}>
+          <View style={styles.place}>
+            <Image source={Images.locationIcon} style={styles.pin} />
+            <Text style={styles.city} numberOfLines={1}>
+              {origin}
+            </Text>
+          </View>
+
+          {roundTrip ? (
+            <Ionicons
+              name="swap-horizontal"
+              size={18}
+              color="#1A1A1A"
+              style={styles.routeIcon}
+            />
+          ) : (
+            <Ionicons
+              name="arrow-forward"
+              size={16}
+              color="#1A1A1A"
+              style={styles.routeIcon}
+            />
+          )}
+
+          <View style={[styles.place, styles.placeEnd]}>
+            <Image source={Images.locationIcon} style={styles.pin} />
+            <Text style={styles.city} numberOfLines={1}>
+              {destination}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.panel}>
         <View style={styles.detailBox}>
           <View style={styles.vehicleCol}>
             <Image
@@ -288,11 +312,14 @@ const baseStyles = {
     shadowOpacity: 0,
   },
   head: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 14,
     paddingTop: 12,
     paddingBottom: 12,
+    gap: 10,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   timeIcon: {
@@ -306,34 +333,25 @@ const baseStyles = {
     fontWeight: '800',
     color: '#1A1A1A',
   },
-  secured: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E7F8EE',
+  tripBadge: {
+    flexShrink: 0,
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    gap: 5,
   },
-  securedText: {
-    color: '#1F9D4E',
+  tripBadgeText: {
     fontSize: 13,
     fontWeight: '700',
+    color: '#1A1A1A',
   },
-  panel: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    borderBottomLeftRadius: 22,
-    borderBottomRightRadius: 22,
-    paddingHorizontal: 12,
-    paddingTop: 16,
-    paddingBottom: 12,
-  },
-  routeRow: {
+  locationBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    backgroundColor: '#FFF6D4',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   place: {
     flexDirection: 'row',
@@ -346,53 +364,29 @@ const baseStyles = {
     justifyContent: 'flex-end',
   },
   pin: {
-    width: 18,
-    height: 22,
+    width: 16,
+    height: 20,
     resizeMode: 'contain',
   },
   city: {
     flexShrink: 1,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
     color: '#1A1A1A',
   },
-  routeTrack: {
-    flexGrow: 0,
+  routeIcon: {
+    marginHorizontal: 8,
     flexShrink: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 4,
   },
-  routeLine: {
-    width: 14,
-    height: 2,
-    backgroundColor: '#F6CC54',
-    borderRadius: 1,
-  },
-  tripPill: {
-    flexShrink: 0,
-    backgroundColor: '#F6CC54',
-    borderRadius: 20,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    marginHorizontal: 4,
-  },
-  tripPillText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#1A1A1A',
-    letterSpacing: 0.4,
-  },
-  arrowHead: {
-    width: 0,
-    height: 0,
-    marginLeft: -1,
-    borderTopWidth: 4,
-    borderBottomWidth: 4,
-    borderLeftWidth: 7,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: '#F6CC54',
+  panel: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: 22,
+    borderBottomRightRadius: 22,
+    paddingHorizontal: 12,
+    paddingTop: 14,
+    paddingBottom: 12,
   },
   detailBox: {
     flexDirection: 'row',

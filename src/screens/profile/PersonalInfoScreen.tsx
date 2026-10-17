@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   Alert,
   Image,
@@ -41,7 +41,7 @@ const VERIFICATION_ITEMS = [
  * Personal Information — profile edit (screenshot match).
  */
 
-const PersonalInfoScreen = ({navigation}) => {
+const PersonalInfoScreen = ({navigation, route}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
@@ -58,7 +58,19 @@ const PersonalInfoScreen = ({navigation}) => {
   const [gstVisible, setGstVisible] = useState(false);
   const [gstDocs, setGstDocs] = useState(EMPTY_GST_DOCS);
   const [gstSubmitted, setGstSubmitted] = useState(false);
+  const [aadhaarVerified, setAadhaarVerified] = useState(false);
   const [cityModalVisible, setCityModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (!route?.params?.aadhaarVerified) {
+      return;
+    }
+    setAadhaarVerified(true);
+    navigation.setParams({
+      aadhaarVerified: undefined,
+      aadhaarNumber: undefined,
+    });
+  }, [navigation, route?.params?.aadhaarVerified]);
 
   const onUpdate = () => {
     dispatch(
@@ -105,7 +117,9 @@ const PersonalInfoScreen = ({navigation}) => {
       setGstVisible(true);
       return;
     }
-    navigation.navigate(ROUTES.AADHAAR_VERIFY);
+    navigation.navigate(ROUTES.AADHAAR_VERIFY, {
+      returnRoute: ROUTES.PERSONAL_INFO,
+    });
   };
 
   const pickGstDocument = index => {
@@ -260,24 +274,44 @@ const PersonalInfoScreen = ({navigation}) => {
         </View>
 
         <Text style={styles.verifyHeading}>Verification</Text>
-        {VERIFICATION_ITEMS.map(item => (
-          <View key={item.id} style={styles.verifyCard}>
-            <View style={styles.verifyCopy}>
-              <Text style={styles.verifyTitle}>{item.title}</Text>
-              <Text style={styles.verifyStatus}>
-                {item.id === 'gst' && gstSubmitted
-                  ? 'Verification pending'
-                  : item.status}
-              </Text>
+        {VERIFICATION_ITEMS.map(item => {
+          const isGst = item.id === 'gst';
+          const isDone = isGst ? gstSubmitted : aadhaarVerified;
+          const status = isDone
+            ? isGst
+              ? 'Verification pending'
+              : 'Verified'
+            : item.status;
+          return (
+            <View key={item.id} style={styles.verifyCard}>
+              <View style={styles.verifyCopy}>
+                <Text style={styles.verifyTitle}>{item.title}</Text>
+                <Text
+                  style={[
+                    styles.verifyStatus,
+                    isDone && styles.verifyStatusDone,
+                  ]}>
+                  {status}
+                </Text>
+              </View>
+              {isDone ? (
+                <View
+                  style={styles.verifyTick}
+                  accessibilityRole="image"
+                  accessibilityLabel={`${item.title} verified`}>
+                  <Ionicons name="checkmark" size={16} color={Colors.surface} />
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.verifyBtn}
+                  onPress={() => onVerify(item.id)}
+                  activeOpacity={0.85}>
+                  <Text style={styles.verifyBtnText}>Verify Now</Text>
+                </TouchableOpacity>
+              )}
             </View>
-            <TouchableOpacity
-              style={styles.verifyBtn}
-              onPress={() => onVerify(item.id)}
-              activeOpacity={0.85}>
-              <Text style={styles.verifyBtnText}>Verify Now</Text>
-            </TouchableOpacity>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
 
       <View style={[styles.footer, {paddingBottom: insets.bottom + 12}]}>
@@ -304,18 +338,19 @@ const PersonalInfoScreen = ({navigation}) => {
             <View style={styles.uploadRow}>
               {gstDocs.map((uri, index) => (
                 <View key={index} style={styles.uploadBox}>
+                  {uri ? (
+                    <Image
+                      source={{uri}}
+                      style={styles.uploadPreview}
+                      resizeMode="cover"
+                    />
+                  ) : null}
                   <TouchableOpacity
                     style={styles.uploadInner}
                     onPress={() => pickGstDocument(index)}
                     activeOpacity={0.85}
                     accessibilityLabel={`Upload GST document ${index + 1}`}>
-                    {uri ? (
-                      <Image
-                        source={{uri}}
-                        style={styles.uploadPreview}
-                        resizeMode="cover"
-                      />
-                    ) : (
+                    {uri ? null : (
                       <>
                         <Ionicons
                           name="camera-outline"
@@ -526,6 +561,9 @@ const baseStyles = {
     fontSize: 13,
     color: Colors.textMuted,
   },
+  verifyStatusDone: {
+    color: '#1FA85A',
+  },
   verifyBtn: {
     backgroundColor: Colors.primary,
     borderRadius: 18,
@@ -536,6 +574,14 @@ const baseStyles = {
     fontSize: 12,
     fontWeight: Typography.fontWeights.bold,
     color: Colors.onPrimary,
+  },
+  verifyTick: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#1FA85A',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   footer: {
     paddingHorizontal: Spacing.screenPadding,
@@ -590,21 +636,20 @@ const baseStyles = {
     borderStyle: 'dashed',
     borderColor: Colors.primary,
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
     overflow: 'hidden',
     backgroundColor: Colors.surfaceAlt,
   },
   uploadInner: {
-    flex: 1,
-    width: '100%',
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
+    zIndex: 1,
   },
   uploadPreview: {
     ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
   },
   uploadClear: {
     position: 'absolute',

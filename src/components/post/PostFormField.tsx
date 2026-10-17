@@ -15,6 +15,7 @@ const PostFormField = ({
   icon,
   multiline = false,
   rightElement,
+  error,
 }) => {
   const styles = useResponsiveStyles(baseStyles);
   const display = value || placeholder;
@@ -27,7 +28,11 @@ const PostFormField = ({
         activeOpacity={onPress ? 0.75 : 1}
         onPress={onPress}
         disabled={!onPress}
-        style={[styles.inputWrap, multiline && styles.inputWrapMulti]}>
+        style={[
+          styles.inputWrap,
+          multiline && styles.inputWrapMulti,
+          error && styles.inputWrapError,
+        ]}>
         <Text
           style={[styles.value, isPlaceholder && styles.placeholder]}
           numberOfLines={multiline ? 4 : 1}>
@@ -38,6 +43,7 @@ const PostFormField = ({
             <Ionicons name={icon} size={18} color={Colors.textMuted} />
           ) : null)}
       </TouchableOpacity>
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   );
 };
@@ -67,6 +73,9 @@ const baseStyles = {
     minHeight: 100,
     alignItems: 'flex-start',
   },
+  inputWrapError: {
+    borderColor: Colors.error,
+  },
   value: {
     flex: 1,
     fontSize: 15,
@@ -75,6 +84,12 @@ const baseStyles = {
   },
   placeholder: {
     color: Colors.textPlaceholder,
+  },
+  errorText: {
+    fontSize: 12,
+    color: Colors.error,
+    marginTop: 6,
+    fontWeight: '500',
   },
 };
 

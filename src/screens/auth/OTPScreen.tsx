@@ -84,11 +84,14 @@ const OTPScreen = ({navigation, route}) => {
         numberOfLines={1}
         adjustsFontSizeToFit
         minimumFontScale={0.85}>
-        We have sent a verification OTP to {maskPhone(phone)}{' '}
-        <Text style={styles.edit} onPress={() => navigation.goBack()}>
-          Edit
-        </Text>
+        We have sent a verification OTP to {maskPhone(phone)}
       </Text>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => navigation.goBack()}
+        style={styles.changeNumberWrap}>
+        <Text style={styles.changeNumber}>Change number</Text>
+      </TouchableOpacity>
 
       <OTPInput
         length={4}
@@ -145,8 +148,15 @@ const baseStyles = {
     lineHeight: 16,
     color: '#9AA0A8',
   },
-  edit: {
-    color: '#2F6BFF',
+  changeNumberWrap: {
+    marginTop: 4,
+    alignItems: 'center',
+  },
+  changeNumber: {
+    textAlign: 'center',
+    fontSize: 12,
+    lineHeight: 16,
+    color: 'rgba(13, 81, 160, 1)',
     fontWeight: Typography.fontWeights.bold,
   },
   otp: {

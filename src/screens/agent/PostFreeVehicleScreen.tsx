@@ -1,5 +1,7 @@
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
+  Dimensions,
+  Keyboard,
   Modal,
   Platform,
   ScrollView,
@@ -8,6 +10,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
@@ -18,6 +21,8 @@ import PostFormField from '../../components/post/PostFormField';
 import {ROUTES} from '../../constants/Routes';
 import {Colors, Spacing} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
+
+const FIELD_KEYBOARD_GAP = 24;
 
 const VEHICLE_OPTIONS = [
   'Hatchback',
@@ -66,9 +71,16 @@ const formatDateTime = date => `${formatDate(date)}, ${formatTime(date)}`;
 /**
  * Post Free Vehicle form (screenshot 5).
  */
+
 const PostFreeVehicleScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
+  const {height: windowHeight} = useWindowDimensions();
+  const scrollRef = useRef(null);
+  const detailsInputRef = useRef(null);
+  const scrollY = useRef(0);
+  const keyboardTopRef = useRef(0);
+  const fullHeightRef = useRef(windowHeight);
 
   const [vehicleType, setVehicleType] = useState('Hatchback');
   const [startTime, setStartTime] = useState('');
@@ -78,6 +90,8 @@ const PostFreeVehicleScreen = ({navigation}) => {
   const [location, setLocation] = useState('');
   const [details, setDetails] = useState('');
   const [pickAnyLocation, setPickAnyLocation] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const [pickerVisible, setPickerVisible] = useState(false);
   const [activeField, setActiveField] = useState('start');
@@ -86,15 +100,133 @@ const PostFreeVehicleScreen = ({navigation}) => {
   const [iosDraftDate, setIosDraftDate] = useState(new Date());
   const [pendingDate, setPendingDate] = useState(new Date());
 
+  if (keyboardHeight === 0) {
+    fullHeightRef.current = windowHeight;
+  }
+  
+  // Android adjustResize already shrinks the window; only add leftover inset.
+  const alreadyResized = Math.max(0, fullHeightRef.current - windowHeight);
+  const keyboardInset = Math.max(0, keyboardHeight - alreadyResized);
+
+  const scrollFocusedFieldIntoView = (attempt = 0) => {
+    const focused = TextInput.State.currentlyFocusedInput?.();
+    const target = focused?.measureInWindow
+      ? focused
+      : detailsInputRef.current?.measureInWindow
+        ? detailsInputRef.current
+        : null;
+
+    if (!target?.measureInWindow) {
+      if (attempt < 8) {
+        setTimeout(() => scrollFocusedFieldIntoView(attempt + 1), 50);
+      }
+      return;
+    }
+
+    target.measureInWindow((_x, y, _w, h) => {
+      if (!h) {
+        return;
+      }
+
+      const visibleBottom =
+        keyboardTopRef.current > 0
+          ? keyboardTopRef.current
+          : Dimensions.get('window').height;
+      const overlap = y + h + FIELD_KEYBOARD_GAP - visibleBottom;
+      if (overlap <= 4) {
+        return;
+      }
+
+      const nextY = Math.max(0, scrollY.current + overlap);
+      scrollY.current = nextY;
+      scrollRef.current?.scrollTo({y: nextY, animated: true});
+    });
+  };
+
+  const onDetailsFocus = () => {
+    setTimeout(
+      () => scrollFocusedFieldIntoView(),
+      Platform.OS === 'ios' ? 80 : 120,
+    );
+    setTimeout(
+      () => scrollFocusedFieldIntoView(),
+      Platform.OS === 'ios' ? 280 : 350,
+    );
+  };
+
+  useEffect(() => {
+    const showEvent =
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent =
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, event => {
+      const coords = event?.endCoordinates || {};
+      const winH = Dimensions.get('window').height;
+      keyboardTopRef.current =
+        typeof coords.screenY === 'number' && coords.screenY > 0
+          ? coords.screenY
+          : winH - (coords.height || 0);
+      setKeyboardHeight(coords.height || 0);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      keyboardTopRef.current = 0;
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (keyboardHeight <= 0) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    const run = delay =>
+      setTimeout(() => {
+        if (!cancelled) {
+          scrollFocusedFieldIntoView();
+        }
+      }, delay);
+
+    const t1 = run(80);
+    const t2 = run(250);
+    const t3 = run(420);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [keyboardHeight, keyboardInset]);
+
+  const clearError = key => {
+    setErrors(prev => {
+      if (!prev[key]) {
+        return prev;
+      }
+      const next = {...prev};
+      delete next[key];
+      return next;
+    });
+  };
+
   const getFieldValue = field => (field === 'start' ? startValue : endValue);
 
   const applyDateTime = (field, date) => {
     if (field === 'start') {
       setStartValue(date);
       setStartTime(formatDateTime(date));
+      clearError('startTime');
     } else {
       setEndValue(date);
       setEndTime(formatDateTime(date));
+      clearError('endTime');
     }
   };
 
@@ -159,11 +291,37 @@ const PostFreeVehicleScreen = ({navigation}) => {
     navigation.navigate(ROUTES.LOCATION_SELECT, {
       onSelect: place => {
         setLocation(place);
+        clearError('location');
       },
     });
   };
 
+  const validateForm = () => {
+    const nextErrors = {};
+
+    if (!vehicleType?.trim()) {
+      nextErrors.vehicleType = 'Please select vehicle type';
+    }
+    if (!startTime?.trim()) {
+      nextErrors.startTime = 'Please select vehicle free start time';
+    }
+    if (!endTime?.trim()) {
+      nextErrors.endTime = 'Please select vehicle free end time';
+    } else if (startTime?.trim() && endValue.getTime() <= startValue.getTime()) {
+      nextErrors.endTime = 'End time must be after start time';
+    }
+    if (!location?.trim()) {
+      nextErrors.location = 'Please select vehicle location';
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
   const onSubmit = () => {
+    if (!validateForm()) {
+      return;
+    }
     navigation.goBack();
   };
 
@@ -181,14 +339,36 @@ const PostFreeVehicleScreen = ({navigation}) => {
       />
 
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        ref={scrollRef}
+        style={styles.flex}
+        contentContainerStyle={[
+          styles.scroll,
+          {
+            paddingBottom:
+              insets.bottom +
+              28 +
+              (keyboardHeight > 0
+                ? Math.max(
+                    keyboardInset,
+                    Platform.OS === 'android' ? 180 : 48,
+                  ) + FIELD_KEYBOARD_GAP
+                : 16),
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+        scrollEventThrottle={16}
+        onScroll={event => {
+          scrollY.current = event.nativeEvent.contentOffset.y;
+        }}
         showsVerticalScrollIndicator={false}>
         <PostFormField
           label="Select Vehicle Type"
           value={vehicleType}
           onPress={() => setPickerVisible(true)}
           icon="chevron-down"
+          error={errors.vehicleType}
         />
 
         <PostFormField
@@ -197,6 +377,7 @@ const PostFreeVehicleScreen = ({navigation}) => {
           value={startTime}
           onPress={() => openDateTimePicker('start')}
           icon="calendar-outline"
+          error={errors.startTime}
         />
 
         <PostFormField
@@ -205,6 +386,7 @@ const PostFreeVehicleScreen = ({navigation}) => {
           value={endTime}
           onPress={() => openDateTimePicker('end')}
           icon="calendar-outline"
+          error={errors.endTime}
         />
 
         <PostFormField
@@ -213,18 +395,21 @@ const PostFreeVehicleScreen = ({navigation}) => {
           value={location}
           onPress={openLocationSelect}
           icon="location-outline"
+          error={errors.location}
         />
 
         <View style={styles.field}>
           <Text style={styles.label}>Add details</Text>
           <View style={styles.textAreaWrap}>
             <TextInput
+              ref={detailsInputRef}
               value={details}
               onChangeText={setDetails}
               placeholder="More details about your free vehicle..."
               placeholderTextColor={Colors.textPlaceholder}
               multiline
               style={styles.textArea}
+              onFocus={onDetailsFocus}
             />
           </View>
         </View>
@@ -233,7 +418,8 @@ const PostFreeVehicleScreen = ({navigation}) => {
           style={styles.checkRow}
           activeOpacity={0.8}
           onPress={() => setPickAnyLocation(v => !v)}>
-          <View style={[styles.checkbox, pickAnyLocation && styles.checkboxOn]}>
+          <View
+            style={[styles.checkbox, pickAnyLocation && styles.checkboxOn]}>
             {pickAnyLocation ? (
               <Ionicons name="checkmark" size={14} color={Colors.onPrimary} />
             ) : null}
@@ -244,9 +430,11 @@ const PostFreeVehicleScreen = ({navigation}) => {
         </TouchableOpacity>
       </ScrollView>
 
-      <View style={[styles.footer, {paddingBottom: insets.bottom + 12}]}>
-        <PrimaryButton title="Submit" onPress={onSubmit} />
-      </View>
+      {keyboardHeight === 0 ? (
+        <View style={[styles.footer, {paddingBottom: insets.bottom + 12}]}>
+          <PrimaryButton title="Submit" onPress={onSubmit} />
+        </View>
+      ) : null}
 
       <Modal visible={pickerVisible} transparent animationType="fade">
         <TouchableOpacity
@@ -260,6 +448,7 @@ const PostFreeVehicleScreen = ({navigation}) => {
                 style={styles.pickerItem}
                 onPress={() => {
                   setVehicleType(opt);
+                  clearError('vehicleType');
                   setPickerVisible(false);
                 }}>
                 <Text style={styles.pickerText}>{opt}</Text>
@@ -386,12 +575,15 @@ const baseStyles = {
     flex: 1,
     backgroundColor: Colors.backgroundAlt,
   },
+  flex: {
+    flex: 1,
+  },
   headerGap: {
     marginBottom: Spacing.base,
   },
   scroll: {
     paddingHorizontal: Spacing.screenPadding,
-    paddingBottom: 24,
+    flexGrow: 1,
   },
   field: {
     marginBottom: Spacing.base,

@@ -52,7 +52,7 @@ const PhoneLoginScreen = ({navigation, route}) => {
       <PrimaryButton title="Continue" onPress={onNext} style={styles.cta} />
 
       <Text style={styles.legal}>
-        By continue, you're agreeing to our{' '}
+        {"By continue, you're agreeing to our\n"}
         <Text style={styles.legalLink}>Term & Conditions</Text>
         {' & '}
         <Text style={styles.legalLink}>Privacy Policy</Text>

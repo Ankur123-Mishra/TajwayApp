@@ -13,6 +13,7 @@ import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
 /** HeaderBanner2.png is 512×106. Height follows this ratio so the art is not stretched. */
+
 const BANNER_WIDTH = 512;
 const BANNER_HEIGHT = 106;
 
@@ -115,6 +116,7 @@ const baseStyles = {
     zIndex: 30,
     elevation: 30,
   },
+
   content: {
     position: 'absolute',
     left: 0,
@@ -123,34 +125,41 @@ const baseStyles = {
     paddingHorizontal: Spacing.screenPadding,
     justifyContent: 'center',
   },
+
   centered: {
     justifyContent: 'center',
   },
+  
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 44,
   },
+
   side: {
     width: 40,
     alignItems: 'flex-start',
     justifyContent: 'center',
   },
+
   backBtn: {
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   backIcon: {
     width: 18,
     height: 16,
   },
+
   sideRight: {
     minWidth: 40,
     alignItems: 'flex-end',
     justifyContent: 'center',
   },
+
   title: {
     flex: 1,
     textAlign: 'center',

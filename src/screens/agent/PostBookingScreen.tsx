@@ -158,10 +158,22 @@ const PostBookingScreen = ({navigation, route}) => {
       : [],
   );
   const [otherDetails, setOtherDetails] = useState('');
+  const [errors, setErrors] = useState({});
 
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerOptions, setPickerOptions] = useState([]);
   const [pickerOnSelect, setPickerOnSelect] = useState(null);
+
+  const clearError = key => {
+    setErrors(prev => {
+      if (!prev[key]) {
+        return prev;
+      }
+      const next = {...prev};
+      delete next[key];
+      return next;
+    });
+  };
 
   const openPicker = (options, onSelect) => {
     setPickerOptions(options);
@@ -180,8 +192,10 @@ const PostBookingScreen = ({navigation, route}) => {
       onSelect: place => {
         if (field === 'pickup') {
           setPickupLocation(place);
+          clearError('pickupLocation');
         } else {
           setDropLocation(place);
+          clearError('dropLocation');
         }
       },
     });
@@ -204,6 +218,7 @@ const PostBookingScreen = ({navigation, route}) => {
     }
     setDateValue(selectedDate);
     setPickupDate(formatDate(selectedDate));
+    clearError('pickupDate');
   };
 
   const onAndroidTimeChange = (event, selectedTime) => {
@@ -213,21 +228,69 @@ const PostBookingScreen = ({navigation, route}) => {
     }
     setTimeValue(selectedTime);
     setPickupTime(formatTime(selectedTime));
+    clearError('pickupTime');
   };
 
   const confirmIosDate = () => {
     setDateValue(iosDraftDate);
     setPickupDate(formatDate(iosDraftDate));
     setShowDatePicker(false);
+    clearError('pickupDate');
   };
 
   const confirmIosTime = () => {
     setTimeValue(iosDraftDate);
     setPickupTime(formatTime(iosDraftDate));
     setShowTimePicker(false);
+    clearError('pickupTime');
+  };
+
+  const validateForm = () => {
+    const nextErrors = {};
+
+    if (!vehicleType?.trim()) {
+      nextErrors.vehicleType = 'Please select vehicle type';
+    }
+    if (!pickupDate?.trim()) {
+      nextErrors.pickupDate = 'Please select pick up date';
+    }
+    if (!pickupTime?.trim()) {
+      nextErrors.pickupTime = 'Please select pick up time';
+    }
+    if (!pickupLocation?.trim()) {
+      nextErrors.pickupLocation = 'Please select pickup location';
+    }
+
+    if (tripType === 'One Way') {
+      if (!dropLocation?.trim()) {
+        nextErrors.dropLocation = 'Please select drop location';
+      }
+    } else {
+      const days = Number(numberOfDays);
+      if (!numberOfDays?.trim() || Number.isNaN(days) || days < 1) {
+        nextErrors.numberOfDays = 'Please enter number of days';
+      }
+    }
+
+    if (amountType === 'Enter booking amount') {
+      const amount = Number(totalAmount);
+      if (
+        !String(totalAmount).trim() ||
+        Number.isNaN(amount) ||
+        amount <= 0
+      ) {
+        nextErrors.totalAmount = 'Please enter booking amount';
+      }
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
   const onPost = () => {
+    if (!validateForm()) {
+      return;
+    }
     navigation.goBack();
   };
 
@@ -246,16 +309,24 @@ const PostBookingScreen = ({navigation, route}) => {
         <SegmentTabs
           options={['One Way', 'Round Trip']}
           value={tripType}
-          onChange={setTripType}
+          onChange={value => {
+            setTripType(value);
+            clearError('dropLocation');
+            clearError('numberOfDays');
+          }}
         />
 
         <PostFormField
           label="Select Vehicle Type"
           value={vehicleType}
           onPress={() =>
-            openPicker(VEHICLE_OPTIONS, v => setVehicleType(v))
+            openPicker(VEHICLE_OPTIONS, v => {
+              setVehicleType(v);
+              clearError('vehicleType');
+            })
           }
           icon="chevron-down"
+          error={errors.vehicleType}
         />
 
         <PostFormField
@@ -264,6 +335,7 @@ const PostBookingScreen = ({navigation, route}) => {
           value={pickupDate}
           onPress={openDatePicker}
           icon="chevron-down"
+          error={errors.pickupDate}
         />
 
         <PostFormField
@@ -272,6 +344,7 @@ const PostBookingScreen = ({navigation, route}) => {
           value={pickupTime}
           onPress={openTimePicker}
           icon="chevron-down"
+          error={errors.pickupTime}
         />
 
         <PostFormField
@@ -280,6 +353,7 @@ const PostBookingScreen = ({navigation, route}) => {
           value={pickupLocation}
           onPress={() => openLocationSelect('pickup')}
           icon="chevron-down"
+          error={errors.pickupLocation}
         />
 
         {tripType === 'One Way' ? (
@@ -289,21 +363,32 @@ const PostBookingScreen = ({navigation, route}) => {
             value={dropLocation}
             onPress={() => openLocationSelect('drop')}
             icon="chevron-down"
+            error={errors.dropLocation}
           />
         ) : (
           <>
             <View style={styles.field}>
               <Text style={styles.label}>Enter Number of Days</Text>
-              <View style={styles.inputWrap}>
+              <View
+                style={[
+                  styles.inputWrap,
+                  errors.numberOfDays && styles.inputWrapError,
+                ]}>
                 <TextInput
                   value={numberOfDays}
-                  onChangeText={setNumberOfDays}
+                  onChangeText={text => {
+                    setNumberOfDays(text);
+                    clearError('numberOfDays');
+                  }}
                   keyboardType="numeric"
                   placeholder="0"
                   placeholderTextColor={Colors.textPlaceholder}
                   style={styles.textInput}
                 />
               </View>
+              {errors.numberOfDays ? (
+                <Text style={styles.errorText}>{errors.numberOfDays}</Text>
+              ) : null}
             </View>
 
             <View style={styles.field}>
@@ -326,23 +411,36 @@ const PostBookingScreen = ({navigation, route}) => {
           label="'Booking Amount' or 'Quote Best Price'?"
           value={amountType}
           onPress={() =>
-            openPicker(AMOUNT_OPTIONS, v => setAmountType(v))
+            openPicker(AMOUNT_OPTIONS, v => {
+              setAmountType(v);
+              clearError('totalAmount');
+            })
           }
           icon="chevron-down"
         />
 
         <View style={styles.field}>
           <Text style={styles.label}>Total Booking Amount</Text>
-          <View style={styles.inputWrap}>
+          <View
+            style={[
+              styles.inputWrap,
+              errors.totalAmount && styles.inputWrapError,
+            ]}>
             <TextInput
               value={totalAmount}
-              onChangeText={setTotalAmount}
+              onChangeText={text => {
+                setTotalAmount(text);
+                clearError('totalAmount');
+              }}
               keyboardType="numeric"
               placeholder="0"
               placeholderTextColor={Colors.textPlaceholder}
               style={styles.textInput}
             />
           </View>
+          {errors.totalAmount ? (
+            <Text style={styles.errorText}>{errors.totalAmount}</Text>
+          ) : null}
         </View>
 
         <TouchableOpacity
@@ -666,6 +764,9 @@ const baseStyles = {
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
+  inputWrapError: {
+    borderColor: Colors.error,
+  },
   textInput: {
     fontSize: 15,
     color: Colors.textPrimary,
@@ -674,6 +775,12 @@ const baseStyles = {
   textArea: {
     minHeight: 72,
     textAlignVertical: 'top',
+  },
+  errorText: {
+    fontSize: 12,
+    color: Colors.error,
+    marginTop: 6,
+    fontWeight: '500',
   },
   hint: {
     fontSize: 12,
