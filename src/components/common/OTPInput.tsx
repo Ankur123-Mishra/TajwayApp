@@ -17,6 +17,7 @@ const OTPInput = ({
   const refs = useRef([]);
   const [focused, setFocused] = useState(autoFocus ? 0 : -1);
   const digits = Array.from({length}, (_, i) => value[i] || '');
+  const compact = length > 4;
 
   const updateAt = (index, char) => {
     const next = digits.slice();
@@ -35,14 +36,18 @@ const OTPInput = ({
   };
 
   return (
-    <View style={[styles.row, style]}>
+    <View style={[styles.row, compact && styles.rowCompact, style]}>
       {digits.map((digit, index) => (
         <TextInput
           key={index}
           ref={el => {
             refs.current[index] = el;
           }}
-          style={[styles.box, focused === index && styles.boxFocused]}
+          style={[
+            styles.box,
+            compact && styles.boxCompact,
+            focused === index && styles.boxFocused,
+          ]}
           value={digit}
           onChangeText={text => updateAt(index, text)}
           onKeyPress={({nativeEvent}) => onKeyPress(index, nativeEvent.key)}
@@ -66,6 +71,9 @@ const baseStyles = {
     justifyContent: 'center',
     gap: 14,
   },
+  rowCompact: {
+    gap: 8,
+  },
   box: {
     width: 56,
     height: 56,
@@ -76,6 +84,11 @@ const baseStyles = {
     fontSize: 22,
     fontWeight: '600',
     color: '#1C1C1C',
+  },
+  boxCompact: {
+    width: 46,
+    height: 52,
+    fontSize: 20,
   },
   boxFocused: {
     borderColor: '#F0A095',

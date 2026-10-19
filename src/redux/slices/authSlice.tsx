@@ -8,7 +8,10 @@ const initialState = {
   role: null,
   user: null,
   token: null,
+  refreshToken: null,
   phone: null,
+  isNewUser: false,
+  nextStep: null,
   preferences: {
     states: [],
     bookingType: null,
@@ -33,21 +36,43 @@ const authSlice = createSlice({
       state.hasPreferences = true;
     },
     loginSuccess(state, action) {
-      const {user, token, role, phone} = action.payload;
+      const {
+        user,
+        token,
+        accessToken,
+        refreshToken,
+        role,
+        phone,
+        mobile,
+        isOnboardingComplete,
+        onboardingCompleted,
+        isNewUser,
+        nextStep,
+      } = action.payload;
+
       state.isAuthenticated = true;
-      state.isOnboarded = true;
       state.user = user;
-      state.token = token;
-      state.phone = phone || user?.phone || state.phone;
+      state.token = token || accessToken || null;
+      state.refreshToken = refreshToken || null;
+      state.phone = phone || mobile || user?.mobile || user?.phone || state.phone;
       state.role = role || user?.role || USER_ROLES.AGENT;
+      state.isNewUser = Boolean(isNewUser);
+      state.nextStep = nextStep || null;
+      state.isOnboarded = Boolean(
+        isOnboardingComplete ?? onboardingCompleted ?? true,
+      );
     },
     logout(state) {
       state.isAuthenticated = false;
       state.user = null;
       state.token = null;
+      state.refreshToken = null;
       state.role = null;
       state.phone = null;
+      state.isNewUser = false;
+      state.nextStep = null;
       state.hasPreferences = false;
+      state.isOnboarded = false;
       state.preferences = {states: [], bookingType: null};
     },
     updateUser(state, action) {

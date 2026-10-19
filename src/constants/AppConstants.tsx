@@ -57,7 +57,7 @@ export const DEMO_ACCOUNTS = {
   '9999999993': 'owner',
 };
 
-export const DEMO_OTP = '1234';
+export const DEMO_OTP = '123456';
 
 export const BOOKING_TYPES = {
   ONE_WAY: 'one_way',

@@ -21,7 +21,7 @@ import {EMPTY_FILTERS} from '../../components/booking/MarketFilterSheet';
 import BannerHeader from '../../components/common/BannerHeader';
 import Images from '../../constants/Images';
 import {ROUTES} from '../../constants/Routes';
-import {getChatByBookingId, mockMyBookings} from '../../mockData';
+import {mockMyBookings} from '../../mockData';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
@@ -57,6 +57,7 @@ const toDetailBooking = item => {
     dropTo: drop || item.to,
     extras: item.pricingNote || item.extras,
     totalAmount: item.amount ?? item.totalAmount,
+    commission: item.commission,
     bookingType:
       item.tab === 'received' ? 'Received Booking' : 'Posted Booking',
   };
@@ -190,14 +191,6 @@ const MyBookingsScreen = ({navigation}) => {
   const handleReject = item => {
     updateBookingStatus(item, 'Rejected');
     setDecision({variant: 'reject', booking: item});
-  };
-
-  const handleChat = item => {
-    const chat = getChatByBookingId(item.id);
-    navigateRoot(ROUTES.CHAT, {
-      chatId: chat?.id || 'chat-001',
-      bookingId: item.id,
-    });
   };
 
   const handleShare = async item => {
@@ -361,11 +354,11 @@ const MyBookingsScreen = ({navigation}) => {
             toState={item.toState}
             vehicle={item.vehicle}
             amount={item.amount}
+            commission={item.commission}
             tripType={item.tripType}
             onPress={() => handleOpenDetail(item)}
             onAccept={() => handleAccept(item)}
             onReject={() => handleReject(item)}
-            onChat={() => handleChat(item)}
             onShare={() => handleShare(item)}
           />
         )}

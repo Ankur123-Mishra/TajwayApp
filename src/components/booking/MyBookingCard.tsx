@@ -11,7 +11,10 @@ const ONE_WAY_BG = '#E5F8EE';
 const ONE_WAY_TEXT = '#1E9B55';
 const ROUND_BG = '#E7F0FF';
 const ROUND_TEXT = '#3B6FD8';
-const FRAME_RADIUS = 22;
+const FARE_PANEL_BG = '#FFF8E6';
+const COMMISSION_ICON_BG = '#FFE4E8';
+const COMMISSION_ICON = '#F07178';
+const FRAME_RADIUS = 18;
 const EDGE = 1.5;
 const LEFT_EDGE = 6;
 
@@ -28,13 +31,42 @@ const isRoundTrip = tripType => /round|two/i.test(String(tripType || ''));
 
 const formatAmount = value => Number(value || 0).toLocaleString('en-IN');
 
-const RouteStop = ({styles, origin, originState, destination, destinationState}) => (
-  <View style={styles.routeRow}>
-    <View style={styles.place}>
+const RouteDash = ({styles, bidirectional = false}) => {
+  const dots = Array.from({length: 4}).map((_, index) => (
+    <View key={index} style={styles.dashDot} />
+  ));
+
+  return (
+    <View style={styles.dashCol}>
+      {bidirectional ? (
+        <Ionicons name="caret-up" size={10} color="#C5CAD1" />
+      ) : null}
+      {dots}
+      <Ionicons name="caret-down" size={10} color="#C5CAD1" />
+    </View>
+  );
+};
+
+const RouteTimeline = ({
+  styles,
+  origin,
+  originState,
+  destination,
+  destinationState,
+  showReturnArrow = false,
+}) => (
+  <View style={styles.timeline}>
+    <View style={styles.timelineRail}>
       <Ionicons name="location" size={16} color={PIN_GREEN} />
-      <View style={styles.placeCopy}>
+      <View style={styles.dashRow}>
+        <RouteDash styles={styles} bidirectional={showReturnArrow} />
+      </View>
+      <Ionicons name="location" size={16} color={PIN_RED} />
+    </View>
+    <View style={styles.timelineCopy}>
+      <View>
         <Text style={styles.city} numberOfLines={1}>
-          {origin}
+          {origin || '—'}
         </Text>
         {originState ? (
           <Text style={styles.state} numberOfLines={1}>
@@ -42,13 +74,9 @@ const RouteStop = ({styles, origin, originState, destination, destinationState})
           </Text>
         ) : null}
       </View>
-    </View>
-    <Ionicons name="arrow-forward" size={16} color="#C5CAD1" />
-    <View style={styles.place}>
-      <Ionicons name="location" size={16} color={PIN_RED} />
-      <View style={styles.placeCopy}>
+      <View style={styles.cityDrop}>
         <Text style={styles.city} numberOfLines={1}>
-          {destination}
+          {destination || '—'}
         </Text>
         {destinationState ? (
           <Text style={styles.state} numberOfLines={1}>
@@ -61,8 +89,9 @@ const RouteStop = ({styles, origin, originState, destination, destinationState})
 );
 
 /**
- * My Bookings card — yellow frame with a thicker left edge and a white inner card.
+ * My Bookings card — yellow frame with fare/commission panel and vehicle label.
  */
+
 const MyBookingCard = ({
   dateTime,
   date,
@@ -74,10 +103,10 @@ const MyBookingCard = ({
   toState = '',
   vehicle = 'Sedan',
   amount = 1500,
+  commission = 1000,
   tripType = 'ONE WAY',
   onAccept,
   onReject,
-  onChat,
   onShare,
   onPress,
 }) => {
@@ -100,100 +129,105 @@ const MyBookingCard = ({
       onPress={onPress}
       disabled={!onPress}>
       <View style={styles.card}>
-      <View style={styles.metaRow}>
-        <View style={styles.metaLeft}>
-          <Ionicons name="calendar-outline" size={15} color="#8B919A" />
-          <Text style={styles.metaText}>{dateLabel}</Text>
-          <View style={styles.metaDivider} />
-          <Ionicons name="time-outline" size={15} color="#8B919A" />
-          <Text style={styles.metaText}>{timeLabel}</Text>
+        <View style={styles.metaRow}>
+          <View style={styles.metaLeft}>
+            <Ionicons name="calendar-outline" size={15} color="#8B919A" />
+            <Text style={styles.metaText}>{dateLabel}</Text>
+            <View style={styles.metaDivider} />
+            <Ionicons name="time-outline" size={15} color="#8B919A" />
+            <Text style={styles.metaText}>{timeLabel}</Text>
+          </View>
+          <TouchableOpacity
+            onPress={stop(onShare)}
+            hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+            accessibilityRole="button"
+            accessibilityLabel="Share booking">
+            <Ionicons name="share-social-outline" size={18} color="#3E4A59" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          onPress={stop(onShare)}
-          hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-          accessibilityRole="button"
-          accessibilityLabel="Share booking">
-          <Ionicons name="share-social-outline" size={18} color="#3E4A59" />
-        </TouchableOpacity>
-      </View>
 
-      <View style={styles.badgeRow}>
-        <View style={[styles.tripPill, roundTrip && styles.tripPillRound]}>
-          <Text style={[styles.tripText, roundTrip && styles.tripTextRound]}>
-            {roundTrip ? 'ROUND TRIP' : 'ONE WAY'}
-          </Text>
-        </View>
-        <View style={styles.idPill}>
-          <Text style={styles.idText}>ID: #{code}</Text>
-        </View>
-      </View>
-
-      <View style={styles.body}>
-        <View style={styles.bodyCopy}>
-          <RouteStop
-            styles={styles}
-            origin={from}
-            originState={fromState}
-            destination={to}
-            destinationState={toState}
-          />
-          {roundTrip ? (
-            <RouteStop
-              styles={styles}
-              origin={to}
-              originState={toState}
-              destination={from}
-              destinationState={fromState}
-            />
-          ) : null}
-          <View style={styles.priceRow}>
-            <View style={styles.rupeeBadge}>
-              <Text style={styles.rupeeMark}>₹</Text>
-            </View>
-            <Text style={styles.price}>₹ {formatAmount(amount)}</Text>
-            <View style={styles.priceDivider} />
-            <Ionicons name="car-outline" size={16} color="#6B7280" />
-            <Text style={styles.vehicle}>{vehicle}</Text>
+        <View style={styles.badgeRow}>
+          <View style={[styles.tripPill, roundTrip && styles.tripPillRound]}>
+            <Text style={[styles.tripText, roundTrip && styles.tripTextRound]}>
+              {roundTrip ? 'ROUND TRIP' : 'ONE WAY'}
+            </Text>
+          </View>
+          <View style={styles.idPill}>
+            <Text style={styles.idText}>ID: #{code}</Text>
           </View>
         </View>
-        <Image source={Images.carImage} style={styles.car} resizeMode="cover" />
-      </View>
 
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.actionBtnAccept]}
-          activeOpacity={0.85}
-          onPress={stop(onAccept)}
-          accessibilityRole="button"
-          accessibilityLabel="Accept">
-          <Text style={[styles.actionLabel, styles.actionLabelAccept]}>
-            Accept
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.actionBtnReject]}
-          activeOpacity={0.85}
-          onPress={stop(onReject)}
-          accessibilityRole="button"
-          accessibilityLabel="Reject">
-          <Text style={[styles.actionLabel, styles.actionLabelReject]}>
-            Reject
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionBtn}
-          activeOpacity={0.85}
-          onPress={stop(onChat)}
-          accessibilityRole="button"
-          accessibilityLabel="Chat">
-          <Ionicons
-            name="chatbubble-ellipses"
-            size={15}
-            color="#C4922A"
-          />
-          <Text style={styles.actionLabel}>Chat</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.routePanel}>
+          <View style={styles.routeCopy}>
+            <RouteTimeline
+              styles={styles}
+              origin={from}
+              originState={fromState}
+              destination={to}
+              destinationState={toState}
+              showReturnArrow={roundTrip}
+            />
+          </View>
+          <View style={styles.carCol}>
+            <View style={styles.carWrap}>
+              <Image
+                source={Images.carImage}
+                style={styles.car}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={styles.vehicleName} numberOfLines={1}>
+              {vehicle}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.farePanel}>
+          <View style={styles.fareItem}>
+            <View style={styles.fareIcon}>
+              <Text style={styles.fareIconMark}>₹</Text>
+            </View>
+            <View style={styles.fareCopy}>
+              <Text style={styles.fareLabel}>Fare</Text>
+              <Text style={styles.fareValue}>₹ {formatAmount(amount)}</Text>
+            </View>
+          </View>
+          <View style={styles.fareDivider} />
+          <View style={styles.fareItem}>
+            <View style={[styles.fareIcon, styles.commissionIcon]}>
+              <Text style={styles.commissionIconMark}>%</Text>
+            </View>
+            <View style={styles.fareCopy}>
+              <Text style={styles.fareLabel}>Commission</Text>
+              <Text style={styles.fareValue}>
+                ₹ {formatAmount(commission)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.actionBtnAccept]}
+            activeOpacity={0.85}
+            onPress={stop(onAccept)}
+            accessibilityRole="button"
+            accessibilityLabel="Accept">
+            <Text style={[styles.actionLabel, styles.actionLabelAccept]}>
+              Accept
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.actionBtnReject]}
+            activeOpacity={0.85}
+            onPress={stop(onReject)}
+            accessibilityRole="button"
+            accessibilityLabel="Reject">
+            <Text style={[styles.actionLabel, styles.actionLabelReject]}>
+              Reject
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -277,33 +311,57 @@ const baseStyles = {
   idText: {
     fontSize: 12,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: '#8A6A1A',
   },
-  body: {
+  routePanel: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#F7F8FA',
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
     gap: 8,
   },
-  bodyCopy: {
+  routeCopy: {
     flex: 1,
+    minWidth: 0,
   },
-  routeRow: {
+  timeline: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: 8,
+  },
+  timelineRail: {
+    alignItems: 'center',
+    minWidth: 16,
+  },
+  dashRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
-    marginBottom: 8,
+    marginVertical: 2,
   },
-  place: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 4,
+  dashCol: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 2,
+    gap: 2,
   },
-  placeCopy: {
+  dashDot: {
+    width: 2,
+    height: 3,
+    borderRadius: 1,
+    backgroundColor: '#D1D5DB',
+  },
+  timelineCopy: {
     flex: 1,
+    justifyContent: 'space-between',
+    minWidth: 0,
+    paddingVertical: 1,
   },
   city: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
     color: Colors.textPrimary,
     lineHeight: 18,
@@ -311,81 +369,118 @@ const baseStyles = {
   state: {
     marginTop: 1,
     fontSize: 11,
+    fontWeight: '400',
     color: '#9AA1AA',
-    fontWeight: '500',
   },
-  priceRow: {
-    flexDirection: 'row',
+  cityDrop: {
+    marginTop: 12,
+  },
+  carCol: {
+    width: 96,
     alignItems: 'center',
     gap: 6,
-    marginTop: 2,
   },
-  rupeeBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+  carWrap: {
+    width: 96,
+    height: 64,
+    borderRadius: 12,
+    backgroundColor: '#EEF0F3',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  car: {
+    width: 88,
+    height: 52,
+  },
+  vehicleName: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#3E4A59',
+    textAlign: 'center',
+  },
+  farePanel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: FARE_PANEL_BG,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    marginTop: 12,
+  },
+  fareItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  fareIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rupeeMark: {
-    fontSize: 12,
+  fareIconMark: {
+    fontSize: 15,
     fontWeight: '800',
     color: Colors.textPrimary,
   },
-  price: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.textPrimary,
+  commissionIcon: {
+    backgroundColor: COMMISSION_ICON_BG,
   },
-  priceDivider: {
-    width: 1,
-    height: 14,
-    backgroundColor: '#E5E7EB',
-  },
-  vehicle: {
+  commissionIconMark: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#4B5563',
+    fontWeight: '800',
+    color: COMMISSION_ICON,
   },
-  car: {
-    width: 92,
-    height: 68,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+  fareCopy: {
+    flexShrink: 1,
+  },
+  fareLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#9AA1AA',
+    marginBottom: 2,
+  },
+  fareValue: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+  },
+  fareDivider: {
+    width: 1,
+    height: 34,
+    backgroundColor: '#E8D9A8',
+    marginHorizontal: 10,
   },
   actions: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 10,
     marginTop: 12,
   },
   actionBtn: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    minHeight: 40,
+    minHeight: 42,
     borderRadius: 22,
-    backgroundColor: '#FFF8E6',
-    borderWidth: 1,
-    borderColor: '#F6D56A',
   },
   actionBtnAccept: {
-    backgroundColor: '#E5F8EE',
-    borderColor: '#B7E8C9',
+    backgroundColor: '#FFF3C4',
   },
   actionBtnReject: {
-    backgroundColor: '#FFF1F2',
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
     borderColor: '#FFD0D4',
   },
   actionLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
-    color: Colors.textPrimary,
   },
   actionLabelAccept: {
-    color: '#1E9B55',
+    color: Colors.textPrimary,
   },
   actionLabelReject: {
     color: '#F07178',

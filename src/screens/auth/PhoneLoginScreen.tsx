@@ -6,10 +6,12 @@ import PrimaryButton from '../../components/brand/PrimaryButton';
 import NoticeModal from '../../components/common/NoticeModal';
 import {ROUTES} from '../../constants/Routes';
 import {setPhone} from '../../redux/slices/authSlice';
+import {AuthService} from '../../services';
 import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Phone login — Welcome sheet over the driver hero.
+ * Continue → send-otp API → OTP screen.
  */
 
 const PhoneLoginScreen = ({navigation, route}) => {
@@ -17,53 +19,82 @@ const PhoneLoginScreen = ({navigation, route}) => {
   const dispatch = useDispatch();
   const mode = route?.params?.mode || 'login';
   const [phone, setPhoneLocal] = useState('');
+  const [loading, setLoading] = useState(false);
   const [noticeVisible, setNoticeVisible] = useState(false);
+  const [noticeTitle, setNoticeTitle] = useState('Mobile number');
+  const [noticeMessage, setNoticeMessage] = useState(
+    'Please add a 10 digit mobile number.',
+  );
 
   const digits = phone.replace(/\D/g, '');
 
-  const onNext = () => {
+  const showNotice = (title, message) => {
+    setNoticeTitle(title);
+    setNoticeMessage(message);
+    setNoticeVisible(true);
+  };
+
+  const onNext = async () => {
     if (digits.length < 10) {
-      setNoticeVisible(true);
+      showNotice('Mobile number', 'Please add a 10 digit mobile number.');
       return;
     }
-    dispatch(setPhone(phone));
-    navigation.navigate(ROUTES.OTP, {phone: digits, mode});
+
+    try {
+      setLoading(true);
+      await AuthService.sendOtp(digits);
+      dispatch(setPhone(digits));
+      navigation.navigate(ROUTES.OTP, {phone: digits, mode});
+    } catch (error) {
+      showNotice(
+        'OTP',
+        error?.message || 'Failed to send OTP. Please try again.',
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <>
-    <AuthHeroLayout>
-      <Text style={styles.welcome}>Welcome!</Text>
-      <Text style={styles.subtitle}>
-        Login/Sign up to your account and continue your journey
-      </Text>
-      <TextInput
-        value={phone}
-        onChangeText={text =>
-          setPhoneLocal(text.replace(/\D/g, '').slice(0, 10))
-        }
-        keyboardType="phone-pad"
-        maxLength={10}
-        placeholder="Enter Phone number"
-        placeholderTextColor="#B0B4BC"
-        style={styles.input}
-      />
-      
-      <PrimaryButton title="Continue" onPress={onNext} style={styles.cta} />
+      <AuthHeroLayout>
+        <Text style={styles.welcome}>Welcome!</Text>
+        <Text style={styles.subtitle}>
+          Login/Sign up to your account and continue your journey
+        </Text>
+        <TextInput
+          value={phone}
+          onChangeText={text =>
+            setPhoneLocal(text.replace(/\D/g, '').slice(0, 10))
+          }
+          keyboardType="phone-pad"
+          maxLength={10}
+          placeholder="Enter Phone number"
+          placeholderTextColor="#B0B4BC"
+          style={styles.input}
+          editable={!loading}
+        />
 
-      <Text style={styles.legal}>
-        {"By continue, you're agreeing to our\n"}
-        <Text style={styles.legalLink}>Term & Conditions</Text>
-        {' & '}
-        <Text style={styles.legalLink}>Privacy Policy</Text>
-      </Text>
-    </AuthHeroLayout>
-    <NoticeModal
-      visible={noticeVisible}
-      title="Mobile number"
-      message="Please add a 10 digit mobile number."
-      onClose={() => setNoticeVisible(false)}
-    />
+        <PrimaryButton
+          title="Continue"
+          onPress={onNext}
+          loading={loading}
+          style={styles.cta}
+        />
+
+        <Text style={styles.legal}>
+          {"By continue, you're agreeing to our\n"}
+          <Text style={styles.legalLink}>Term & Conditions</Text>
+          {' & '}
+          <Text style={styles.legalLink}>Privacy Policy</Text>
+        </Text>
+      </AuthHeroLayout>
+      <NoticeModal
+        visible={noticeVisible}
+        title={noticeTitle}
+        message={noticeMessage}
+        onClose={() => setNoticeVisible(false)}
+      />
     </>
   );
 };
