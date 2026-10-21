@@ -12,6 +12,7 @@ import {
 import {ROUTES} from '../../constants/Routes';
 import {useAuth, useResponsiveStyles} from '../../hooks';
 import {logout} from '../../redux/slices/authSlice';
+import {AuthService} from '../../services';
 import {Colors, Spacing} from '../../theme';
 
 const DriverHomeScreen = ({navigation}) => {
@@ -40,7 +41,8 @@ const DriverHomeScreen = ({navigation}) => {
         <AppButton
           title="Sign out"
           variant="outline"
-          onPress={() => {
+          onPress={async () => {
+            await AuthService.clearSession();
             dispatch(logout());
             navigation.reset({
               index: 0,

@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {
+  Alert,
   Modal,
   Platform,
   ScrollView,
@@ -17,6 +18,7 @@ import PrimaryButton from '../../components/brand/PrimaryButton';
 import BannerHeader from '../../components/common/BannerHeader';
 import PostFormField from '../../components/post/PostFormField';
 import {ROUTES} from '../../constants/Routes';
+import {BookingService} from '../../services';
 import {Colors, Spacing} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
@@ -159,6 +161,7 @@ const PostBookingScreen = ({navigation, route}) => {
   );
   const [otherDetails, setOtherDetails] = useState('');
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerOptions, setPickerOptions] = useState([]);
@@ -287,11 +290,50 @@ const PostBookingScreen = ({navigation, route}) => {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const onPost = () => {
-    if (!validateForm()) {
+  const onPost = async () => {
+    if (!validateForm() || loading) {
       return;
     }
-    navigation.goBack();
+
+    if (isEdit) {
+      navigation.goBack();
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const result = await BookingService.createBooking({
+        tripType,
+        vehicleType,
+        pickupDateValue: dateValue,
+        pickupTimeValue: timeValue,
+        pickupLocation,
+        dropLocation,
+        numberOfDays,
+        tourDescription,
+        amountType,
+        bookingAmount: totalAmount,
+        commissionAmount: commission,
+        isNegotiable: negotiable,
+        visibility,
+        isSecure: secureBooking,
+        extraRequirements: selectedExtras,
+        otherDetails,
+      });
+
+      Alert.alert(
+        'Success',
+        result.message || 'Booking posted successfully',
+        [{text: 'OK', onPress: () => navigation.goBack()}],
+      );
+    } catch (error) {
+      Alert.alert(
+        'Unable to post booking',
+        error?.message || 'Something went wrong. Please try again.',
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -565,6 +607,7 @@ const PostBookingScreen = ({navigation, route}) => {
         <PrimaryButton
           title={isEdit ? 'Update' : 'Post Booking'}
           onPress={onPost}
+          loading={loading}
           style={styles.submitBtn}
         />
       </View>

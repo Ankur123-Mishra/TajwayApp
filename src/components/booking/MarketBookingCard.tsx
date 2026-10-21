@@ -42,6 +42,7 @@ const noteParts = text =>
  * Market trip request card — matches the marketplace booking screenshot.
  */
 
+
 const MarketBookingCard = ({
   name = 'Travel Partner',
   company,

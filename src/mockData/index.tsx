@@ -550,10 +550,14 @@ export const mockNetworkContacts = [
   {
     id: 'net-1',
     name: 'Namit Arora',
-    phones: ['9555786532'],
+    phones: ['9555786535'],
     company: 'Skyline Travels',
     tripType: 'One Way',
     vehicleType: 'Sedan',
+    rating: 4.8,
+    location: 'Delhi NCR',
+    networkSince: '12 March 2024',
+    activeStatus: 'Active network contact',
   },
   {
     id: 'net-2',
@@ -562,6 +566,10 @@ export const mockNetworkContacts = [
     company: 'Skyline Travels',
     tripType: 'Round Trip',
     vehicleType: 'Hatchback',
+    rating: 4.6,
+    location: 'Delhi NCR',
+    networkSince: '5 February 2024',
+    activeStatus: 'Active network contact',
   },
   {
     id: 'net-3',
@@ -570,6 +578,10 @@ export const mockNetworkContacts = [
     company: 'Skyline Travels',
     tripType: 'One Way',
     vehicleType: 'Sedan',
+    rating: 4.7,
+    location: 'Delhi NCR',
+    networkSince: '18 January 2024',
+    activeStatus: 'Active network contact',
   },
   {
     id: 'net-4',
@@ -578,6 +590,10 @@ export const mockNetworkContacts = [
     company: 'Skyline Travels',
     tripType: 'Round Trip',
     vehicleType: 'Hatchback',
+    rating: 4.5,
+    location: 'Delhi NCR',
+    networkSince: '22 December 2023',
+    activeStatus: 'Active network contact',
   },
   {
     id: 'net-5',
@@ -586,6 +602,10 @@ export const mockNetworkContacts = [
     company: 'Skyline Travels',
     tripType: 'One Way',
     vehicleType: 'Sedan',
+    rating: 4.8,
+    location: 'Delhi NCR',
+    networkSince: '12 March 2024',
+    activeStatus: 'Active network contact',
   },
   {
     id: 'net-6',
@@ -594,6 +614,10 @@ export const mockNetworkContacts = [
     company: 'Skyline Travels',
     tripType: 'Round Trip',
     vehicleType: 'Hatchback',
+    rating: 4.5,
+    location: 'Delhi NCR',
+    networkSince: '22 December 2023',
+    activeStatus: 'Active network contact',
   },
 ];
 

@@ -29,6 +29,7 @@ const Images = {
   introDriver1: require('../assets/images/intro-driver-1.png'),
   introDriver2: require('../assets/images/intro-driver-2.png'),
   introDriver3: require('../assets/images/intro-driver-3.png'),
+  offerContest: require('../assets/images/Offer&Contest.png'),
   partnerDeepesh: require('../assets/images/partner_deepesh.png'),
   profile: require('../assets/images/Profile.png'),
   personalInfo: require('../assets/images/PersonalInfo.png'),

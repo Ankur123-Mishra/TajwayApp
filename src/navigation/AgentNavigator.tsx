@@ -17,7 +17,9 @@ import RouteAlertSetupScreen from '../screens/marketplace/RouteAlertSetupScreen'
 import AadhaarVerifyScreen from '../screens/profile/AadhaarVerifyScreen';
 import ManageDriversScreen from '../screens/profile/ManageDriversScreen';
 import ManageVehiclesScreen from '../screens/profile/ManageVehiclesScreen';
+import ContactDetailsScreen from '../screens/profile/ContactDetailsScreen';
 import MyNetworkScreen from '../screens/profile/MyNetworkScreen';
+import OffersContestScreen from '../screens/profile/OffersContestScreen';
 import PaymentMethodsScreen from '../screens/profile/PaymentMethodsScreen';
 import PersonalInfoScreen from '../screens/profile/PersonalInfoScreen';
 import TransactionsScreen from '../screens/profile/TransactionsScreen';
@@ -108,6 +110,14 @@ const AgentNavigator = () => {
         component={ManageDriversScreen}
       />
       <Stack.Screen name={ROUTES.MY_NETWORK} component={MyNetworkScreen} />
+      <Stack.Screen
+        name={ROUTES.CONTACT_DETAILS}
+        component={ContactDetailsScreen}
+      />
+      <Stack.Screen
+        name={ROUTES.OFFERS_CONTEST}
+        component={OffersContestScreen}
+      />
       <Stack.Screen
         name={ROUTES.PAYMENT_METHODS}
         component={PaymentMethodsScreen}

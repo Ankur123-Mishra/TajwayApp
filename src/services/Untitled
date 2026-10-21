@@ -1,0 +1,13 @@
+curl -X POST "$BASE_URL/api/v1/app/bookings" \
+  -H "Authorization: Bearer PASTE_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "ngrok-skip-browser-warning: true" \
+  -d '{
+    "listingType":"free_vehicle",
+    "vehicleType":"ertiga",
+    "availableFrom":"2026-10-20T08:00:00.000Z",
+    "availableTill":"2026-10-22T18:00:00.000Z",
+    "vehicleLocation":"Bareilly, Uttar Pradesh, India",
+    "details":"Ready from current location",
+    "availableFromAnyLocation":false
+  }'

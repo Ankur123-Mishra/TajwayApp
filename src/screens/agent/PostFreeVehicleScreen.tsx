@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {
+  Alert,
   Dimensions,
   Keyboard,
   Modal,
@@ -19,6 +20,7 @@ import PrimaryButton from '../../components/brand/PrimaryButton';
 import BannerHeader from '../../components/common/BannerHeader';
 import PostFormField from '../../components/post/PostFormField';
 import {ROUTES} from '../../constants/Routes';
+import {BookingService} from '../../services';
 import {Colors, Spacing} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
@@ -91,6 +93,7 @@ const PostFreeVehicleScreen = ({navigation}) => {
   const [details, setDetails] = useState('');
   const [pickAnyLocation, setPickAnyLocation] = useState(false);
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const [pickerVisible, setPickerVisible] = useState(false);
@@ -318,11 +321,35 @@ const PostFreeVehicleScreen = ({navigation}) => {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const onSubmit = () => {
-    if (!validateForm()) {
+  const onSubmit = async () => {
+    if (!validateForm() || loading) {
       return;
     }
-    navigation.goBack();
+
+    try {
+      setLoading(true);
+      const result = await BookingService.createFreeVehicle({
+        vehicleType,
+        availableFrom: startValue,
+        availableTill: endValue,
+        vehicleLocation: location,
+        details,
+        availableFromAnyLocation: pickAnyLocation,
+      });
+
+      Alert.alert(
+        'Success',
+        result.message || 'Free vehicle posted successfully',
+        [{text: 'OK', onPress: () => navigation.goBack()}],
+      );
+    } catch (error) {
+      Alert.alert(
+        'Unable to post free vehicle',
+        error?.message || 'Something went wrong. Please try again.',
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const datePickerTitle =
@@ -432,7 +459,7 @@ const PostFreeVehicleScreen = ({navigation}) => {
 
       {keyboardHeight === 0 ? (
         <View style={[styles.footer, {paddingBottom: insets.bottom + 12}]}>
-          <PrimaryButton title="Submit" onPress={onSubmit} />
+          <PrimaryButton title="Submit" onPress={onSubmit} loading={loading} />
         </View>
       ) : null}
 

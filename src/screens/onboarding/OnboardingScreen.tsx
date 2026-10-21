@@ -11,6 +11,7 @@ import PrimaryButton from '../../components/brand/PrimaryButton';
 import {Images} from '../../constants/Images';
 import {ROUTES} from '../../constants/Routes';
 import {useResponsiveStyles} from '../../hooks';
+import {AuthService} from '../../services';
 import {Colors, Spacing, Typography} from '../../theme';
 
 const CREAM = '#FDF7E3';
@@ -75,6 +76,7 @@ const OnboardingScreen = ({navigation}) => {
   };
 
   const finish = () => {
+    AuthService.saveOnboarding(true).catch(() => {});
     navigation.replace(ROUTES.PHONE_LOGIN);
   };
 

@@ -12,6 +12,7 @@ const cleanMobile = mobile =>
 /**
  * Maps API user payload into the shape used across the app.
  */
+
 const mapUser = (user, mobile) => {
   if (!user) {
     return null;
@@ -27,16 +28,19 @@ const mapUser = (user, mobile) => {
 /**
  * Persists auth session so axios can attach Bearer tokens later.
  */
+ 
 const persistSession = async session => {
   await AsyncStorage.setItem(STORAGE_KEYS.AUTH_SESSION, JSON.stringify(session));
   return session;
 };
 
 export const AuthService = {
+  
   /**
    * POST /auth/send-otp
    * Body: { mobile }
    */
+
   async sendOtp(mobile) {
     const cleaned = cleanMobile(mobile);
     if (!isValidIndianMobile(cleaned)) {
@@ -64,6 +68,7 @@ export const AuthService = {
    * POST /auth/verify-otp
    * Body: { mobile, otp }
    */
+
   async verifyOtp({mobile, otp}) {
     const cleaned = cleanMobile(mobile);
     const otpCode = String(otp || '').trim();

@@ -20,6 +20,7 @@ import Images from '../../constants/Images';
 import {ROUTES} from '../../constants/Routes';
 import {useAuth, useResponsiveStyles} from '../../hooks';
 import {logout} from '../../redux/slices/authSlice';
+import {AuthService} from '../../services';
 import {Colors, Spacing, Typography} from '../../theme';
 
 const ACCOUNT_ITEMS = [
@@ -42,6 +43,7 @@ const ACCOUNT_ITEMS = [
     label: 'Offers & Contest',
     icon: 'sale-outline',
     library: 'mdi',
+    route: ROUTES.OFFERS_CONTEST,
   },
   {
     id: 'drivers',
@@ -168,7 +170,8 @@ const AgentProfileScreen = ({navigation}) => {
   const displayPhone = formatPhone(phone || user?.phone || '9555786532');
   const displayName = user?.name || user?.fullName || 'Tajway Partner';
 
-  const onLogout = () => {
+  const onLogout = async () => {
+    await AuthService.clearSession();
     dispatch(logout());
     const root =
       navigation.getParent()?.getParent() || navigation.getParent() || navigation;
@@ -217,10 +220,6 @@ const AgentProfileScreen = ({navigation}) => {
     }
     if (item.id === 'language') {
       setLanguageModalVisible(true);
-      return;
-    }
-    if (item.id === 'offers') {
-      showComingSoon('Offers & Contest will be available soon.');
       return;
     }
     if (item.id === 'about') {
@@ -406,6 +405,7 @@ const AgentProfileScreen = ({navigation}) => {
           </TouchableOpacity>
         </TouchableOpacity>
       </Modal>
+      
     </View>
   );
 };

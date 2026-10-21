@@ -11,6 +11,7 @@ import {Ionicons} from '@react-native-vector-icons/ionicons';
 import BannerHeader from '../../components/common/BannerHeader';
 import AddNetworkContactModal from '../../components/profile/AddNetworkContactModal';
 import Images from '../../constants/Images';
+import {ROUTES} from '../../constants/Routes';
 import {mockNetworkContacts} from '../../mockData';
 import {Colors, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
@@ -63,14 +64,19 @@ const tripBadge = tripType => {
   };
 };
 
-const NetworkRow = ({item}) => {
+const NetworkRow = ({item, onPress}) => {
   const styles = useResponsiveStyles(baseStyles);
   const phone = formatPhone(item.phones?.[0]);
   const badge = tripBadge(item.tripType);
   const vehicle = String(item.vehicleType || '').trim();
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.85}
+      onPress={() => onPress?.(item)}
+      accessibilityRole="button"
+      accessibilityLabel={`${item.name || 'Contact'} details`}>
       <Image source={Images.profile} style={styles.avatar} />
 
       <View style={styles.copy}>
@@ -143,7 +149,7 @@ const NetworkRow = ({item}) => {
           </View>
         ) : null}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -166,8 +172,16 @@ const MyNetworkScreen = ({navigation}) => {
       company: contact.company,
       tripType: contact.tripType,
       vehicleType: contact.vehicleType,
+      location: contact.location || 'Delhi NCR',
+      rating: 4.5,
+      networkSince: formatInviteStatus().replace('Invitation Sent On ', ''),
+      activeStatus: 'Invitation pending',
     };
     setContacts(prev => [nextContact, ...prev]);
+  };
+
+  const openContactDetails = contact => {
+    navigation.navigate(ROUTES.CONTACT_DETAILS, {contact});
   };
 
   return (
@@ -177,7 +191,9 @@ const MyNetworkScreen = ({navigation}) => {
       <FlatList
         data={contacts}
         keyExtractor={item => item.id}
-        renderItem={({item}) => <NetworkRow item={item} />}
+        renderItem={({item}) => (
+          <NetworkRow item={item} onPress={openContactDetails} />
+        )}
         contentContainerStyle={[
           styles.list,
           {paddingBottom: insets.bottom + 88},

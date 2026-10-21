@@ -8,6 +8,7 @@ import {storage} from '../utils/storage';
 import {AuthService as ApiAuthService} from './authService';
 import {BookingService} from './bookingService';
 import {DriverService} from './driverService';
+import {UserService} from './userService';
 
 const delay = (ms = 500) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -81,6 +82,11 @@ export {default as authService} from './authService';
 export {BookingService} from './bookingService';
 export {
   createBooking,
+  createFreeVehicle,
+  buildCreateBookingPayload,
+  buildCreateFreeVehiclePayload,
+  getMarketBookings,
+  mapMarketBookingItem,
   getBookings,
   updateBooking,
   selectDriver,
@@ -97,8 +103,12 @@ export {
   completeTrip,
 } from './driverService';
 
+export {UserService, isVerificationComplete} from './userService';
+export {default as userService} from './userService';
+
 export default {
   AuthService,
   BookingService,
   DriverService,
+  UserService,
 };

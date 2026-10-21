@@ -20,7 +20,8 @@ import BannerHeader from '../../components/common/BannerHeader';
 import CitySelectModal from '../../components/profile/CitySelectModal';
 import {USER_ROLES} from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
-import {updateUser} from '../../redux/slices/authSlice';
+import {setRole as setAuthRole, updateUser} from '../../redux/slices/authSlice';
+import {UserService} from '../../services';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useAuth, useResponsiveStyles} from '../../hooks';
 
@@ -39,22 +40,30 @@ const VERIFICATION_ITEMS = [
 
 /**
  * Personal Information — profile edit (screenshot match).
+ * Update → PATCH /user/profile (GST / Aadhaar not sent yet).
  */
 
 const PersonalInfoScreen = ({navigation, route}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
-  const {user} = useAuth();
-  const [fullName, setFullName] = useState('');
-  const [city, setCity] = useState('');
-  const [company, setCompany] = useState('');
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState(USER_ROLES.AGENT);
+  const {user, role: authRole} = useAuth();
+  const [fullName, setFullName] = useState(
+    user?.fullName || user?.name || '',
+  );
+  const [city, setCity] = useState(user?.city || '');
+  const [company, setCompany] = useState(
+    user?.companyName || user?.company || '',
+  );
+  const [email, setEmail] = useState(user?.email || '');
+  const [role, setRole] = useState(
+    user?.role || authRole || USER_ROLES.AGENT,
+  );
   const [profileImageUri, setProfileImageUri] = useState(
     user?.profileImage || null,
   );
-  
+  const [loading, setLoading] = useState(false);
+
   const [gstVisible, setGstVisible] = useState(false);
   const [gstDocs, setGstDocs] = useState(EMPTY_GST_DOCS);
   const [gstSubmitted, setGstSubmitted] = useState(false);
@@ -72,18 +81,40 @@ const PersonalInfoScreen = ({navigation, route}) => {
     });
   }, [navigation, route?.params?.aadhaarVerified]);
 
-  const onUpdate = () => {
-    dispatch(
-      updateUser({
-        name: fullName,
-        city,
-        company,
-        email,
+  const onUpdate = async () => {
+    try {
+      setLoading(true);
+      const result = await UserService.updateProfile({
+        fullName,
         role,
+        city,
+        companyName: company,
+        email,
+      });
+
+      const nextUser = {
+        ...(result.user || {}),
+        name: result.user?.fullName || fullName,
+        company: result.user?.companyName || company,
         profileImage: profileImageUri,
-      }),
-    );
-    navigation.goBack();
+      };
+
+      dispatch(updateUser(nextUser));
+      if (nextUser.role) {
+        dispatch(setAuthRole(nextUser.role));
+      }
+
+      Alert.alert('Success', result.message || 'Profile updated successfully', [
+        {text: 'OK', onPress: () => navigation.goBack()},
+      ]);
+    } catch (error) {
+      Alert.alert(
+        'Update failed',
+        error?.message || 'Unable to update profile. Please try again.',
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const pickProfileImage = () => {
@@ -318,6 +349,7 @@ const PersonalInfoScreen = ({navigation, route}) => {
         <PrimaryButton
           title="Update"
           onPress={onUpdate}
+          loading={loading}
           style={styles.updateBtn}
         />
       </View>

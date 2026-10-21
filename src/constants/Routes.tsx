@@ -30,6 +30,8 @@ export const ROUTES = {
   MANAGE_DRIVERS: 'ManageDrivers',
   ADD_DRIVER: 'AddDriver',
   MY_NETWORK: 'MyNetwork',
+  CONTACT_DETAILS: 'ContactDetails',
+  OFFERS_CONTEST: 'OffersContest',
   PAYMENT_METHODS: 'PaymentMethods',
   TRANSACTIONS: 'Transactions',
   VERIFIED_SUPPLIER: 'VerifiedSupplier',

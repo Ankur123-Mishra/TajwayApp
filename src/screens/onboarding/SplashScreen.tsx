@@ -9,30 +9,44 @@ import {
 } from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
+import {useDispatch} from 'react-redux';
 import {
   APP_TAGLINE_HI,
   APP_VERSION,
+  USER_ROLES,
 } from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
-import {useAuth, useResponsiveStyles} from '../../hooks';
+import {useResponsiveStyles} from '../../hooks';
 import BrandLogo from '../../components/brand/BrandLogo';
 import {Images} from '../../constants/Images';
+import {loginSuccess} from '../../redux/slices/authSlice';
+import {AuthService} from '../../services';
 import {Colors, Spacing, Typography} from '../../theme';
 
 /**
  * Splash — logo, tagline, car spotlight middle, brand hill footer.
+ * Restores saved auth session so login survives app reload.
  */
 
+const resolveHomeRoute = role => {
+  if (role === USER_ROLES.DRIVER) {
+    return ROUTES.DRIVER_ROOT;
+  }
+  if (role === USER_ROLES.OWNER) {
+    return ROUTES.OWNER_ROOT;
+  }
+  return ROUTES.AGENT_ROOT;
+};
 
 const SplashScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
+  const dispatch = useDispatch();
   const spin = useRef(new Animated.Value(0)).current;
   const fadeIn = useRef(new Animated.Value(0)).current;
   const rise = useRef(new Animated.Value(20)).current;
   const floatY = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0)).current;
-  const {isAuthenticated, role} = useAuth();
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -106,27 +120,65 @@ const SplashScreen = ({navigation}) => {
   }, [fadeIn, rise, floatY, glow]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!isAuthenticated) {
-        navigation.replace(ROUTES.INTRO);
+    let cancelled = false;
+
+    const bootstrap = async () => {
+      await new Promise(resolve => setTimeout(resolve, 2200));
+      if (cancelled) {
         return;
       }
-      // Location + preferences skipped — logged-in users go straight to tabs
-      // if (!hasPreferences) {
-      //   navigation.replace(ROUTES.PREFERENCES);
-      //   return;
-      // }
-      if (role === 'driver') {
-        navigation.replace(ROUTES.DRIVER_ROOT);
-      } else if (role === 'owner') {
-        navigation.replace(ROUTES.OWNER_ROOT);
-      } else {
-        navigation.replace(ROUTES.AGENT_ROOT);
-      }
-    }, 2200);
 
-    return () => clearTimeout(timer);
-  }, [isAuthenticated, navigation, role]);
+      try {
+        const {session, onboardingCompleted} = await AuthService.loadSession();
+        if (cancelled) {
+          return;
+        }
+
+        const hasSession =
+          session?.isLoggedIn === true &&
+          Boolean(session?.token || session?.accessToken || session?.user);
+
+        if (hasSession) {
+          dispatch(
+            loginSuccess({
+              user: session.user,
+              token: session.token || session.accessToken,
+              accessToken: session.accessToken || session.token,
+              refreshToken: session.refreshToken,
+              role: session.role,
+              phone: session.phone || session.mobile,
+              mobile: session.mobile || session.phone,
+              isNewUser: session.isNewUser,
+              nextStep: session.nextStep,
+              isOnboardingComplete:
+                session.isOnboardingComplete ?? session.onboardingCompleted,
+              onboardingCompleted:
+                session.onboardingCompleted ?? session.isOnboardingComplete,
+            }),
+          );
+          navigation.replace(resolveHomeRoute(session.role));
+          return;
+        }
+
+        if (onboardingCompleted) {
+          navigation.replace(ROUTES.PHONE_LOGIN);
+          return;
+        }
+      } catch {
+        // Fall through to intro on any restore error.
+      }
+
+      if (!cancelled) {
+        navigation.replace(ROUTES.INTRO);
+      }
+    };
+
+    bootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, navigation]);
 
   const rotate = spin.interpolate({
     inputRange: [0, 1],

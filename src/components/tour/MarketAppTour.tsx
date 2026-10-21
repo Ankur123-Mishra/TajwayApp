@@ -187,8 +187,10 @@ const Spotlight = ({rect, shape, cornerRadius = 18}) => {
     width / 2,
     height / 2,
   );
+  
   // One rounded hole. A thick border with a matching radius clips the dim
   // overlay to the card edge, so corners stay a normal border radius.
+
   const border = Math.ceil(Math.max(screenW, screenH));
 
   return (

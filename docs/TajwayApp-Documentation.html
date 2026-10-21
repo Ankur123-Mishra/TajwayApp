@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TajwayApp — Project Documentation</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 16mm;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Times New Roman", Times, Georgia, serif;
+      font-size: 11pt;
+      line-height: 1.55;
+      color: #000;
+      background: #fff;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 28px 24px;
+    }
+    h1 {
+      font-size: 22pt;
+      font-weight: bold;
+      margin: 0 0 4px;
+    }
+    .subtitle {
+      font-size: 11pt;
+      margin: 0 0 14px;
+      font-style: italic;
+    }
+    .divider {
+      border: none;
+      border-top: 1.5px solid #000;
+      margin: 10px 0 16px;
+    }
+    .meta {
+      margin: 0 0 16px;
+      font-size: 10.5pt;
+    }
+    .meta p { margin: 2px 0; }
+    h2 {
+      font-size: 14pt;
+      font-weight: bold;
+      margin: 26px 0 10px;
+      page-break-after: avoid;
+    }
+    h3 {
+      font-size: 12pt;
+      font-weight: bold;
+      margin: 18px 0 6px;
+      page-break-after: avoid;
+    }
+    h4 {
+      font-size: 11pt;
+      font-weight: bold;
+      margin: 14px 0 4px;
+      page-break-after: avoid;
+    }
+    p { margin: 6px 0 10px; text-align: justify; }
+    ul {
+      margin: 4px 0 12px;
+      padding-left: 20px;
+    }
+    li { margin: 4px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px;
+      font-size: 9.5pt;
+      page-break-inside: auto;
+    }
+    thead { display: table-header-group; }
+    tr { page-break-inside: avoid; }
+    th, td {
+      border: 1px solid #000;
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { font-weight: bold; }
+    pre {
+      border: 1px solid #000;
+      padding: 10px 12px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 9pt;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      page-break-inside: avoid;
+      margin: 8px 0 14px;
+    }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 9.5pt;
+    }
+    .toc {
+      margin: 8px 0 14px;
+      padding-left: 22px;
+    }
+    .toc a { color: #000; text-decoration: none; }
+    .footer-note {
+      margin-top: 28px;
+      padding-top: 10px;
+      border-top: 1px solid #000;
+      font-size: 9pt;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>TajwayApp</h1>
+  <p class="subtitle">Project Documentation — UI, Functionality &amp; API Integration</p>
+  <hr class="divider" />
+
+  <div class="meta">
+    <p><strong>Product:</strong> Tajway — India’s B2B Taxi Marketplace</p>
+    <p><strong>Tagline:</strong> Bharat Ki Apni Taxi Community</p>
+    <p><strong>Technology:</strong> React Native, React Navigation, Redux Toolkit, Axios</p>
+    <p><strong>API Base URL:</strong> <code>https://cytopathogenic-harmony-prosurrender.ngrok-free.dev/api/v1/app</code></p>
+    <p><strong>Document Date:</strong> October 2026</p>
+  </div>
+
+  <p>
+    Tajway is a B2B mobile application for India’s taxi and travel industry.
+    It connects three roles on one platform: travel agents who need cars for customers,
+    fleet owners who supply vehicles and drivers, and drivers who take trips.
+    In simple words, it is a marketplace where booking demand and vehicle supply can meet.
+  </p>
+  <p>
+    Today, the Agent side is the most complete. An agent can log in with OTP, browse the market,
+    post a booking or a free vehicle, open chat screens, and use profile and verification UI.
+    Driver and Owner sides mainly have starting screens and are not full products yet.
+  </p>
+
+  <h2>Contents</h2>
+  <ol class="toc">
+    <li><a href="#part1">UI and Functionality</a></li>
+    <li><a href="#part2">API Integration</a></li>
+    <li><a href="#summary">Summary Checklist</a></li>
+  </ol>
+
+  <!-- ===================== PART 1 ===================== -->
+  <h2 id="part1">1. UI and Functionality</h2>
+
+  <h3>1.1 Overall Progress</h3>
+  <p>
+    The project has many screens, but not every screen is finished to the same level.
+    Some screens are complete and connected to real APIs. Some look complete but still use mock data.
+    Some are only basic placeholders.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Area</th>
+        <th>What it means</th>
+        <th>Approx. completion</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Agent journey (Market, Post, Profile)</td>
+        <td>Main product path. Most screens are designed and usable for demos.</td>
+        <td>70–75% UI</td>
+      </tr>
+      <tr>
+        <td>Live data behind Agent screens</td>
+        <td>Only selected actions talk to the server. Many lists still use sample data.</td>
+        <td>35–40% API-backed</td>
+      </tr>
+      <tr>
+        <td>Driver / Owner journey</td>
+        <td>After OTP, users see a simple welcome/home screen with logout.</td>
+        <td>5–10%</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>1.2 Application Flow</h3>
+  <p>
+    When the app opens, the user first sees branding, then a short introduction, then phone login.
+    After OTP success, the app checks the user’s role from the server response and opens the matching home.
+  </p>
+  <pre>Splash → Intro slides → Phone login → OTP verification
+    → Agent home (full tab application), or
+    → Driver home (scaffold), or
+    → Owner home (scaffold)</pre>
+
+  <p><strong>Agent bottom tabs:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Tab</th>
+        <th>Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Market</td>
+        <td>Browse public bookings and free vehicles.</td>
+      </tr>
+      <tr>
+        <td>My Bookings</td>
+        <td>See bookings the agent posted or received.</td>
+      </tr>
+      <tr>
+        <td>+ (center)</td>
+        <td>Create a new booking or free vehicle listing.</td>
+      </tr>
+      <tr>
+        <td>Chat</td>
+        <td>Open the message inbox related to bookings.</td>
+      </tr>
+      <tr>
+        <td>Profile</td>
+        <td>Manage account, verification, network, fleet links, and logout.</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    From these tabs, the user can open extra screens such as booking detail, personal information,
+    Aadhaar verification, KYC verification, route alert setup, and chat conversation.
+  </p>
+
+  <h3>1.3 Onboarding and Authentication</h3>
+  <p>
+    Authentication is phone-based. The live flow is simple: enter mobile number, receive OTP,
+    verify OTP, and enter the app.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Screen</th>
+        <th>Purpose</th>
+        <th>Backend</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>SplashScreen</td>
+        <td>Brand loading and startup routing</td>
+        <td>Local only</td>
+      </tr>
+      <tr>
+        <td>OnboardingScreen</td>
+        <td>Product intro before login</td>
+        <td>Local only</td>
+      </tr>
+      <tr>
+        <td>PhoneLoginScreen</td>
+        <td>Collect 10-digit mobile number and request OTP</td>
+        <td>API — send OTP</td>
+      </tr>
+      <tr>
+        <td>OTPScreen</td>
+        <td>Verify OTP, save session, open role home</td>
+        <td>API — verify OTP</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>SplashScreen</h4>
+  <ul>
+    <li>This is the first screen after the app starts. It shows the Tajway logo and brand message.</li>
+    <li>It displays branding and a short animation for about two seconds.</li>
+    <li>After that delay, it moves the user to the intro / onboarding slides.</li>
+    <li>Its purpose is branding and startup routing, not data entry.</li>
+  </ul>
+
+  <h4>OnboardingScreen</h4>
+  <ul>
+    <li>Introduces the product before login so first-time users understand what Tajway is.</li>
+    <li>Shows a carousel of intro slides with artwork and short product messages.</li>
+    <li>Slides can auto-advance so the user can watch without tapping every time.</li>
+    <li>When the user taps Get Started, the app opens Phone Login.</li>
+  </ul>
+
+  <h4>PhoneLoginScreen</h4>
+  <ul>
+    <li>Login begins here. The user enters a 10-digit Indian mobile number.</li>
+    <li>The field accepts only digits and is limited to 10 characters.</li>
+    <li>If fewer than 10 digits are entered, the app shows a notice asking for a valid number.</li>
+    <li>On Continue, the app calls <code>sendOtp</code> with the mobile number.</li>
+    <li>If the OTP request succeeds, the phone number is saved in Redux and the OTP screen opens.</li>
+    <li>If the request fails, an error notice is shown and the user stays on this screen.</li>
+  </ul>
+
+  <h4>OTPScreen</h4>
+  <ul>
+    <li>This screen completes login. The user enters the 6-digit OTP received on the phone.</li>
+    <li>It shows a masked phone number so the user can confirm where the OTP was sent.</li>
+    <li>OTP is entered in a 6-box input. When all digits are filled, verification can run.</li>
+    <li>The screen calls <code>verifyOtp</code> with mobile and OTP.</li>
+    <li>On success, the server returns user details, role, and tokens. These are saved in AsyncStorage (<code>auth_session</code>) and also stored in Redux.</li>
+    <li>Based on role (<code>agent</code>, <code>driver</code>, or <code>owner</code>), navigation resets to the matching root screen.</li>
+    <li>A resend timer allows requesting another OTP after a wait period.</li>
+  </ul>
+
+  <h3>1.4 Marketplace (Market Tab)</h3>
+  <p>
+    Market is the heart of the Agent app. Agents come here to discover available bookings
+    and free vehicles posted by other partners. This screen also nudges incomplete profiles
+    toward verification and setup.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Screen</th>
+        <th>What the user can do</th>
+        <th>Data status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>MarketHomeScreen</td>
+        <td>Browse bookings / free vehicles, search, filter, setup progress, tour, help</td>
+        <td>Bookings live if verified; otherwise mock. Free vehicles list is mock.</td>
+      </tr>
+      <tr>
+        <td>MarketBookingDetailScreen</td>
+        <td>View full trip summary, call partner, open chat</td>
+        <td>UI complete; no booking-by-id API</td>
+      </tr>
+      <tr>
+        <td>RouteAlertSetupScreen</td>
+        <td>Set preferred vehicle and routes for alerts</td>
+        <td>UI complete; save is local only</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>MarketHomeScreen — detailed behavior</h4>
+  <ul>
+    <li>
+      <strong>Tabs:</strong>
+      The user can switch between Bookings and Free Vehicles.
+      Bookings are trip requests. Free Vehicles are cars available for hire in a time window.
+    </li>
+    <li>
+      <strong>Search and filters:</strong>
+      The user can search text and open a filter sheet for trip type, vehicle type, and pickup/drop preferences.
+      Filters narrow the visible list on the device.
+    </li>
+    <li>
+      <strong>Verification-based data:</strong>
+      When Market opens, it fetches the latest user profile with <code>UserService.getMe()</code>.
+      If verification is complete, bookings are loaded from <code>GET /bookings</code>.
+      If the user is not verified, the screen shows sample market bookings from mock data.
+    </li>
+    <li>
+      <strong>Free Vehicles tab:</strong>
+      Creating a free vehicle can go to the API from the Post flow, but the Free Vehicles list on Market
+      still reads from mock data. So new posts may not appear here from the server yet.
+    </li>
+    <li>
+      <strong>Setup progress:</strong>
+      A progress ring / checklist guides the user through personal info, verification, and related setup steps.
+    </li>
+    <li>
+      <strong>Verification prompt:</strong>
+      If the user is not verified, a bottom sheet may appear after a short delay asking them to complete KYC.
+    </li>
+    <li>
+      <strong>App tour:</strong>
+      First-time users can get a spotlight tour that highlights important Market controls,
+      with spoken guidance. Completion is saved on the device.
+    </li>
+    <li>
+      <strong>Help / call:</strong>
+      A help action can open the phone dialer with a sample support number.
+    </li>
+  </ul>
+
+  <h4>MarketBookingDetailScreen</h4>
+  <ul>
+    <li>Opened when a user taps a booking card on Market or My Bookings.</li>
+    <li>Shows route, dates, vehicle type, amount/quote details, and partner information.</li>
+    <li>Call opens the device dialer. Chat navigates into the chat conversation UI.</li>
+    <li>Booking content is passed through navigation parameters. There is no “get booking by id” API yet.</li>
+  </ul>
+
+  <h4>RouteAlertSetupScreen</h4>
+  <ul>
+    <li>Helps an agent set which routes and vehicle types they care about for future matching.</li>
+    <li>It is a step-by-step setup for vehicle choice, one-way routes, and round-trip routes.</li>
+    <li>Locations can be selected through Location Select.</li>
+    <li>Saving currently keeps values on the device / local UI state. There is no route-alert API yet.</li>
+  </ul>
+
+  <h3>1.5 Bookings and Posting</h3>
+  <p>
+    Agents both consume and create supply/demand. My Bookings is for managing existing posts.
+    The center “+” tab is for creating new listings.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Screen</th>
+        <th>Purpose</th>
+        <th>Backend</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>MyBookingsScreen</td>
+        <td>Private desk for posted / received bookings, accept/reject</td>
+        <td>Mock / local</td>
+      </tr>
+      <tr>
+        <td>PostBookingScreen</td>
+        <td>Publish a new trip request to the marketplace</td>
+        <td>API — POST /bookings</td>
+      </tr>
+      <tr>
+        <td>PostFreeVehicleScreen</td>
+        <td>Advertise an available vehicle for a time window</td>
+        <td>API — POST /bookings</td>
+      </tr>
+      <tr>
+        <td>LocationSelectScreen</td>
+        <td>Pick city / airport for forms</td>
+        <td>Static local list</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>MyBookingsScreen</h4>
+  <ul>
+    <li>This is the agent’s private booking desk, separate from the public Market feed.</li>
+    <li>It has Posted and Received tabs so the agent can see bookings they created and bookings coming to them.</li>
+    <li>Search and filters work similarly to Market for narrowing the list.</li>
+    <li>Each booking card can open detail, share, or show accept/reject actions where relevant.</li>
+    <li>Accept and reject open a confirmation modal. After confirm, status is updated in local state only.</li>
+    <li>The list itself is loaded from mock data, not from a “my bookings” API.</li>
+  </ul>
+
+  <h4>PostBookingScreen</h4>
+  <ul>
+    <li>Lets an agent publish a new trip request. This create flow already talks to the backend.</li>
+    <li>The agent chooses one-way or round-trip.</li>
+    <li>They select pickup and drop locations, date and time, vehicle type, and pricing style (fixed amount or quote).</li>
+    <li>Extra options and visibility settings can also be filled.</li>
+    <li>On submit, the app builds a payload and calls <code>BookingService.createBooking</code>, which posts to <code>/bookings</code> with <code>listingType: 'new_booking'</code>.</li>
+    <li>Success and failure are handled with UI feedback so the user knows whether the post was created.</li>
+  </ul>
+
+  <h4>PostFreeVehicleScreen</h4>
+  <ul>
+    <li>Used when the agent has a free car and wants to advertise availability.</li>
+    <li>The user selects vehicle type, available time window, location, and optional details.</li>
+    <li>On submit, the app calls <code>BookingService.createFreeVehicle</code>, which posts to <code>/bookings</code> with <code>listingType: 'free_vehicle'</code>.</li>
+    <li>Even though create works on the API, the Market Free Vehicles tab still shows mock list data, so end-to-end list refresh is incomplete.</li>
+  </ul>
+
+  <h4>LocationSelectScreen</h4>
+  <ul>
+    <li>Many booking and alert forms need a pickup or drop location. This screen provides a simple picker.</li>
+    <li>The user can search among popular cities and airports from a static in-app list.</li>
+    <li>Selecting a location returns the value to the previous form and goes back.</li>
+    <li>There is no Google Places / Maps autocomplete API yet.</li>
+  </ul>
+
+  <h3>1.6 Chat and Profile</h3>
+  <p>
+    Chat and Profile support the booking lifecycle after discovery.
+    Chat is for partner communication. Profile is for account trust, network, and settings.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Screen</th>
+        <th>Purpose</th>
+        <th>Backend</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>AgentMessagesScreen</td>
+        <td>Chat inbox for posted / received conversations</td>
+        <td>Mock</td>
+      </tr>
+      <tr>
+        <td>ChatDetailsScreen</td>
+        <td>One conversation thread with booking summary</td>
+        <td>Mock / local send</td>
+      </tr>
+      <tr>
+        <td>AgentProfileScreen</td>
+        <td>Account hub and menu of profile-related screens</td>
+        <td>Uses Redux user</td>
+      </tr>
+      <tr>
+        <td>PersonalInfoScreen</td>
+        <td>Edit name, city, company, email, role</td>
+        <td>API — PATCH profile</td>
+      </tr>
+      <tr>
+        <td>AadhaarVerifyScreen</td>
+        <td>Aadhaar number + OTP style confirmation UI</td>
+        <td>Local validation only</td>
+      </tr>
+      <tr>
+        <td>VerificationScreen</td>
+        <td>Full multi-step KYC wizard</td>
+        <td>UI only (submit not API)</td>
+      </tr>
+      <tr>
+        <td>ManageVehicles / ManageDrivers</td>
+        <td>Fleet empty states and add forms</td>
+        <td>UI shell</td>
+      </tr>
+      <tr>
+        <td>MyNetworkScreen</td>
+        <td>Partner contact directory</td>
+        <td>Mock / local add</td>
+      </tr>
+      <tr>
+        <td>PaymentMethodsScreen</td>
+        <td>Bank account form for payouts</td>
+        <td>UI only</td>
+      </tr>
+      <tr>
+        <td>TransactionsScreen</td>
+        <td>Payment history list</td>
+        <td>Mock</td>
+      </tr>
+      <tr>
+        <td>Verified Supplier screens</td>
+        <td>Plan / benefits marketing pages</td>
+        <td>UI stubs</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>Chat screens</h4>
+  <ul>
+    <li><strong>AgentMessagesScreen:</strong> Shows chat rows with search and filters. Tapping a row opens Chat Details. All rows currently come from mock data.</li>
+    <li><strong>ChatDetailsScreen:</strong> Shows the message thread, a short booking summary, and a compose box. Sending a message updates local UI only; messages are not synced to a server.</li>
+  </ul>
+
+  <h4>Profile and account screens</h4>
+  <ul>
+    <li>
+      <strong>AgentProfileScreen:</strong>
+      Shows banner, avatar, and a menu for personal information, network, drivers, vehicles, payments,
+      transactions, verified supplier, verification, and logout. Some items show Coming Soon.
+    </li>
+    <li>
+      <strong>PersonalInfoScreen:</strong>
+      Editable fields include full name, city, company name, email, and role.
+      Save calls <code>UserService.updateProfile</code> (PATCH <code>/user/profile</code>).
+      Photo/GST/Aadhaar are not fully backend-driven yet.
+    </li>
+    <li>
+      <strong>AadhaarVerifyScreen:</strong>
+      Collects a 12-digit Aadhaar number and a short OTP. Checks are local format/UI validation only.
+    </li>
+    <li>
+      <strong>VerificationScreen:</strong>
+      Walks through profile, GST/Aadhaar, bank details, and vehicle/driver documents.
+      Final submit currently shows an alert. There is no verification-submit API.
+      Market still uses verification status from profile (<code>getMe</code>) to decide whether to show live bookings.
+    </li>
+    <li>
+      <strong>ManageVehicles / ManageDrivers:</strong>
+      Empty states with add forms. Values are not saved through an API yet.
+    </li>
+    <li>
+      <strong>MyNetworkScreen:</strong>
+      Contact cards with invite/status style information and an add-contact modal.
+      Initial contacts are mock; new contacts stay in local screen state.
+    </li>
+    <li>
+      <strong>PaymentMethodsScreen:</strong>
+      Bank account form. Update currently navigates back without a payment API save.
+    </li>
+    <li>
+      <strong>TransactionsScreen:</strong>
+      Polished transaction cards loaded from mock data.
+    </li>
+    <li>
+      <strong>Verified Supplier screens:</strong>
+      Explain plan pricing and benefits. Purchase/upgrade actions are stubs, not a payment gateway.
+    </li>
+  </ul>
+
+  <h3>1.7 Driver and Owner</h3>
+  <p>
+    The app already routes Driver and Owner roles after OTP, but their product features are not built out yet.
+    These homes mainly prove that role-based navigation works.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Screen</th>
+        <th>Current behavior</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>DriverHomeScreen</td>
+        <td>Welcome card, empty jobs area, sign out</td>
+        <td>Scaffold</td>
+      </tr>
+      <tr>
+        <td>OwnerHomeScreen</td>
+        <td>Welcome message, “coming soon”, sign out</td>
+        <td>Scaffold</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <ul>
+    <li>There is no live driver job feed, interest flow, or trip tracking on Driver Home yet.</li>
+    <li>Owner Home does not yet include fleet dashboards, request management, or driver assignment.</li>
+  </ul>
+
+  <h3>1.8 How Core Features Work</h3>
+  <p>
+    This section explains the main product behaviors as end-to-end stories,
+    so it is clear how screens and APIs connect.
+  </p>
+
+  <h4>OTP login</h4>
+  <ul>
+    <li>User enters phone number on Phone Login.</li>
+    <li>App calls send-OTP. Server sends an OTP to that number.</li>
+    <li>User enters OTP on OTP screen. App calls verify-OTP.</li>
+    <li>Server returns user profile, role, and tokens.</li>
+    <li>App stores session locally, updates Redux, and opens Agent, Driver, or Owner home.</li>
+  </ul>
+
+  <h4>Verification gate on Market</h4>
+  <ul>
+    <li>Market asks the server for the latest user profile.</li>
+    <li>If the profile is marked verified, Market loads live bookings from the bookings API.</li>
+    <li>If not verified, Market shows sample bookings and may prompt the user to finish verification.</li>
+    <li>This protects the live marketplace while still letting new users explore the UI.</li>
+  </ul>
+
+  <h4>Create listing</h4>
+  <ul>
+    <li>User taps the center “+” button on the Agent tab bar.</li>
+    <li>A quick action opens either Post Booking or Post Free Vehicle.</li>
+    <li>User fills the form and submits.</li>
+    <li>App sends a POST request to <code>/bookings</code> with the correct listing type.</li>
+    <li>On success, the listing is created on the server. Whether it immediately appears in Market depends on verification and list wiring (especially for free vehicles).</li>
+  </ul>
+
+  <h4>App tour, filters, accept/reject</h4>
+  <ul>
+    <li><strong>App tour:</strong> First Market visit can show a spotlight tour with spoken steps. Completion is stored locally.</li>
+    <li><strong>Filters:</strong> Market, My Bookings, and Chat share filter concepts for trip type, vehicle, and locations. Filtering happens on already loaded data.</li>
+    <li><strong>Accept / reject:</strong> On My Bookings, a confirmation modal updates local status only. A decision API is not connected yet.</li>
+  </ul>
+
+  <h3>1.9 Real Data vs Mock Data</h3>
+  <p>
+    Understanding this split is important for testing. If a screen uses mock data,
+    server changes will not appear there, and actions may not persist after app restart.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Data source</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>OTP login</td><td>Real API</td></tr>
+      <tr><td>Market bookings (verified user)</td><td>Real API</td></tr>
+      <tr><td>Market bookings (unverified user)</td><td>Mock sample list</td></tr>
+      <tr><td>Free vehicles list on Market</td><td>Mock</td></tr>
+      <tr><td>Create booking / create free vehicle</td><td>Real API</td></tr>
+      <tr><td>My Bookings list and decisions</td><td>Mock / local</td></tr>
+      <tr><td>Chat inbox and conversation</td><td>Mock / local</td></tr>
+      <tr><td>Network and Transactions</td><td>Mock</td></tr>
+      <tr><td>Verification submit, Aadhaar, Payments, Vehicles, Drivers</td><td>UI only</td></tr>
+    </tbody>
+  </table>
+
+  <h3>1.10 State Management</h3>
+  <ul>
+    <li>
+      <strong>authSlice:</strong>
+      Stores login status, user object, role, phone, tokens, and related flags.
+      This is the most important shared state and is used after OTP, on profile screens, and on Market.
+    </li>
+    <li>
+      <strong>Other slices (booking, marketplace, driver, notification):</strong>
+      These exist for future or legacy flows.
+      Current Agent Market and My Bookings screens mostly keep local state and call services directly.
+    </li>
+  </ul>
+
+  <!-- ===================== PART 2 ===================== -->
+  <h2 id="part2">2. API Integration</h2>
+
+  <h3>2.1 How the API Layer Works</h3>
+  <p>
+    Screens do not own all HTTP logic. They call service functions. Services call shared HTTP helpers.
+    Helpers talk to the base URL.
+  </p>
+  <pre>Screen → Service (auth / user / booking)
+       → Axios helpers in api/common.tsx
+       → Base URL + path from endpoints.tsx</pre>
+  <ul>
+    <li>
+      <strong>Axios setup:</strong>
+      One shared Axios instance uses the project base URL, a 30-second timeout, and JSON headers.
+      An ngrok skip-browser-warning header is included so free ngrok tunnels return JSON instead of an HTML warning page.
+    </li>
+    <li>
+      <strong>Auth header:</strong>
+      For protected routes, helpers read <code>auth_session</code> from AsyncStorage and attach
+      <code>Authorization: Bearer &lt;token&gt;</code>.
+    </li>
+    <li>
+      <strong>Response shape:</strong>
+      Services generally expect <code>{ success, message?, data? }</code>.
+      If <code>success</code> is false, they treat it as an error and surface a message to the UI.
+    </li>
+    <li>
+      <strong>Still missing:</strong>
+      Automatic token refresh, global 401 interceptors, and a DELETE helper are not implemented yet.
+    </li>
+  </ul>
+
+  <h3>2.2 Defined Endpoints</h3>
+  <p>
+    All known backend paths used by the app are listed in <code>src/api/endpoints.tsx</code>.
+    Some are already connected to screens. Some are only reserved for later.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Endpoint key</th>
+        <th>Path</th>
+        <th>Used in app?</th>
+        <th>Where</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>SEND_OTP</td>
+        <td><code>/auth/send-otp</code></td>
+        <td>Yes</td>
+        <td>PhoneLoginScreen</td>
+      </tr>
+      <tr>
+        <td>VERIFY_OTP</td>
+        <td><code>/auth/verify-otp</code></td>
+        <td>Yes</td>
+        <td>OTPScreen</td>
+      </tr>
+      <tr>
+        <td>USER_ME</td>
+        <td><code>/user/me</code></td>
+        <td>Yes (GET)</td>
+        <td>MarketHomeScreen</td>
+      </tr>
+      <tr>
+        <td>UPDATE_PROFILE</td>
+        <td><code>/user/profile</code></td>
+        <td>Yes (PATCH)</td>
+        <td>PersonalInfoScreen</td>
+      </tr>
+      <tr>
+        <td>BOOKINGS</td>
+        <td><code>/bookings</code></td>
+        <td>Yes (GET + POST)</td>
+        <td>Market list, Post Booking, Post Free Vehicle</td>
+      </tr>
+      <tr>
+        <td>LOGIN</td>
+        <td><code>/auth/login</code></td>
+        <td>No</td>
+        <td>Reserved (OTP is used instead)</td>
+      </tr>
+      <tr>
+        <td>LOGOUT</td>
+        <td><code>/auth/logout</code></td>
+        <td>No</td>
+        <td>Reserved (logout is mostly local)</td>
+      </tr>
+      <tr>
+        <td>REFRESH_TOKEN</td>
+        <td><code>/auth/refresh-token</code></td>
+        <td>No</td>
+        <td>Reserved (token stored, not refreshed)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>2.3 Services</h3>
+  <p>
+    Services are the business layer between UI and HTTP. They validate inputs, call endpoints,
+    map responses, and update local session storage where needed.
+  </p>
+
+  <h4>Auth service</h4>
+  <ul>
+    <li>
+      <code>sendOtp(mobile)</code> validates that the number looks like a 10-digit Indian mobile,
+      then POSTs <code>{ mobile }</code> to send-OTP.
+    </li>
+    <li>
+      <code>verifyOtp({ mobile, otp })</code> POSTs mobile and OTP to verify-OTP.
+      On success it stores access token, refresh token, user, role, and related flags in <code>auth_session</code>.
+    </li>
+    <li>
+      <code>loadSession</code> reads the saved session from storage.
+      <code>clearSession</code> removes it.
+    </li>
+  </ul>
+
+  <h4>User service</h4>
+  <ul>
+    <li>
+      <code>getMe()</code> GETs the current user from <code>/user/me</code>
+      and merges the latest user object into the stored session.
+    </li>
+    <li>
+      <code>updateProfile(...)</code> PATCHes selected profile fields to <code>/user/profile</code>
+      (full name, role, city, company name, optional email).
+    </li>
+    <li>
+      Helper <code>isVerificationComplete(user)</code> checks client-side flags such as verified badge / verification status
+      so Market can decide whether to load live listings.
+    </li>
+  </ul>
+
+  <h4>Booking service</h4>
+  <ul>
+    <li>
+      <code>getMarketBookings(...)</code> GETs <code>/bookings</code> with query params such as listing type, page, and limit,
+      then maps each item into the card format expected by Market UI.
+    </li>
+    <li>
+      <code>createBooking(form)</code> converts the Post Booking form into an API payload and POSTs it
+      with <code>listingType: 'new_booking'</code>.
+    </li>
+    <li>
+      <code>createFreeVehicle(form)</code> does the same for free vehicles with
+      <code>listingType: 'free_vehicle'</code>.
+    </li>
+  </ul>
+
+  <h4>Driver service</h4>
+  <ul>
+    <li>Provides mock helpers for available bookings, showing interest, and trip status changes.</li>
+    <li>It uses local storage and sample bookings, not live driver APIs.</li>
+    <li>No active Driver home screen currently imports this service.</li>
+  </ul>
+
+  <h3>2.4 Feature Integration Status</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Status</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>OTP authentication</td>
+        <td>Integrated</td>
+        <td>Primary and only live login path</td>
+      </tr>
+      <tr>
+        <td>Profile</td>
+        <td>Partial</td>
+        <td>GET me + PATCH profile; photo/GST/Aadhaar not fully API-driven</td>
+      </tr>
+      <tr>
+        <td>Create booking / free vehicle</td>
+        <td>Integrated</td>
+        <td>POST /bookings</td>
+      </tr>
+      <tr>
+        <td>Market booking list</td>
+        <td>Partial</td>
+        <td>Live for verified users; mock for others</td>
+      </tr>
+      <tr>
+        <td>Free vehicle list</td>
+        <td>Mock</td>
+        <td>Create API exists; list feed not wired</td>
+      </tr>
+      <tr>
+        <td>My Bookings</td>
+        <td>Mock</td>
+        <td>Local accept/reject</td>
+      </tr>
+      <tr>
+        <td>Chat / Network / Payments / Vehicles</td>
+        <td>Mock / UI</td>
+        <td>No backend calls</td>
+      </tr>
+      <tr>
+        <td>Verification submit</td>
+        <td>UI only</td>
+        <td>Wizard complete; no submit API</td>
+      </tr>
+      <tr>
+        <td>Driver jobs</td>
+        <td>Mock</td>
+        <td>Service unused by active screens</td>
+      </tr>
+      <tr>
+        <td>Logout / refresh token</td>
+        <td>Not wired</td>
+        <td>Endpoint constants exist only</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>2.5 Screens Connected to the Backend</h3>
+  <p>
+    Only a small set of screens currently make real HTTP calls.
+    Everything else is either mock-driven or local UI.
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Screen</th>
+        <th>API used</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>PhoneLoginScreen</td>
+        <td>POST /auth/send-otp</td>
+      </tr>
+      <tr>
+        <td>OTPScreen</td>
+        <td>POST /auth/verify-otp (including resend)</td>
+      </tr>
+      <tr>
+        <td>MarketHomeScreen</td>
+        <td>GET /user/me; GET /bookings when verified</td>
+      </tr>
+      <tr>
+        <td>PersonalInfoScreen</td>
+        <td>PATCH /user/profile</td>
+      </tr>
+      <tr>
+        <td>PostBookingScreen</td>
+        <td>POST /bookings (new booking)</td>
+      </tr>
+      <tr>
+        <td>PostFreeVehicleScreen</td>
+        <td>POST /bookings (free vehicle)</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    That means about six screens are backend-connected.
+    Overall end-to-end API coverage for the full product vision is roughly 20–25%.
+  </p>
+
+  <h3>2.6 Auth Session Flow</h3>
+  <p>
+    Session handling has two layers: AsyncStorage for persistence and Redux for in-memory app state.
+  </p>
+  <pre>PhoneLogin → sendOtp
+  → OTPScreen → verifyOtp
+      → save auth_session (tokens + user)
+      → Redux loginSuccess
+      → open Agent / Driver / Owner home</pre>
+  <ul>
+    <li>
+      After verify-OTP, both storage and Redux are updated, so authenticated API calls and UI state work in the same session.
+    </li>
+    <li>
+      On a full app restart, <code>loadSession</code> is available but is not consistently used to rehydrate Redux.
+      Because of that, the UI may behave as logged out even if a token file still exists on disk.
+    </li>
+    <li>
+      Logout is inconsistent across screens. Some clear only Redux. Some also clear <code>auth_session</code>.
+      The server logout endpoint is not called.
+    </li>
+    <li>
+      Refresh token is saved during login, but there is no automatic refresh call when access token expires.
+    </li>
+  </ul>
+
+  <h3>2.7 API Completion Overview</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Layer</th>
+        <th>Approx. completion</th>
+        <th>Comment</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>HTTP client setup</td>
+        <td>~75%</td>
+        <td>Shared Axios helpers and error handling; missing interceptors/refresh</td>
+      </tr>
+      <tr>
+        <td>Endpoint catalog</td>
+        <td>~40%</td>
+        <td>Five of eight defined paths are in active use</td>
+      </tr>
+      <tr>
+        <td>Service coverage</td>
+        <td>~35%</td>
+        <td>Auth, user profile, booking create/list</td>
+      </tr>
+      <tr>
+        <td>Screens on API</td>
+        <td>~12–15%</td>
+        <td>Six screens with real calls</td>
+      </tr>
+      <tr>
+        <td>Product end-to-end</td>
+        <td>~20–25%</td>
+        <td>OTP + profile + post/list bookings; most other flows still UI/mock</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ===================== SUMMARY ===================== -->
+  <h2 id="summary">3. Summary Checklist</h2>
+
+  <h3>3.1 UI — Agent Path</h3>
+  <ul>
+    <li>[x] Splash, onboarding, phone login, and OTP</li>
+    <li>[x] Market home with tour, filters, and tabs</li>
+    <li>[x] Post booking and free vehicle forms</li>
+    <li>[x] My Bookings, Chat, and Profile hub</li>
+    <li>[x] Personal info and verification wizard UI</li>
+    <li>[ ] Full Driver and Owner applications</li>
+    <li>[ ] Working fleet save for vehicles and drivers</li>
+    <li>[ ] Live chat, payments, and transactions</li>
+  </ul>
+
+  <h3>3.2 API</h3>
+  <ul>
+    <li>[x] send-otp / verify-otp</li>
+    <li>[x] GET /user/me and PATCH /user/profile</li>
+    <li>[x] GET /bookings for verified market users</li>
+    <li>[x] POST /bookings for new booking and free vehicle</li>
+    <li>[ ] My Bookings CRUD and decision APIs</li>
+    <li>[ ] Free vehicles list feed on Market</li>
+    <li>[ ] Chat, network, and KYC submit</li>
+    <li>[ ] logout / refresh-token</li>
+    <li>[ ] Driver and registration APIs</li>
+  </ul>
+
+  <div class="footer-note">
+    Prepared from the TajwayApp source tree (screens, API layer, services, navigation, mock data, and Redux).
+  </div>
+
+</body>
+</html>

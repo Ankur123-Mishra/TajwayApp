@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Easing,
   Image,
@@ -19,6 +20,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {useIsFocused} from '@react-navigation/native';
+import {useDispatch} from 'react-redux';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import FreeVehicleCard from '../../components/booking/FreeVehicleCard';
 import MarketBookingCard from '../../components/booking/MarketBookingCard';
@@ -35,6 +37,12 @@ import {STORAGE_KEYS} from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
 import {mockFreeVehicles, mockMarketBookings} from '../../mockData';
 import {Images} from '../../constants/Images';
+import {updateUser} from '../../redux/slices/authSlice';
+import {
+  getMarketBookings,
+  isVerificationComplete,
+  UserService,
+} from '../../services';
 import {Colors, Dimensions, Spacing} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 import {moderateScale} from '../../utils/responsive';
@@ -164,6 +172,7 @@ const ProgressRing = ({percent}) => {
 
 const MarketHomeScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
+  const dispatch = useDispatch();
   const {width: windowWidth, height: windowHeight} = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
@@ -182,6 +191,10 @@ const MarketHomeScreen = ({navigation}) => {
   const [verifyPromptVisible, setVerifyPromptVisible] = useState(false);
   const [spotlight, setSpotlight] = useState(null);
   const [activeTourTarget, setActiveTourTarget] = useState(null);
+  const [isVerified, setIsVerified] = useState(false);
+  const [marketBookings, setMarketBookings] = useState(mockMarketBookings);
+  const [bookingsLoading, setBookingsLoading] = useState(true);
+  const [bookingsError, setBookingsError] = useState('');
   const isVehicles = tab === 'vehicles';
   const scrollRef = useRef(null);
   const scrollYRef = useRef(0);
@@ -293,11 +306,70 @@ const MarketHomeScreen = ({navigation}) => {
   }, []);
 
   useEffect(() => {
-    if (verifyDismissedRef.current) {
+    if (!isFocused) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const loadMarketBookings = async () => {
+      setBookingsLoading(true);
+      setBookingsError('');
+      try {
+        const meResult = await UserService.getMe();
+        if (cancelled || !mountedRef.current) {
+          return;
+        }
+
+        const user = meResult?.user || null;
+        if (user) {
+          dispatch(updateUser(user));
+        }
+
+        const verified = isVerificationComplete(user);
+        setIsVerified(verified);
+
+        if (!verified) {
+          setMarketBookings(mockMarketBookings);
+          return;
+        }
+
+        const bookingResult = await getMarketBookings({
+          listingType: 'new_booking',
+          page: 1,
+          limit: 20,
+        });
+        if (cancelled || !mountedRef.current) {
+          return;
+        }
+        setMarketBookings(bookingResult.bookings || []);
+      } catch (error) {
+        if (cancelled || !mountedRef.current) {
+          return;
+        }
+        setBookingsError(
+          error?.message || 'Failed to load bookings. Please try again.',
+        );
+        setMarketBookings([]);
+      } finally {
+        if (!cancelled && mountedRef.current) {
+          setBookingsLoading(false);
+        }
+      }
+    };
+
+    loadMarketBookings();
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, isFocused]);
+
+  useEffect(() => {
+    if (isVerified || verifyDismissedRef.current) {
       return undefined;
     }
     const timer = setTimeout(() => {
-      if (!mountedRef.current || verifyDismissedRef.current) {
+      if (!mountedRef.current || verifyDismissedRef.current || isVerified) {
         return;
       }
       if (!isFocusedRef.current) {
@@ -306,7 +378,7 @@ const MarketHomeScreen = ({navigation}) => {
       setVerifyPromptVisible(true);
     }, VERIFY_PROMPT_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [appForegroundId]);
+  }, [appForegroundId, isVerified]);
 
   useEffect(() => {
     if (!tourOpen) {
@@ -524,7 +596,7 @@ const MarketHomeScreen = ({navigation}) => {
   };
 
   const filteredBookings = useMemo(() => {
-    let list = mockMarketBookings;
+    let list = marketBookings;
     const needle = query.trim().toLowerCase();
     if (needle) {
       list = list.filter(booking =>
@@ -583,7 +655,7 @@ const MarketHomeScreen = ({navigation}) => {
     }
 
     return list;
-  }, [query, appliedFilters]);
+  }, [marketBookings, query, appliedFilters]);
 
   const filteredVehicles = useMemo(() => {
     let list = mockFreeVehicles;
@@ -828,148 +900,185 @@ const MarketHomeScreen = ({navigation}) => {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.9}
-              style={styles.bookingBannerWrap}
-              onPress={handleStartDriving}>
-              <Image
-                source={Images.bookingBanner}
-                style={styles.bannerImage}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-
-            <Text style={styles.sectionTitle}>Quick Access</Text>
-            <View style={styles.featureRow}>
-              {FEATURES.map(f => (
+            {!isVerified ? (
+              <>
                 <TouchableOpacity
-                  key={f.id}
-                  ref={f.id === 'videos' ? setTargetRef('videos') : undefined}
-                  collapsable={false}
-                  style={styles.featureCard}
-                  activeOpacity={0.85}
-                  onPress={() => handleFeaturePress(f.id)}>
+                  activeOpacity={0.9}
+                  style={styles.bookingBannerWrap}
+                  onPress={handleStartDriving}>
                   <Image
-                    source={f.icon}
-                    style={styles.featureIcon}
+                    source={Images.bookingBanner}
+                    style={styles.bannerImage}
                     resizeMode="contain"
                   />
-                  <Text style={styles.featureLabel}>{f.label}</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
 
-            <View
-              ref={setTargetRef('progress')}
-              collapsable={false}
-              style={[
-                styles.progressCard,
-                activeTourTarget === 'progress' && styles.tourLift,
-              ]}>
-              <View style={styles.progressTop}>
-                <View style={styles.progressCopy}>
-                  <Text style={styles.progressTitle}>Your Profile</Text>
-                  <Text style={styles.progressSub}>
-                    Complete your profile to start receiving bookings and unlock
-                    more opportunities.
-                  </Text>
+                <Text style={styles.sectionTitle}>Quick Access</Text>
+                <View style={styles.featureRow}>
+                  {FEATURES.map(f => (
+                    <TouchableOpacity
+                      key={f.id}
+                      ref={
+                        f.id === 'videos' ? setTargetRef('videos') : undefined
+                      }
+                      collapsable={false}
+                      style={styles.featureCard}
+                      activeOpacity={0.85}
+                      onPress={() => handleFeaturePress(f.id)}>
+                      <Image
+                        source={f.icon}
+                        style={styles.featureIcon}
+                        resizeMode="contain"
+                      />
+                      <Text style={styles.featureLabel}>{f.label}</Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-                <ProgressRing percent={profileProgress.percent} />
-              </View>
 
-              {SETUP_FLOWS.map(flow => {
-                const done = !!flow.completed;
-                return (
-                  <TouchableOpacity
-                    key={flow.id}
-                    ref={
-                      flow.id === 'vehicle' ? setTargetRef('vehicle') : undefined
-                    }
-                    collapsable={false}
-                    style={[
-                      styles.profileRow,
-                      activeTourTarget === 'vehicle' &&
-                        flow.id === 'vehicle' &&
-                        styles.tourLift,
-                    ]}
-                    activeOpacity={0.85}
-                    onPress={() => handleProfileSectionPress(flow)}>
-                    <View style={styles.profileIcon}>
-                      <Ionicons name={flow.icon} size={18} color="#1B2437" />
-                    </View>
-                    <View style={styles.profileCopy}>
-                      <Text style={styles.profileTitle}>{flow.title}</Text>
-                      <Text style={styles.profileSub} numberOfLines={1}>
-                        {flow.subtitle}
+                <View
+                  ref={setTargetRef('progress')}
+                  collapsable={false}
+                  style={[
+                    styles.progressCard,
+                    activeTourTarget === 'progress' && styles.tourLift,
+                  ]}>
+                  <View style={styles.progressTop}>
+                    <View style={styles.progressCopy}>
+                      <Text style={styles.progressTitle}>Your Profile</Text>
+                      <Text style={styles.progressSub}>
+                        Complete your profile to start receiving bookings and
+                        unlock more opportunities.
                       </Text>
                     </View>
-                    <View
-                      style={[
-                        styles.statusPill,
-                        done ? styles.statusDone : styles.statusPending,
-                      ]}>
-                      {done ? (
-                        <Ionicons name="checkmark" size={12} color="#3BA55D" />
-                      ) : null}
-                      <Text
+                    <ProgressRing percent={profileProgress.percent} />
+                  </View>
+
+                  {SETUP_FLOWS.map(flow => {
+                    const done = !!flow.completed;
+                    return (
+                      <TouchableOpacity
+                        key={flow.id}
+                        ref={
+                          flow.id === 'vehicle'
+                            ? setTargetRef('vehicle')
+                            : undefined
+                        }
+                        collapsable={false}
                         style={[
-                          styles.statusText,
-                          done ? styles.statusTextDone : styles.statusTextPending,
-                        ]}>
-                        {done ? 'Done' : 'Pending'}
-                      </Text>
-                    </View>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={16}
-                      color="#B0B6C0"
-                      style={styles.profileChevron}
-                    />
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+                          styles.profileRow,
+                          activeTourTarget === 'vehicle' &&
+                            flow.id === 'vehicle' &&
+                            styles.tourLift,
+                        ]}
+                        activeOpacity={0.85}
+                        onPress={() => handleProfileSectionPress(flow)}>
+                        <View style={styles.profileIcon}>
+                          <Ionicons
+                            name={flow.icon}
+                            size={18}
+                            color="#1B2437"
+                          />
+                        </View>
+                        <View style={styles.profileCopy}>
+                          <Text style={styles.profileTitle}>{flow.title}</Text>
+                          <Text style={styles.profileSub} numberOfLines={1}>
+                            {flow.subtitle}
+                          </Text>
+                        </View>
+                        <View
+                          style={[
+                            styles.statusPill,
+                            done ? styles.statusDone : styles.statusPending,
+                          ]}>
+                          {done ? (
+                            <Ionicons
+                              name="checkmark"
+                              size={12}
+                              color="#3BA55D"
+                            />
+                          ) : null}
+                          <Text
+                            style={[
+                              styles.statusText,
+                              done
+                                ? styles.statusTextDone
+                                : styles.statusTextPending,
+                            ]}>
+                            {done ? 'Done' : 'Pending'}
+                          </Text>
+                        </View>
+                        <Ionicons
+                          name="chevron-forward"
+                          size={16}
+                          color="#B0B6C0"
+                          style={styles.profileChevron}
+                        />
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
 
-            <View style={styles.staySafeBannerWrap}>
-              <Image
-                source={Images.staySafeBanner}
-                style={styles.bannerImage}
-                resizeMode="contain"
-              />
-            </View>
+                <View style={styles.staySafeBannerWrap}>
+                  <Image
+                    source={Images.staySafeBanner}
+                    style={styles.bannerImage}
+                    resizeMode="contain"
+                  />
+                </View>
+              </>
+            ) : null}
 
-            {filteredBookings.length === 0 ? (
+            {bookingsLoading ? (
+              <View style={styles.loadingWrap}>
+                <ActivityIndicator size="small" color={Colors.primary} />
+                <Text style={styles.loadingText}>Loading bookings...</Text>
+              </View>
+            ) : null}
+
+            {!bookingsLoading && bookingsError ? (
+              <Text style={styles.emptyText}>{bookingsError}</Text>
+            ) : null}
+
+            {!bookingsLoading &&
+            !bookingsError &&
+            filteredBookings.length === 0 ? (
               <Text style={styles.emptyText}>No bookings found.</Text>
             ) : null}
 
-            {filteredBookings.map(({id, hasAvatar, ...booking}, index) => (
-              <View
-                key={id}
-                ref={index === 0 ? setTargetRef('booking') : undefined}
-                collapsable={false}
-                style={
-                  index === 0 && activeTourTarget === 'booking'
-                    ? styles.tourLift
-                    : null
-                }>
-                <MarketBookingCard
-                  {...booking}
-                  avatarSource={hasAvatar ? Images.partnerDeepesh : undefined}
-                  onPress={() =>
-                    navigation.navigate(ROUTES.MARKET_BOOKING_DETAIL, {
-                      booking: {id, hasAvatar, ...booking},
-                    })
-                  }
-                  onMenu={() =>
-                    showComingSoon('More options will be available soon.')
-                  }
-                  onQuote={() =>
-                    showComingSoon('Quote best price will be available soon.')
-                  }
-                  onContact={() => handleOpenDialer()}
-                />
-              </View>
-            ))}
+            {!bookingsLoading
+              ? filteredBookings.map(({id, hasAvatar, ...booking}, index) => (
+                  <View
+                    key={id}
+                    ref={index === 0 ? setTargetRef('booking') : undefined}
+                    collapsable={false}
+                    style={
+                      index === 0 && activeTourTarget === 'booking'
+                        ? styles.tourLift
+                        : null
+                    }>
+                    <MarketBookingCard
+                      {...booking}
+                      avatarSource={
+                        hasAvatar ? Images.partnerDeepesh : undefined
+                      }
+                      onPress={() =>
+                        navigation.navigate(ROUTES.MARKET_BOOKING_DETAIL, {
+                          booking: {id, hasAvatar, ...booking},
+                        })
+                      }
+                      onMenu={() =>
+                        showComingSoon('More options will be available soon.')
+                      }
+                      onQuote={() =>
+                        showComingSoon(
+                          'Quote best price will be available soon.',
+                        )
+                      }
+                      onContact={() => handleOpenDialer()}
+                    />
+                  </View>
+                ))
+              : null}
           </>
         )}
       </ScrollView>
@@ -999,7 +1108,7 @@ const MarketHomeScreen = ({navigation}) => {
       />
 
       <VerificationPromptSheet
-        visible={verifyPromptVisible && isFocused}
+        visible={verifyPromptVisible && isFocused && !isVerified}
         onClose={closeVerifyPrompt}
         onVerify={handleVerifyNow}
       />
@@ -1249,6 +1358,7 @@ const baseStyles = {
     paddingTop: 14,
     paddingBottom: 100,
   },
+
   segment: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1258,6 +1368,7 @@ const baseStyles = {
     marginHorizontal: Spacing.screenPadding,
     overflow: 'hidden',
   },
+
   segBtn: {
     flex: 1,
     height: 40,
@@ -1267,6 +1378,7 @@ const baseStyles = {
     flexDirection: 'row',
     gap: 6,
   },
+  
   segIcon: {
     width: 18,
     height: 18,
@@ -1497,6 +1609,17 @@ const baseStyles = {
     color: Colors.textMuted,
     marginBottom: 12,
     fontSize: 13,
+  },
+  loadingWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 28,
+    gap: 10,
+  },
+  loadingText: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    fontWeight: '600',
   },
   fabWrap: {
     position: 'absolute',
