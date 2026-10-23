@@ -11,7 +11,7 @@ import {useResponsiveStyles} from '../../hooks';
 
 /**
  * Phone login — Welcome sheet over the driver hero.
- * Continue → send-otp API → OTP screen.
+ * Continue → send-otp → OTP screen.
  */
 
 const PhoneLoginScreen = ({navigation, route}) => {

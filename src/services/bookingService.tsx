@@ -132,6 +132,10 @@ export function buildCreateBookingPayload(form = {}) {
     payload.otherDetails = form.otherDetails.trim();
   }
 
+  // Preference modal: first-driver-pays vs self-select, and call vs message-only
+  payload.driverPaysCommissionFirst = Boolean(form.driverPaysCommissionFirst);
+  payload.allowCalls = Boolean(form.allowCalls);
+
   return payload;
 }
 
@@ -294,6 +298,8 @@ export function mapMarketBookingItem(item = {}) {
     duration: item.numberOfDays ? `for ${item.numberOfDays} Days` : undefined,
     from: pickup.city || pickup.label || '',
     to: drop.city || drop.label || '',
+    fromState: pickup.state || '',
+    toState: drop.state || '',
     pickupFrom: pickupLabel,
     dropTo: dropLabel,
     tripType: /round/i.test(String(item.tripType || ''))
@@ -308,9 +314,52 @@ export function mapMarketBookingItem(item = {}) {
     reviews: postedBy.reviewCount || 0,
     rating: postedBy.rating || 0,
     partnerHidden: hidePartner,
+    phone: postedBy.mobile || undefined,
+    driverPaysCommissionFirst: Boolean(item.driverPaysCommissionFirst),
+    // Call icon on market cards — only show when API says calls are allowed.
+    allowCalls:
+      item.allowCalls === true ||
+      item.allowCalls === 1 ||
+      item.allowCalls === 'true',
     secured: Boolean(item.isSecure),
     bookingType:
       item.visibility === 'my_network' ? 'Network Booking' : 'Public Booking',
+    hasAvatar: Boolean(postedBy.profilePic),
+    avatarUrl: postedBy.profilePic || null,
+    raw: item,
+  };
+}
+
+/**
+ * Maps GET /bookings free_vehicle item into FreeVehicleCard props.
+ */
+export function mapFreeVehicleItem(item = {}) {
+  const postedBy = item.postedBy || {};
+  const location = item.vehicleLocation || {};
+  const availableFrom = item.availableFrom ? new Date(item.availableFrom) : null;
+  const availableTill = item.availableTill ? new Date(item.availableTill) : null;
+  const hidePartner = Boolean(postedBy.isHidden);
+  const vehicleLabel = formatVehicleLabel(item.vehicleType);
+
+  return {
+    id: item.id || item.bookingCode,
+    bookingCode: item.bookingCode,
+    vehicleName: vehicleLabel,
+    vehicleType: vehicleLabel,
+    availableFromDate: formatPickupWhen(availableFrom) || '—',
+    availableFromTime: formatPickupTime(availableFrom) || '',
+    availableTillDate: formatPickupWhen(availableTill) || '—',
+    availableTillTime: formatPickupTime(availableTill) || '',
+    location: location.label || location.city || '',
+    otherDetails:
+      item.otherDetailsDisplay || item.freeVehicleDetails || '',
+    currentLocationOnly: item.availableFromAnyLocation === false,
+    name: hidePartner
+      ? 'Travel Partner'
+      : postedBy.fullName || 'Travel Partner',
+    company: hidePartner ? undefined : postedBy.companyName,
+    phone: hidePartner ? undefined : postedBy.mobile || undefined,
+    verified: Boolean(postedBy.isVerifiedBadge),
     hasAvatar: Boolean(postedBy.profilePic),
     avatarUrl: postedBy.profilePic || null,
     raw: item,
@@ -347,10 +396,154 @@ export async function getMarketBookings({
         ? response.data
         : [];
 
+  const mapped = items.map(
+    listingType === 'free_vehicle'
+      ? mapFreeVehicleItem
+      : mapMarketBookingItem,
+  );
+
   return {
     success: true,
     message: response?.message || 'Bookings fetched successfully',
-    bookings: items.map(mapMarketBookingItem),
+    bookings: mapped,
+    vehicles: mapped,
+    meta: response?.data?.meta || null,
+    data: response?.data ?? null,
+  };
+}
+
+const formatMyBookingDateTime = date => {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const datePart = date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+  const timePart = formatPickupTime(date);
+  if (!timePart) {
+    return datePart;
+  }
+  return `${datePart} @ ${timePart}`;
+};
+
+/**
+ * Maps GET /bookings/mine item into MyBookingCard props.
+ */
+export function mapMyBookingItem(item = {}, view = 'posted') {
+  const isFreeVehicle = item.listingType === 'free_vehicle';
+  const postedBy = item.postedBy || {};
+  const acceptedBy = item.acceptedBy || {};
+  const partner =
+    view === 'received'
+      ? postedBy
+      : Object.keys(acceptedBy).length
+        ? acceptedBy
+        : postedBy;
+  const hidePartner = Boolean(item.hideProfile || partner.isHidden);
+
+  const pickup = item.pickupLocation || {};
+  const drop = item.dropLocation || {};
+  const vehicleLoc = item.vehicleLocation || {};
+  const pricing = item.pricing || {};
+
+  const whenDate = isFreeVehicle
+    ? item.availableFrom
+      ? new Date(item.availableFrom)
+      : null
+    : item.pickupAt
+      ? new Date(item.pickupAt)
+      : null;
+
+  const bookingAmount = Number(pricing.bookingAmount) || 0;
+  const commission = Number(pricing.commissionAmount) || 0;
+  const isQuote =
+    pricing.pricingMode === 'quote_best_price' || pricing.showAmount === false;
+  const totalAmount = isQuote ? 0 : bookingAmount;
+  const driverEarning = isQuote ? 0 : Math.max(bookingAmount - commission, 0);
+
+  const from = isFreeVehicle
+    ? vehicleLoc.city || vehicleLoc.label || ''
+    : pickup.city || pickup.label || '';
+  const to = isFreeVehicle
+    ? item.availableFromAnyLocation
+      ? 'Any Location'
+      : vehicleLoc.city || vehicleLoc.label || ''
+    : drop.city || drop.label || '';
+
+  return {
+    id: item.id || item.bookingCode,
+    code: item.bookingCode,
+    dateTime: formatMyBookingDateTime(whenDate),
+    status: item.status || '',
+    from,
+    fromState: isFreeVehicle ? vehicleLoc.state || '' : pickup.state || '',
+    to,
+    toState: isFreeVehicle ? '' : drop.state || '',
+    vehicle: formatVehicleLabel(item.vehicleType),
+    pricingNote: formatExtraLabels(item.extraRequirements),
+    amount: driverEarning,
+    totalAmount,
+    driverEarning,
+    commission,
+    tripType: isFreeVehicle
+      ? 'ONE WAY'
+      : /round/i.test(String(item.tripType || ''))
+        ? 'ROUND TRIP'
+        : 'ONE WAY',
+    tab: view,
+    listingType: item.listingType,
+    name: hidePartner
+      ? 'Travel Partner'
+      : partner.fullName || 'Travel Partner',
+    company: hidePartner ? undefined : partner.companyName,
+    rating: partner.rating || 0,
+    reviews: partner.reviewCount || 0,
+    phone: hidePartner ? undefined : partner.mobile || undefined,
+    hasAvatar: Boolean(partner.profilePic),
+    avatarUrl: partner.profilePic || null,
+    notes: item.tourDescription || item.otherDetails || item.freeVehicleDetails || '',
+    raw: item,
+  };
+}
+
+/**
+ * GET /bookings/mine?view=posted|received&page=&limit=
+ */
+export async function getMyBookings({
+  view = 'posted',
+  page = 1,
+  limit = 20,
+} = {}) {
+  const response = await getWithToken(ENDPOINTS.MY_BOOKINGS, {
+    view,
+    page,
+    limit,
+  });
+
+  if (!response?.success) {
+    throw {
+      message:
+        response?.message || 'Failed to fetch my bookings. Please try again.',
+      data: response,
+    };
+  }
+
+  const items = Array.isArray(response?.data?.items)
+    ? response.data.items
+    : Array.isArray(response?.data?.bookings)
+      ? response.data.bookings
+      : Array.isArray(response?.data)
+        ? response.data
+        : [];
+
+  const mapped = items.map(item => mapMyBookingItem(item, view));
+
+  return {
+    success: true,
+    message: response?.message || 'My bookings fetched successfully',
+    bookings: mapped,
     meta: response?.data?.meta || null,
     data: response?.data ?? null,
   };
@@ -359,6 +552,7 @@ export async function getMarketBookings({
 /**
  * POST /bookings — create a new booking listing (one_way / round_trip).
  */
+
 export async function createBooking(form = {}) {
   const body = buildCreateBookingPayload(form);
 
@@ -383,26 +577,34 @@ export async function createBooking(form = {}) {
 /**
  * POST /bookings — create a free vehicle listing.
  */
+
 export async function createFreeVehicle(form = {}) {
   const body = buildCreateFreeVehiclePayload(form);
+  console.log('[createFreeVehicle] request body:', body);
 
-  const response = await postWithToken(ENDPOINTS.BOOKINGS, body);
+  try {
+    const response = await postWithToken(ENDPOINTS.BOOKINGS, body);
+    console.log('[createFreeVehicle] API response:', response);
 
-  if (!response?.success) {
-    throw {
-      message:
-        response?.message ||
-        'Failed to post free vehicle. Please try again.',
-      data: response,
+    if (!response?.success) {
+      throw {
+        message:
+          response?.message ||
+          'Failed to post free vehicle. Please try again.',
+        data: response,
+      };
+    }
+
+    return {
+      success: true,
+      message: response?.message || 'Free vehicle posted successfully',
+      booking: response?.data?.booking || response?.data || null,
+      data: response?.data ?? null,
     };
+  } catch (error) {
+    console.log('[createFreeVehicle] API error:', error);
+    throw error;
   }
-
-  return {
-    success: true,
-    message: response?.message || 'Free vehicle posted successfully',
-    booking: response?.data?.booking || response?.data || null,
-    data: response?.data ?? null,
-  };
 }
 
 export async function getBookings(filters = {}) {
@@ -472,7 +674,10 @@ export const BookingService = {
   buildCreateBookingPayload,
   buildCreateFreeVehiclePayload,
   getMarketBookings,
+  getMyBookings,
   mapMarketBookingItem,
+  mapMyBookingItem,
+  mapFreeVehicleItem,
   getBookings,
   updateBooking,
   selectDriver,

@@ -28,14 +28,13 @@ const mapUser = (user, mobile) => {
 /**
  * Persists auth session so axios can attach Bearer tokens later.
  */
- 
+
 const persistSession = async session => {
   await AsyncStorage.setItem(STORAGE_KEYS.AUTH_SESSION, JSON.stringify(session));
   return session;
 };
 
 export const AuthService = {
-  
   /**
    * POST /auth/send-otp
    * Body: { mobile }
@@ -85,8 +84,6 @@ export const AuthService = {
       otp: otpCode,
     });
 
-    console.log('Verify OTP API response:', JSON.stringify(response, null, 2));
-
     if (!response?.success) {
       throw {
         message: response?.message || 'Invalid OTP. Please try again.',
@@ -109,14 +106,14 @@ export const AuthService = {
       token: accessToken,
       accessToken,
       refreshToken,
-      tokenType: payload.tokenType || 'Bearer',
-      expiresIn: payload.expiresIn || null,
-      refreshExpiresAt: payload.refreshExpiresAt || null,
+      tokenType: 'Bearer',
+      expiresIn: null,
+      refreshExpiresAt: null,
       role,
       phone: cleaned,
       mobile: cleaned,
-      isNewUser: Boolean(payload.isNewUser),
-      nextStep: payload.nextStep || null,
+      isNewUser: false,
+      nextStep: null,
       isOnboardingComplete,
       onboardingCompleted: isOnboardingComplete,
     };

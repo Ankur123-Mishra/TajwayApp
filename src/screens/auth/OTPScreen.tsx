@@ -5,7 +5,6 @@ import AuthHeroLayout from '../../components/brand/AuthHeroLayout';
 import PrimaryButton from '../../components/brand/PrimaryButton';
 import NoticeModal from '../../components/common/NoticeModal';
 import OTPInput from '../../components/common/OTPInput';
-import {USER_ROLES} from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
 import {loginSuccess} from '../../redux/slices/authSlice';
 import {AuthService} from '../../services';
@@ -23,19 +22,12 @@ const maskPhone = phone => {
   return `${digits.slice(0, 5)}${'*'.repeat(digits.length - 5)}`;
 };
 
-const resolveHomeRoute = role => {
-  if (role === USER_ROLES.DRIVER) {
-    return ROUTES.DRIVER_ROOT;
-  }
-  if (role === USER_ROLES.OWNER) {
-    return ROUTES.OWNER_ROOT;
-  }
-  return ROUTES.AGENT_ROOT;
-};
+/** All roles share the same main app (market, bookings, chat). */
+const resolveHomeRoute = () => ROUTES.AGENT_ROOT;
 
 /**
  * OTP verification — boxed code, resend timer, invalid state.
- * Verify → verify-otp API → store tokens → home / onboarding.
+ * Verify → verify-otp → home.
  */
 
 const OTPScreen = ({navigation, route}) => {
@@ -95,7 +87,7 @@ const OTPScreen = ({navigation, route}) => {
         }),
       );
 
-      const homeRoute = resolveHomeRoute(result.role);
+      const homeRoute = resolveHomeRoute();
       navigation.reset({
         index: 0,
         routes: [{name: homeRoute}],

@@ -433,7 +433,7 @@ const baseStyles = {
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: Typography.fontWeights.bold,
     color: Colors.textPrimary,
   },

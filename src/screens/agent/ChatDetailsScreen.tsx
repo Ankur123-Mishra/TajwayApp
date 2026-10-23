@@ -23,18 +23,11 @@ import {
   pick,
   types as documentTypes,
 } from '@react-native-documents/picker';
+import ChatBookingDetailsCard from '../../components/booking/ChatBookingDetailsCard';
 import {getChatById} from '../../mockData';
 import {Images} from '../../constants/Images';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
-
-const formatInr = value => `₹${Number(value).toLocaleString('en-IN')}`;
-
-const STATUS_STYLES = {
-  Ended: {bg: '#E8F8EF', color: '#1FA971'},
-  Assigned: {bg: '#E7F0FF', color: '#3B7DFF'},
-  Pending: {bg: '#FFF6D6', color: '#C4922A'},
-};
 
 const formatContactName = name => {
   const text = String(name || '').trim();
@@ -100,45 +93,6 @@ const formatFileSize = bytes => {
     return `${(size / 1024).toFixed(1)} KB`;
   }
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
-};
-
-const BookingSummaryCard = ({booking}) => {
-  const styles = useResponsiveStyles(baseStyles);
-  if (!booking) {
-    return null;
-  }
-
-  const statusStyle = STATUS_STYLES[booking.status] || {
-    bg: '#F3F4F6',
-    color: '#6B7280',
-  };
-
-  return (
-    <View style={styles.summaryCard}>
-      <View style={styles.summaryLeft}>
-        <View style={styles.routeRow}>
-          <Ionicons name="location" size={16} color={Colors.primaryDark} />
-          <Text style={styles.routeText} numberOfLines={1}>
-            {booking.from} → {booking.to}
-          </Text>
-        </View>
-        <Text style={styles.price}>{formatInr(booking.amount)}</Text>
-      </View>
-      <View style={styles.summaryDivider} />
-      {booking.status ? (
-        <View style={[styles.statusPill, {backgroundColor: statusStyle.bg}]}>
-          <Ionicons
-            name="checkmark-circle"
-            size={16}
-            color={statusStyle.color}
-          />
-          <Text style={[styles.statusText, {color: statusStyle.color}]}>
-            {booking.status}
-          </Text>
-        </View>
-      ) : null}
-    </View>
-  );
 };
 
 const ImagePreview = ({uri, fileName}) => {
@@ -313,16 +267,21 @@ const AttachSheet = ({visible, onClose, onPickImage, onPickDocument}) => {
 };
 
 /**
- * Chat details — booking summary + message thread matching product screenshot.
+ * Chat details — market booking card (when opened from Market) + message thread.
  */
+
 const ChatDetailsScreen = ({navigation, route}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
   const chatId = route?.params?.chatId;
+  const marketBooking = route?.params?.booking;
+  const fromMarket = Boolean(route?.params?.fromMarket && marketBooking);
   const chat = useMemo(
-    () => getChatById(chatId) || getChatById('chat-001'),
-    [chatId],
+    () => getChatById(chatId) || (fromMarket ? null : getChatById('chat-001')),
+    [chatId, fromMarket],
   );
+  const contactName =
+    route?.params?.contactName || chat?.contactName || marketBooking?.name;
   const [draft, setDraft] = useState('');
   const [messages, setMessages] = useState(chat?.messages || []);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -377,7 +336,21 @@ const ChatDetailsScreen = ({navigation, route}) => {
   };
 
   const handleCallPress = () => {
-    openDialer(chat?.contactPhone);
+    openDialer(chat?.contactPhone || marketBooking?.phone);
+  };
+
+  const handlePayCommission = () => {
+    Alert.alert(
+      'Pay Commission',
+      'Commission payment will be available soon.',
+    );
+  };
+
+  const handleShareDriverDetails = () => {
+    Alert.alert(
+      'Share Driver Details',
+      'Sharing driver details will be available soon.',
+    );
   };
 
   const pickImage = () => {
@@ -503,7 +476,7 @@ const ChatDetailsScreen = ({navigation, route}) => {
             />
           </TouchableOpacity>
           <Text style={styles.headerTitle} numberOfLines={1}>
-            {formatContactName(chat?.contactName)}
+            {formatContactName(contactName)}
           </Text>
           <TouchableOpacity
             style={styles.headerBtn}
@@ -520,9 +493,15 @@ const ChatDetailsScreen = ({navigation, route}) => {
         </View>
       </BannerHeader>
 
-      <View style={styles.summaryWrap}>
-        <BookingSummaryCard booking={chat?.booking} />
-      </View>
+      {fromMarket ? (
+        <View style={styles.summaryWrap}>
+          <ChatBookingDetailsCard
+            booking={marketBooking}
+            onPayCommission={handlePayCommission}
+            onShareDriverDetails={handleShareDriverDetails}
+          />
+        </View>
+      ) : null}
 
       <ScrollView
         style={styles.thread}
@@ -606,65 +585,14 @@ const baseStyles = {
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: Typography.fontWeights.bold,
     color: Colors.textPrimary,
   },
   summaryWrap: {
     paddingHorizontal: Spacing.screenPadding,
-    paddingTop: 14,
+    paddingTop: 12,
     paddingBottom: 6,
-  },
-  summaryCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFF8E4',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#F0E2B0',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-  },
-  summaryLeft: {
-    flex: 1,
-    minWidth: 0,
-    paddingRight: 12,
-  },
-  routeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  routeText: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  summaryDivider: {
-    width: 1,
-    alignSelf: 'stretch',
-    backgroundColor: '#E7DDB8',
-    marginRight: 14,
-  },
-  price: {
-    marginTop: 6,
-    marginLeft: 22,
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderRadius: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  statusText: {
-    fontSize: 13,
-    fontWeight: '700',
   },
   thread: {
     flex: 1,

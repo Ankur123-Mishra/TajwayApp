@@ -36,11 +36,14 @@ const BannerHeader = ({
   const {width: windowWidth} = useWindowDimensions();
   const [barWidth, setBarWidth] = useState(windowWidth);
   const imageWidth = barWidth || windowWidth;
+  // Banner art ratio, plus a bit of safe-area so title/back clear the notch/camera on iOS.
   const imageHeight = (imageWidth * BANNER_HEIGHT) / BANNER_WIDTH;
+  const headerHeight = imageHeight + Math.round(insets.top * 0.25);
+  const contentTop = Math.min(insets.top, Math.max(headerHeight - 48, 0));
 
   return (
     <View
-      style={[styles.wrap, {height: imageHeight}, raised && styles.raised, style]}
+      style={[styles.wrap, {height: headerHeight}, raised && styles.raised, style]}
       onLayout={event => {
         const nextWidth = event.nativeEvent.layout.width;
         if (nextWidth > 0 && nextWidth !== barWidth) {
@@ -60,7 +63,7 @@ const BannerHeader = ({
       <View
         style={[
           styles.content,
-          imageHeight > insets.top + 36 ? {top: insets.top} : null,
+          {top: contentTop},
           children == null && styles.centered,
           contentStyle,
         ]}>
@@ -163,7 +166,7 @@ const baseStyles = {
   title: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: Typography.fontWeights.bold,
     color: Colors.textPrimary,
     marginHorizontal: 8,

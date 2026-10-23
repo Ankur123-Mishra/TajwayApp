@@ -12,8 +12,6 @@ const ONE_WAY_TEXT = '#1E9B55';
 const ROUND_BG = '#E7F0FF';
 const ROUND_TEXT = '#3B6FD8';
 const FARE_PANEL_BG = '#FFF8E6';
-const COMMISSION_ICON_BG = '#FFE4E8';
-const COMMISSION_ICON = '#F07178';
 const FRAME_RADIUS = 18;
 const EDGE = 1.5;
 const LEFT_EDGE = 6;
@@ -89,7 +87,7 @@ const RouteTimeline = ({
 );
 
 /**
- * My Bookings card — yellow frame with fare/commission panel and vehicle label.
+ * My Bookings card — yellow frame with amount breakdown and partner contact row.
  */
 
 const MyBookingCard = ({
@@ -103,10 +101,17 @@ const MyBookingCard = ({
   toState = '',
   vehicle = 'Sedan',
   amount = 1500,
+  totalAmount,
+  driverEarning,
   commission = 1000,
   tripType = 'ONE WAY',
-  onAccept,
-  onReject,
+  name = 'Rohit Sharma',
+  company = 'Shree Travel Agency',
+  rating = 4.8,
+  reviews = 2,
+  avatarSource,
+  onChat,
+  onCall,
   onShare,
   onPress,
 }) => {
@@ -116,11 +121,26 @@ const MyBookingCard = ({
   const timeLabel = time || parsed.time;
   const roundTrip = isRoundTrip(tripType);
   const code = String(bookingId || '').replace(/^#/, '');
+  const total = totalAmount ?? Number(amount || 0) + Number(commission || 0);
+  const earning = driverEarning ?? amount;
+  const initials = String(name || 'TP')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0])
+    .join('')
+    .toUpperCase();
 
   const stop = handler => event => {
     event?.stopPropagation?.();
     handler?.();
   };
+
+  const amounts = [
+    {key: 'total', label: 'Total Amount', value: total},
+    {key: 'earn', label: 'Driver Earning', value: earning},
+    {key: 'comm', label: 'Commission', value: commission},
+  ];
 
   return (
     <TouchableOpacity
@@ -182,51 +202,73 @@ const MyBookingCard = ({
           </View>
         </View>
 
-        <View style={styles.farePanel}>
-          <View style={styles.fareItem}>
-            <View style={styles.fareIcon}>
-              <Text style={styles.fareIconMark}>₹</Text>
+        <View style={styles.amountPanel}>
+          {amounts.map((item, index) => (
+            <React.Fragment key={item.key}>
+              {index > 0 ? <View style={styles.amountDivider} /> : null}
+              <View style={styles.amountItem}>
+                <Text style={styles.amountLabel} numberOfLines={1}>
+                  {item.label}
+                </Text>
+                <Text style={styles.amountValue} numberOfLines={1}>
+                  ₹ {formatAmount(item.value)}
+                </Text>
+              </View>
+            </React.Fragment>
+          ))}
+        </View>
+
+        <View style={styles.partnerPanel}>
+          {avatarSource ? (
+            <Image source={avatarSource} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarFallback}>
+              <Text style={styles.avatarInitials}>{initials}</Text>
             </View>
-            <View style={styles.fareCopy}>
-              <Text style={styles.fareLabel}>Fare</Text>
-              <Text style={styles.fareValue}>₹ {formatAmount(amount)}</Text>
-            </View>
-          </View>
-          <View style={styles.fareDivider} />
-          <View style={styles.fareItem}>
-            <View style={[styles.fareIcon, styles.commissionIcon]}>
-              <Text style={styles.commissionIconMark}>%</Text>
-            </View>
-            <View style={styles.fareCopy}>
-              <Text style={styles.fareLabel}>Commission</Text>
-              <Text style={styles.fareValue}>
-                ₹ {formatAmount(commission)}
+          )}
+
+          <View style={styles.partnerInfo}>
+            <Text style={styles.partnerName} numberOfLines={1}>
+              {name}
+            </Text>
+            {company ? (
+              <Text style={styles.partnerCompany} numberOfLines={1}>
+                {company}
+              </Text>
+            ) : null}
+            <View style={styles.reviewRow}>
+              <Ionicons name="star" size={12} color="#F5C518" />
+              <Text style={styles.ratingText}>
+                {Number(rating).toFixed(1)}
+              </Text>
+              <Text style={styles.reviewCount}>
+                ({reviews} {Number(reviews) === 1 ? 'Review' : 'Reviews'})
               </Text>
             </View>
           </View>
-        </View>
 
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.actionBtnAccept]}
-            activeOpacity={0.85}
-            onPress={stop(onAccept)}
-            accessibilityRole="button"
-            accessibilityLabel="Accept">
-            <Text style={[styles.actionLabel, styles.actionLabelAccept]}>
-              Accept
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.actionBtnReject]}
-            activeOpacity={0.85}
-            onPress={stop(onReject)}
-            accessibilityRole="button"
-            accessibilityLabel="Reject">
-            <Text style={[styles.actionLabel, styles.actionLabelReject]}>
-              Reject
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.contactActions}>
+            <TouchableOpacity
+              style={styles.contactBtn}
+              activeOpacity={0.85}
+              onPress={stop(onChat)}
+              accessibilityRole="button"
+              accessibilityLabel="Chat">
+              <Ionicons
+                name="chatbubble-ellipses"
+                size={18}
+                color={Colors.textPrimary}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.contactBtn}
+              activeOpacity={0.85}
+              onPress={stop(onCall)}
+              accessibilityRole="button"
+              accessibilityLabel="Call">
+              <Ionicons name="call" size={18} color={Colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -399,91 +441,108 @@ const baseStyles = {
     color: '#3E4A59',
     textAlign: 'center',
   },
-  farePanel: {
+  amountPanel: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: FARE_PANEL_BG,
     borderRadius: 14,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 12,
     marginTop: 12,
   },
-  fareItem: {
+  amountItem: {
     flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  amountDivider: {
+    width: 1,
+    height: 34,
+    backgroundColor: '#E5E7EB',
+  },
+  amountLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#9AA1AA',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  amountValue: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: Colors.textPrimary,
+    textAlign: 'center',
+  },
+  partnerPanel: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    backgroundColor: FARE_PANEL_BG,
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    marginTop: 10,
   },
-  fareIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+  },
+  avatarFallback: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  fareIconMark: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: Colors.textPrimary,
-  },
-  commissionIcon: {
-    backgroundColor: COMMISSION_ICON_BG,
-  },
-  commissionIconMark: {
+  avatarInitials: {
     fontSize: 14,
     fontWeight: '800',
-    color: COMMISSION_ICON,
+    color: Colors.textPrimary,
   },
-  fareCopy: {
-    flexShrink: 1,
+  partnerInfo: {
+    flex: 1,
+    marginLeft: 10,
+    marginRight: 8,
+    minWidth: 0,
   },
-  fareLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#9AA1AA',
-    marginBottom: 2,
-  },
-  fareValue: {
-    fontSize: 15,
+  partnerName: {
+    fontSize: 14,
     fontWeight: '800',
     color: Colors.textPrimary,
   },
-  fareDivider: {
-    width: 1,
-    height: 34,
-    backgroundColor: '#E8D9A8',
-    marginHorizontal: 10,
+  partnerCompany: {
+    fontSize: 12,
+    color: '#8B919A',
+    marginTop: 1,
   },
-  actions: {
+  reviewRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 12,
+    alignItems: 'center',
+    marginTop: 2,
+    gap: 3,
   },
-  actionBtn: {
-    flex: 1,
+  ratingText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  reviewCount: {
+    fontSize: 12,
+    color: '#8B919A',
+  },
+  contactActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  contactBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 42,
-    borderRadius: 22,
-  },
-  actionBtnAccept: {
-    backgroundColor: '#FFF3C4',
-  },
-  actionBtnReject: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: '#FFD0D4',
-  },
-  actionLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  actionLabelAccept: {
-    color: Colors.textPrimary,
-  },
-  actionLabelReject: {
-    color: '#F07178',
   },
 };
 

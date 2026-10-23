@@ -2,6 +2,7 @@ const Images = {
   addDriver: require('../assets/images/AddDriver.png'),
   addVehicle: require('../assets/images/AddVehicle.png'),
   bookingBanner: require('../assets/images/BokingBanner.png'),
+  bookingPostSuccessful: require('../assets/images/BookingPostSucessfull.png'),
   carImage: require('../assets/images/carImage.png'),
   carErtiga: require('../assets/images/car_ertiga.png'),
   carInnova: require('../assets/images/car_innova.png'),

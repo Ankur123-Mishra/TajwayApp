@@ -193,7 +193,9 @@ const MarketHomeScreen = ({navigation}) => {
   const [activeTourTarget, setActiveTourTarget] = useState(null);
   const [isVerified, setIsVerified] = useState(false);
   const [marketBookings, setMarketBookings] = useState(mockMarketBookings);
+  const [freeVehicles, setFreeVehicles] = useState(mockFreeVehicles);
   const [bookingsLoading, setBookingsLoading] = useState(true);
+  const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const [bookingsError, setBookingsError] = useState('');
   const isVehicles = tab === 'vehicles';
   const scrollRef = useRef(null);
@@ -312,53 +314,92 @@ const MarketHomeScreen = ({navigation}) => {
 
     let cancelled = false;
 
-    const loadMarketBookings = async () => {
+    const loadMarketListings = async () => {
       setBookingsLoading(true);
+      setVehiclesLoading(true);
       setBookingsError('');
+
       try {
         const meResult = await UserService.getMe();
         if (cancelled || !mountedRef.current) {
           return;
         }
-
         const user = meResult?.user || null;
         if (user) {
           dispatch(updateUser(user));
         }
-
-        const verified = isVerificationComplete(user);
-        setIsVerified(verified);
-
-        if (!verified) {
-          setMarketBookings(mockMarketBookings);
-          return;
-        }
-
-        const bookingResult = await getMarketBookings({
-          listingType: 'new_booking',
-          page: 1,
-          limit: 20,
-        });
-        if (cancelled || !mountedRef.current) {
-          return;
-        }
-        setMarketBookings(bookingResult.bookings || []);
-      } catch (error) {
-        if (cancelled || !mountedRef.current) {
-          return;
-        }
-        setBookingsError(
-          error?.message || 'Failed to load bookings. Please try again.',
-        );
-        setMarketBookings([]);
-      } finally {
-        if (!cancelled && mountedRef.current) {
-          setBookingsLoading(false);
-        }
+        setIsVerified(isVerificationComplete(user));
+      } catch {
+        // Profile fetch is independent of bookings list.
       }
+
+      if (cancelled || !mountedRef.current) {
+        return;
+      }
+
+      const loadBookings = async () => {
+        try {
+          const bookingResult = await getMarketBookings({
+            listingType: 'new_booking',
+            page: 1,
+            limit: 20,
+          });
+          if (cancelled || !mountedRef.current) {
+            return;
+          }
+
+          const apiBookings = bookingResult?.bookings || [];
+          // Prefer live API data; keep static cards only when API has no items.
+          setMarketBookings(
+            apiBookings.length > 0 ? apiBookings : mockMarketBookings,
+          );
+        } catch {
+          if (cancelled || !mountedRef.current) {
+            return;
+          }
+          // On API failure, fall back to static marketplace bookings.
+          setBookingsError('');
+          setMarketBookings(mockMarketBookings);
+        } finally {
+          if (!cancelled && mountedRef.current) {
+            setBookingsLoading(false);
+          }
+        }
+      };
+
+      const loadFreeVehicles = async () => {
+        try {
+          const vehicleResult = await getMarketBookings({
+            listingType: 'free_vehicle',
+            page: 1,
+            limit: 20,
+          });
+          if (cancelled || !mountedRef.current) {
+            return;
+          }
+
+          const apiVehicles =
+            vehicleResult?.vehicles || vehicleResult?.bookings || [];
+          // Prefer live API data; keep static cards only when API has no items.
+          setFreeVehicles(
+            apiVehicles.length > 0 ? apiVehicles : mockFreeVehicles,
+          );
+        } catch {
+          if (cancelled || !mountedRef.current) {
+            return;
+          }
+          setFreeVehicles(mockFreeVehicles);
+        } finally {
+          if (!cancelled && mountedRef.current) {
+            setVehiclesLoading(false);
+          }
+        }
+      };
+
+      await Promise.all([loadBookings(), loadFreeVehicles()]);
     };
 
-    loadMarketBookings();
+    loadMarketListings();
     return () => {
       cancelled = true;
     };
@@ -658,7 +699,7 @@ const MarketHomeScreen = ({navigation}) => {
   }, [marketBookings, query, appliedFilters]);
 
   const filteredVehicles = useMemo(() => {
-    let list = mockFreeVehicles;
+    let list = freeVehicles;
     const needle = query.trim().toLowerCase();
     if (needle) {
       list = list.filter(vehicle =>
@@ -694,7 +735,7 @@ const MarketHomeScreen = ({navigation}) => {
     }
 
     return list;
-  }, [query, appliedFilters]);
+  }, [freeVehicles, query, appliedFilters]);
 
   return (
     <View style={styles.container}>
@@ -849,20 +890,38 @@ const MarketHomeScreen = ({navigation}) => {
               </TouchableOpacity>
             </View>
 
-            {filteredVehicles.length === 0 ? (
+            {vehiclesLoading ? (
+              <View style={styles.loadingWrap}>
+                <ActivityIndicator size="large" color={Colors.primary} />
+              </View>
+            ) : null}
+
+            {!vehiclesLoading && filteredVehicles.length === 0 ? (
               <Text style={styles.emptyText}>No vehicles found.</Text>
             ) : null}
 
-            {filteredVehicles.map(({id, hasAvatar, phone, ...vehicle}) => (
-              <FreeVehicleCard
-                key={id}
-                {...vehicle}
-                phone={phone}
-                avatarSource={hasAvatar ? Images.partnerDeepesh : undefined}
-                onPress={showVehicleToast}
-                onCall={() => handleOpenDialer(getRandomPhone())}
-              />
-            ))}
+            {!vehiclesLoading
+              ? filteredVehicles.map(
+                  ({id, hasAvatar, phone, avatarUrl, ...vehicle}) => (
+                    <FreeVehicleCard
+                      key={id}
+                      {...vehicle}
+                      phone={phone}
+                      avatarSource={
+                        avatarUrl
+                          ? {uri: avatarUrl}
+                          : hasAvatar
+                            ? Images.partnerDeepesh
+                            : undefined
+                      }
+                      onPress={showVehicleToast}
+                      onCall={() =>
+                        handleOpenDialer(phone || getRandomPhone())
+                      }
+                    />
+                  ),
+                )
+              : null}
           </>
         ) : (
           <>
@@ -1058,6 +1117,7 @@ const MarketHomeScreen = ({navigation}) => {
                     }>
                     <MarketBookingCard
                       {...booking}
+                      allowCalls={booking.allowCalls}
                       avatarSource={
                         hasAvatar ? Images.partnerDeepesh : undefined
                       }
@@ -1074,7 +1134,17 @@ const MarketHomeScreen = ({navigation}) => {
                           'Quote best price will be available soon.',
                         )
                       }
-                      onContact={() => handleOpenDialer()}
+                      onChat={() =>
+                        navigation.navigate(ROUTES.CHAT, {
+                          chatId: booking.chatId || `booking-${id}`,
+                          contactName: booking.name,
+                          booking: {id, hasAvatar, ...booking},
+                          fromMarket: true,
+                        })
+                      }
+                      onCall={() =>
+                        handleOpenDialer(booking.phone || getRandomPhone())
+                      }
                     />
                   </View>
                 ))

@@ -10,11 +10,7 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {useDispatch} from 'react-redux';
-import {
-  APP_TAGLINE_HI,
-  APP_VERSION,
-  USER_ROLES,
-} from '../../constants/AppConstants';
+import {APP_TAGLINE_HI, APP_VERSION} from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
 import {useResponsiveStyles} from '../../hooks';
 import BrandLogo from '../../components/brand/BrandLogo';
@@ -28,15 +24,8 @@ import {Colors, Spacing, Typography} from '../../theme';
  * Restores saved auth session so login survives app reload.
  */
 
-const resolveHomeRoute = role => {
-  if (role === USER_ROLES.DRIVER) {
-    return ROUTES.DRIVER_ROOT;
-  }
-  if (role === USER_ROLES.OWNER) {
-    return ROUTES.OWNER_ROOT;
-  }
-  return ROUTES.AGENT_ROOT;
-};
+/** All roles share the same main app (market, bookings, chat). */
+const resolveHomeRoute = () => ROUTES.AGENT_ROOT;
 
 const SplashScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
@@ -156,7 +145,7 @@ const SplashScreen = ({navigation}) => {
                 session.onboardingCompleted ?? session.isOnboardingComplete,
             }),
           );
-          navigation.replace(resolveHomeRoute(session.role));
+          navigation.replace(resolveHomeRoute());
           return;
         }
 

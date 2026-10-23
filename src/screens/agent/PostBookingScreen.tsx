@@ -15,6 +15,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import PrimaryButton from '../../components/brand/PrimaryButton';
+import {BookingPostedSuccessModal} from '../../components/booking';
 import BannerHeader from '../../components/common/BannerHeader';
 import PostFormField from '../../components/post/PostFormField';
 import {ROUTES} from '../../constants/Routes';
@@ -120,6 +121,7 @@ const splitDateTime = dateTime => {
  * Post a Booking — full form (screenshots 2–4).
  * Also supports edit mode when navigated with { mode: 'edit', booking }.
  */
+
 const PostBookingScreen = ({navigation, route}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
@@ -162,6 +164,7 @@ const PostBookingScreen = ({navigation, route}) => {
   const [otherDetails, setOtherDetails] = useState('');
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [successVisible, setSuccessVisible] = useState(false);
 
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerOptions, setPickerOptions] = useState([]);
@@ -290,7 +293,7 @@ const PostBookingScreen = ({navigation, route}) => {
     return Object.keys(nextErrors).length === 0;
   };
 
-  const onPost = async () => {
+  const onPost = () => {
     if (!validateForm() || loading) {
       return;
     }
@@ -300,9 +303,28 @@ const PostBookingScreen = ({navigation, route}) => {
       return;
     }
 
+    // Collect driver/call preferences in the modal, then POST with those flags
+    setSuccessVisible(true);
+  };
+
+  const onSuccessClose = () => {
+    if (loading) {
+      return;
+    }
+    setSuccessVisible(false);
+  };
+
+  const onSuccessConfirm = async ({approach, contactPreference} = {}) => {
+    if (loading) {
+      return;
+    }
+
+    const driverPaysCommissionFirst = approach !== 'self_select';
+    const allowCalls = contactPreference === 'message_and_call';
+
     try {
       setLoading(true);
-      const result = await BookingService.createBooking({
+      await BookingService.createBooking({
         tripType,
         vehicleType,
         pickupDateValue: dateValue,
@@ -317,15 +339,14 @@ const PostBookingScreen = ({navigation, route}) => {
         isNegotiable: negotiable,
         visibility,
         isSecure: secureBooking,
+        driverPaysCommissionFirst,
+        allowCalls,
         extraRequirements: selectedExtras,
         otherDetails,
       });
 
-      Alert.alert(
-        'Success',
-        result.message || 'Booking posted successfully',
-        [{text: 'OK', onPress: () => navigation.goBack()}],
-      );
+      setSuccessVisible(false);
+      navigation.goBack();
     } catch (error) {
       Alert.alert(
         'Unable to post booking',
@@ -611,6 +632,13 @@ const PostBookingScreen = ({navigation, route}) => {
           style={styles.submitBtn}
         />
       </View>
+
+      <BookingPostedSuccessModal
+        visible={successVisible}
+        loading={loading}
+        onClose={onSuccessClose}
+        onConfirm={onSuccessConfirm}
+      />
 
       <Modal visible={pickerVisible} transparent animationType="fade">
         <TouchableOpacity

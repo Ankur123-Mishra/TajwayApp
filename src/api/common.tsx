@@ -1,5 +1,7 @@
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+/**
+ * Shared axios helpers for authenticated and public API calls.
+ */
+import axios from 'axios';import AsyncStorage from '@react-native-async-storage/async-storage';
 import {API_BASE_URL} from './endpoints';
 import {STORAGE_KEYS} from '../constants/AppConstants';
 

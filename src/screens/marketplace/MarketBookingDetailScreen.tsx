@@ -81,7 +81,12 @@ const MarketBookingDetailScreen = ({navigation, route}) => {
   const ratingLabel = Number(rating).toFixed(1);
 
   const handleChat = () => {
-    navigation.navigate(ROUTES.CHAT, {chatId: 'chat-001'});
+    navigation.navigate(ROUTES.CHAT, {
+      chatId: booking.chatId || `booking-${booking.id || 'market'}`,
+      contactName: booking.name,
+      booking,
+      fromMarket: true,
+    });
   };
 
   const amounts = [

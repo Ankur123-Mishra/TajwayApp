@@ -4,7 +4,7 @@ import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {Images} from '../../constants/Images';
 import {useResponsiveStyles} from '../../hooks';
 
-const formatInr = value => `₹${Number(value).toLocaleString('en-IN')}`;
+const formatInr = value => `₹ ${Number(value || 0).toLocaleString('en-IN')}`;
 
 const isRoundTrip = tripType => /round|two/i.test(String(tripType || ''));
 
@@ -63,14 +63,20 @@ const MarketBookingCard = ({
   reviews = 0,
   rating = 5,
   partnerHidden = false,
+  allowCalls = false,
   onPress,
   onQuote,
   onChat,
+  onCall,
   onContact,
 }) => {
   const styles = useResponsiveStyles(baseStyles);
   const hasQuote = totalAmount == null || totalAmount === '';
-  const handleContact = onChat || onContact;
+  // Market booking list: chat on every card; call only when API allowCalls is true.
+  const showChat = true;
+  const showCall =
+    allowCalls === true || allowCalls === 1 || allowCalls === 'true';
+  const handleChat = onChat || onContact;
   const extraItems = splitExtras(extras);
   const origin = shortCity(from) || shortCity(pickupFrom) || '—';
   const destination = shortCity(to) || shortCity(dropTo) || '—';
@@ -93,19 +99,16 @@ const MarketBookingCard = ({
   const prices = [
     {
       key: 'total',
-      icon: 'cash',
       label: 'Total Amount',
       amount: formatInr(totalAmount),
     },
     {
       key: 'earn',
-      icon: 'wallet',
       label: 'Driver Earning',
       amount: formatInr(driverEarning),
     },
     {
       key: 'comm',
-      icon: 'percent',
       label: 'Commission',
       amount: formatInr(commission),
     },
@@ -235,17 +238,9 @@ const MarketBookingCard = ({
       ) : (
         <View style={styles.priceBar}>
           {prices.map((item, index) => (
-            <View
-              key={item.key}
-              style={[styles.priceItem, index > 0 && styles.priceItemBorder]}>
-              <View style={styles.priceIcon}>
-                {item.icon === 'percent' ? (
-                  <Text style={styles.percentMark}>%</Text>
-                ) : (
-                  <Ionicons name={item.icon} size={14} color="#1B2437" />
-                )}
-              </View>
-              <View style={styles.priceCopy}>
+            <React.Fragment key={item.key}>
+              {index > 0 ? <View style={styles.priceDivider} /> : null}
+              <View style={styles.priceItem}>
                 <Text style={styles.priceLabel} numberOfLines={1}>
                   {item.label}
                 </Text>
@@ -253,7 +248,7 @@ const MarketBookingCard = ({
                   {item.amount}
                 </Text>
               </View>
-            </View>
+            </React.Fragment>
           ))}
         </View>
       )}
@@ -283,15 +278,34 @@ const MarketBookingCard = ({
           </View>
         </View>
 
-        <TouchableOpacity
-          style={styles.chatBtn}
-          onPress={stopAndRun(handleContact)}
-          activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel="Chat">
-          <Ionicons name="chatbubble-ellipses" size={14} color="#1B2437" />
-          <Text style={styles.chatText}>Chat</Text>
-        </TouchableOpacity>
+        {showChat || showCall ? (
+          <View style={styles.contactActions}>
+            {showChat ? (
+              <TouchableOpacity
+                style={styles.contactBtn}
+                onPress={stopAndRun(handleChat)}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="Chat">
+                <Ionicons
+                  name="chatbubble-ellipses"
+                  size={18}
+                  color="#1B2437"
+                />
+              </TouchableOpacity>
+            ) : null}
+            {showCall ? (
+              <TouchableOpacity
+                style={styles.contactBtn}
+                onPress={stopAndRun(onCall)}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="Call">
+                <Ionicons name="call" size={18} color="#1B2437" />
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        ) : null}
       </View>
       </View>
     </TouchableOpacity>
@@ -521,48 +535,35 @@ const baseStyles = {
   },
   priceBar: {
     flexDirection: 'row',
-    backgroundColor: '#FFF6D4',
+    alignItems: 'center',
+    backgroundColor: '#FFF8E6',
     borderRadius: 14,
-    paddingVertical: 10,
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 12,
     marginBottom: 12,
   },
   priceItem: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 4,
   },
-  priceItemBorder: {
-    borderLeftWidth: 1,
-    borderLeftColor: 'rgba(0, 0, 0, 0.08)',
-  },
-  priceIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#F6CC54',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 6,
-  },
-  percentMark: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#1B2437',
-  },
-  priceCopy: {
-    flex: 1,
+  priceDivider: {
+    width: 1,
+    height: 34,
+    backgroundColor: '#E5E7EB',
   },
   priceLabel: {
-    fontSize: 9,
-    color: '#3E4A59',
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#9AA1AA',
+    marginBottom: 4,
+    textAlign: 'center',
   },
   priceAmt: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '800',
     color: '#1B2437',
-    marginTop: 1,
+    textAlign: 'center',
   },
   footer: {
     flexDirection: 'row',
@@ -611,19 +612,18 @@ const baseStyles = {
     fontSize: 12,
     color: '#8B919A',
   },
-  chatBtn: {
+  contactActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F6CC54',
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    gap: 5,
+    gap: 8,
   },
-  chatText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#1B2437',
+  contactBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F6CC54',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 };
 

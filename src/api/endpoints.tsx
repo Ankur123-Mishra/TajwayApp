@@ -4,7 +4,7 @@
  */
 
 export const API_BASE_URL =
-  'https://cytopathogenic-harmony-prosurrender.ngrok-free.dev/api/v1/app';
+  'https://d1ff-110-235-232-181.ngrok-free.app/api/v1/app';
 
 export const ENDPOINTS = {
   // Auth
@@ -20,4 +20,5 @@ export const ENDPOINTS = {
 
   // Bookings
   BOOKINGS: '/bookings',
+  MY_BOOKINGS: '/bookings/mine',
 };

@@ -87,6 +87,7 @@ export {
   buildCreateFreeVehiclePayload,
   getMarketBookings,
   mapMarketBookingItem,
+  mapFreeVehicleItem,
   getBookings,
   updateBooking,
   selectDriver,

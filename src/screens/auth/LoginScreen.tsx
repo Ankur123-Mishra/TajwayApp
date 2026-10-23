@@ -25,13 +25,8 @@ const LoginScreen = ({navigation, route}) => {
       const result = await AuthService.login({role, email, password});
       dispatch(loginSuccess(result));
 
-      if (result.role === USER_ROLES.DRIVER) {
-        navigation.reset({index: 0, routes: [{name: ROUTES.DRIVER_ROOT}]});
-      } else if (result.role === USER_ROLES.OWNER) {
-        navigation.reset({index: 0, routes: [{name: ROUTES.OWNER_ROOT}]});
-      } else {
-        navigation.reset({index: 0, routes: [{name: ROUTES.AGENT_ROOT}]});
-      }
+      // Driver / Owner / Agent all use the same main app experience.
+      navigation.reset({index: 0, routes: [{name: ROUTES.AGENT_ROOT}]});
     } catch (error) {
       Alert.alert('Login failed', 'Unable to sign in with mock credentials.');
     } finally {

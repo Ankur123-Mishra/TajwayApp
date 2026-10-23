@@ -1,6 +1,18 @@
 import React, {useState} from 'react';
-import {Modal, ScrollView, Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {
+  Alert,
+  Image,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
+import {launchImageLibrary} from 'react-native-image-picker';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import PrimaryButton from '../../components/brand/PrimaryButton';
 import BannerHeader from '../../components/common/BannerHeader';
@@ -17,6 +29,11 @@ const DRIVER_FIELDS = [
   'City',
 ];
 
+const DL_SIDES = [
+  {key: 'front', label: 'Front'},
+  {key: 'back', label: 'Back'},
+];
+
 /**
  * Manage Drivers + Add Driver bottom sheet (screenshots 13–14).
  */
@@ -26,6 +43,66 @@ const ManageDriversScreen = ({navigation}) => {
   const insets = useSafeAreaInsets();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [form, setForm] = useState({});
+  const [dlImages, setDlImages] = useState({front: null, back: null});
+
+  const closeSheet = () => {
+    setSheetOpen(false);
+  };
+
+  const resetForm = () => {
+    setForm({});
+    setDlImages({front: null, back: null});
+  };
+
+  const pickDlImage = side => {
+    const openPicker = () => {
+      launchImageLibrary(
+        {
+          mediaType: 'photo',
+          selectionLimit: 1,
+          quality: 0.85,
+        },
+        response => {
+          if (Platform.OS === 'ios') {
+            setSheetOpen(true);
+          }
+          if (response.didCancel) {
+            return;
+          }
+          if (response.errorCode) {
+            Alert.alert(
+              'Unable to open gallery',
+              response.errorMessage || 'Please try again.',
+            );
+            return;
+          }
+          const uri = response.assets?.[0]?.uri;
+          if (!uri) {
+            return;
+          }
+          setDlImages(prev => ({...prev, [side]: uri}));
+        },
+      );
+    };
+
+    if (Platform.OS === 'ios') {
+      setSheetOpen(false);
+      setTimeout(openPicker, 350);
+      return;
+    }
+
+    openPicker();
+  };
+
+  const clearDlImage = side => {
+    setDlImages(prev => ({...prev, [side]: null}));
+  };
+
+  const onAdd = () => {
+    closeSheet();
+    resetForm();
+    navigation.navigate(ROUTES.AGENT_TABS);
+  };
 
   return (
     <View style={styles.container}>
@@ -47,7 +124,11 @@ const ManageDriversScreen = ({navigation}) => {
 
       <View style={styles.empty} />
 
-      <Modal visible={sheetOpen} transparent animationType="slide">
+      <Modal
+        visible={sheetOpen}
+        transparent
+        animationType="slide"
+        presentationStyle="overFullScreen">
         <View style={styles.overlay}>
           <View style={[styles.sheet, {paddingBottom: insets.bottom + 12}]}>
             <View style={styles.sheetHead}>
@@ -57,7 +138,7 @@ const ManageDriversScreen = ({navigation}) => {
                 style={styles.headSide}
                 activeOpacity={0.7}
                 hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-                onPress={() => setSheetOpen(false)}>
+                onPress={closeSheet}>
                 <Ionicons name="close" size={22} color={Colors.textPrimary} />
               </TouchableOpacity>
             </View>
@@ -69,7 +150,8 @@ const ManageDriversScreen = ({navigation}) => {
 
             <ScrollView
               showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled">
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.scrollContent}>
               {DRIVER_FIELDS.map(field => (
                 <View key={field} style={styles.field}>
                   <Text style={styles.label}>{field}</Text>
@@ -86,20 +168,67 @@ const ManageDriversScreen = ({navigation}) => {
                   </View>
                 </View>
               ))}
+
+              <View style={styles.dlSection}>
+                <Text style={styles.label}>Upload Driver License Images</Text>
+                <View style={styles.dlRow}>
+                  {DL_SIDES.map(({key, label}) => {
+                    const uri = dlImages[key];
+                    return (
+                      <View key={key} style={styles.dlCol}>
+                        <View style={styles.dlBox}>
+                          {uri ? (
+                            <Image
+                              source={{uri}}
+                              style={styles.dlPreview}
+                              resizeMode="cover"
+                            />
+                          ) : null}
+                          <TouchableOpacity
+                            style={styles.dlInner}
+                            onPress={() => pickDlImage(key)}
+                            activeOpacity={0.85}
+                            accessibilityLabel={`Upload DL ${label}`}>
+                            {uri ? null : (
+                              <Ionicons
+                                name="add"
+                                size={32}
+                                color="#A0A8B5"
+                              />
+                            )}
+                          </TouchableOpacity>
+                          {uri ? (
+                            <TouchableOpacity
+                              style={styles.dlClear}
+                              onPress={() => clearDlImage(key)}
+                              hitSlop={{top: 8, right: 8, bottom: 8, left: 8}}
+                              accessibilityLabel={`Remove DL ${label}`}>
+                              <Ionicons
+                                name="close-circle"
+                                size={22}
+                                color={Colors.textNavy}
+                              />
+                            </TouchableOpacity>
+                          ) : null}
+                        </View>
+                        <Text style={styles.dlSideLabel}>{label}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
             </ScrollView>
 
             <PrimaryButton
               title="Add"
               darkText
-              onPress={() => {
-                setSheetOpen(false);
-                navigation.navigate(ROUTES.AGENT_TABS);
-              }}
+              onPress={onAdd}
               style={styles.addButton}
             />
           </View>
         </View>
       </Modal>
+      
     </View>
   );
 };
@@ -203,6 +332,9 @@ const baseStyles = {
     borderBottomLeftRadius: 14,
     borderBottomRightRadius: 14,
   },
+  scrollContent: {
+    paddingBottom: 8,
+  },
   field: {
     marginBottom: 14,
   },
@@ -225,6 +357,55 @@ const baseStyles = {
     fontSize: 14,
     color: Colors.textPrimary,
     padding: 0,
+  },
+  dlSection: {
+    marginBottom: 8,
+  },
+  dlRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  dlCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  dlBox: {
+    width: '100%',
+    aspectRatio: 1.35,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#C9CED6',
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dlInner: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  dlPreview: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
+  },
+  dlClear: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    zIndex: 2,
+    backgroundColor: Colors.surface,
+    borderRadius: 11,
+  },
+  dlSideLabel: {
+    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textPrimary,
   },
   addButton: {
     marginTop: 8,

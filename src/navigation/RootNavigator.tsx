@@ -7,8 +7,6 @@ import PhoneLoginScreen from '../screens/auth/PhoneLoginScreen';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import SplashScreen from '../screens/onboarding/SplashScreen';
 // import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
-import DriverHomeScreen from '../screens/driver/DriverHomeScreen';
-import OwnerHomeScreen from '../screens/owner/OwnerHomeScreen';
 import {Colors} from '../theme';
 import AgentNavigator from './AgentNavigator';
 
@@ -22,7 +20,7 @@ const screenOptions = {
 
 /**
  * Root flow:
- * Splash → Intro → Phone → OTP → Agent tabs
+ * Splash → Intro → Phone → OTP → main tabs (Agent / Driver / Owner share this)
  * Preferences (location + booking type) skipped after OTP
  */
 const RootNavigator = () => {
@@ -40,11 +38,12 @@ const RootNavigator = () => {
       {/* <Stack.Screen name={ROUTES.WELCOME} component={WelcomeScreen} /> */}
       <Stack.Screen name={ROUTES.PHONE_LOGIN} component={PhoneLoginScreen} />
       <Stack.Screen name={ROUTES.OTP} component={OTPScreen} />
-      {/* Location + preferences skipped — OTP goes straight to agent tabs */}
+      {/* Location + preferences skipped — OTP goes straight to main tabs */}
       {/* <Stack.Screen name={ROUTES.PREFERENCES} component={PreferencesScreen} /> */}
       <Stack.Screen name={ROUTES.AGENT_ROOT} component={AgentNavigator} />
-      <Stack.Screen name={ROUTES.DRIVER_ROOT} component={DriverHomeScreen} />
-      <Stack.Screen name={ROUTES.OWNER_ROOT} component={OwnerHomeScreen} />
+      {/* Legacy role roots — same app as agent until dedicated shells exist */}
+      <Stack.Screen name={ROUTES.DRIVER_ROOT} component={AgentNavigator} />
+      <Stack.Screen name={ROUTES.OWNER_ROOT} component={AgentNavigator} />
     </Stack.Navigator>
   );
 };

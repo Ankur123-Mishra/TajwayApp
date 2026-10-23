@@ -30,5 +30,54 @@ target 'Tajway' do
       :mac_catalyst_enabled => false,
       # :ccache_enabled => true
     )
+
+    # CocoaPods links React.framework from React-Core-prebuilt but does not embed it
+    # when the pod also declares header source_files. Missing embed causes dyld crash:
+    # "Library not loaded: @rpath/React.framework/React"
+    embed_react_framework_if_needed!(installer)
+  end
+end
+
+def embed_react_framework_if_needed!(installer)
+  support_dir = File.join(installer.sandbox.root, 'Target Support Files', 'Pods-Tajway')
+  frameworks_script = File.join(support_dir, 'Pods-Tajway-frameworks.sh')
+  return unless File.exist?(frameworks_script)
+
+  react_framework = '${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework'
+  script = File.read(frameworks_script)
+  unless script.include?(react_framework)
+    install_line = "  install_framework \"#{react_framework}\""
+    script = script.gsub(
+      /^(  install_framework "\$\{PODS_XCFRAMEWORKS_BUILD_DIR\}\/ReactNativeDependencies\/ReactNativeDependencies\.framework")/,
+      "#{install_line}\n\\1"
+    )
+    File.write(frameworks_script, script)
+    Pod::UI.puts 'Embedded React.framework into Pods-Tajway-frameworks.sh'.green
+  end
+
+  ['Debug', 'Release'].each do |config|
+    input_list = File.join(support_dir, "Pods-Tajway-frameworks-#{config}-input-files.xcfilelist")
+    output_list = File.join(support_dir, "Pods-Tajway-frameworks-#{config}-output-files.xcfilelist")
+
+    if File.exist?(input_list)
+      input = File.read(input_list)
+      marker = "${PODS_XCFRAMEWORKS_BUILD_DIR}/React-Core-prebuilt/React.framework/React"
+      unless input.include?(marker)
+        lines = input.lines.map(&:chomp)
+        insert_at = lines.index { |l| l.include?('ReactNativeDependencies.framework') } || lines.length
+        lines.insert(insert_at, marker)
+        File.write(input_list, lines.join("\n") + "\n")
+      end
+    end
+
+    if File.exist?(output_list)
+      output = File.read(output_list)
+      marker = "${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/React.framework"
+      unless output.include?(marker)
+        lines = output.lines.map(&:chomp)
+        lines.unshift(marker)
+        File.write(output_list, lines.join("\n") + "\n")
+      end
+    end
   end
 end

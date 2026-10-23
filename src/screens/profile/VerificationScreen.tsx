@@ -18,12 +18,6 @@ import {
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {launchImageLibrary} from 'react-native-image-picker';
-import {
-  errorCodes,
-  isErrorWithCode,
-  pick,
-  types as documentTypes,
-} from '@react-native-documents/picker';
 import PrimaryButton from '../../components/brand/PrimaryButton';
 import BannerHeader from '../../components/common/BannerHeader';
 import CitySelectModal from '../../components/profile/CitySelectModal';
@@ -68,25 +62,6 @@ const BANKS = [
   'IDFC First Bank',
 ];
 
-const VEHICLE_OPTIONS = [
-  'Hatchback',
-  'Sedan',
-  'SUV',
-  'Ertiga',
-  'Innova',
-  'Innova Crysta',
-  'Tempo Traveller',
-  'Bus',
-];
-
-const DOCUMENT_TYPES = [
-  'Insurance',
-  'Permit',
-  'PUC Certificate',
-  'Fitness Certificate',
-  'Road Tax',
-];
-
 const INK = '#1A1A1B';
 const MUTED = '#8B93A3';
 const FIELD_ICON = '#9AA3B2';
@@ -113,9 +88,18 @@ const EMPTY_FORM = {
   bankName: '',
   vehicleType: '',
   registration: '',
+  vehicleAdded: false,
   license: '',
   rcDocument: null,
   driverPhoto: null,
+  driverFullName: '',
+  driverContact: '',
+  driverAddress1: '',
+  driverAddress2: '',
+  driverCity: '',
+  licenseFront: null,
+  licenseBack: null,
+  driverAdded: false,
   extraDocumentType: '',
 };
 
@@ -153,31 +137,6 @@ const pickImage = onPicked => {
   );
 };
 
-const pickDocument = async onPicked => {
-  try {
-    const [file] = await pick({
-      type: [documentTypes.pdf, documentTypes.images],
-      allowMultiSelection: false,
-    });
-    if (!file?.uri) {
-      return;
-    }
-    if (file.size && file.size > MAX_FILE_BYTES) {
-      Alert.alert('File too large', 'Please choose a PDF, JPG or PNG up to 5MB.');
-      return;
-    }
-    onPicked({
-      name: file.name || 'Document',
-      uri: file.uri,
-    });
-  } catch (err) {
-    if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
-      return;
-    }
-    Alert.alert('Unable to choose file', err?.message || 'Please try again.');
-  }
-};
-
 const ContinueButton = ({title = 'Continue', onPress}) => {
   const styles = useResponsiveStyles(baseStyles);
   return (
@@ -188,8 +147,66 @@ const ContinueButton = ({title = 'Continue', onPress}) => {
       accessibilityRole="button"
       accessibilityLabel={title}>
       <Text style={styles.continueText}>{title}</Text>
-      <Text style={styles.continueArrow}>→</Text>
     </TouchableOpacity>
+  );
+};
+
+const PlainField = ({
+  value,
+  onChangeText,
+  placeholder,
+  keyboardType,
+  autoCapitalize = 'sentences',
+  maxLength,
+  onFocus,
+  right,
+}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
+    <View style={styles.plainInput}>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={PLACEHOLDER}
+        style={styles.plainInputValue}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        autoCorrect={false}
+        maxLength={maxLength}
+        onFocus={onFocus}
+      />
+      {right}
+    </View>
+  );
+};
+
+const VerifyActionRow = ({title, subtitle, done, onAdd}) => {
+  const styles = useResponsiveStyles(baseStyles);
+  return (
+    <View style={styles.vdRow}>
+      <View style={styles.vdCopy}>
+        <Text style={styles.vdTitle}>{title}</Text>
+        <Text style={styles.vdSub}>{subtitle}</Text>
+      </View>
+      {done ? (
+        <View
+          style={styles.verifyTick}
+          accessibilityRole="image"
+          accessibilityLabel={`${title} added`}>
+          <Ionicons name="checkmark" size={16} color={Colors.surface} />
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={styles.vdAddBtn}
+          onPress={onAdd}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={`Add ${title}`}>
+          <Text style={styles.vdAddBtnText}>Add</Text>
+        </TouchableOpacity>
+      )}
+    </View>
   );
 };
 
@@ -254,27 +271,6 @@ const TextField = ({
   return (
     <TouchableOpacity activeOpacity={0.8} onPress={onPress}>
       {box}
-    </TouchableOpacity>
-  );
-};
-
-const UploadZone = ({actionLabel, file, onPress}) => {
-  const styles = useResponsiveStyles(baseStyles);
-  return (
-    <TouchableOpacity
-      style={[styles.upload, file && styles.uploadOn]}
-      activeOpacity={0.85}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={actionLabel}>
-      <Ionicons name="cloud-upload-outline" size={26} color={FIELD_ICON} />
-      <Text style={styles.uploadTitle}>
-        <Text style={styles.uploadStrong}>
-          {file?.name || actionLabel}
-        </Text>
-        {file ? '' : ' or drag and drop'}
-      </Text>
-      <Text style={styles.uploadHint}>PDF, JPG, PNG (Max 5MB)</Text>
     </TouchableOpacity>
   );
 };
@@ -380,6 +376,7 @@ const Stepper = ({step}) => {
  * Four-step partner verification opened from Verify Now.
  * Header uses the same yellow banner as My Bookings.
  */
+
 const VerificationScreen = ({navigation, route}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
@@ -395,6 +392,10 @@ const VerificationScreen = ({navigation, route}) => {
   const [picker, setPicker] = useState(null);
   const [gstVisible, setGstVisible] = useState(false);
   const [gstDocs, setGstDocs] = useState(EMPTY_GST_DOCS);
+  const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
+  const [driverModalOpen, setDriverModalOpen] = useState(false);
+  const [vehicleDraft, setVehicleDraft] = useState('');
+  const [vehicleFound, setVehicleFound] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   if (keyboardHeight === 0) {
@@ -534,6 +535,14 @@ const VerificationScreen = ({navigation, route}) => {
     const subscription = BackHandler.addEventListener(
       'hardwareBackPress',
       () => {
+        if (vehicleModalOpen) {
+          setVehicleModalOpen(false);
+          return true;
+        }
+        if (driverModalOpen) {
+          setDriverModalOpen(false);
+          return true;
+        }
         if (gstVisible) {
           setGstVisible(false);
           return true;
@@ -554,9 +563,17 @@ const VerificationScreen = ({navigation, route}) => {
       },
     );
     return () => subscription.remove();
-  }, [cityOpen, gstVisible, picker, step]);
+  }, [cityOpen, driverModalOpen, gstVisible, picker, step, vehicleModalOpen]);
 
   const handleBack = () => {
+    if (vehicleModalOpen) {
+      setVehicleModalOpen(false);
+      return;
+    }
+    if (driverModalOpen) {
+      setDriverModalOpen(false);
+      return;
+    }
     if (gstVisible) {
       setGstVisible(false);
       return;
@@ -566,6 +583,91 @@ const VerificationScreen = ({navigation, route}) => {
       return;
     }
     navigation.goBack();
+  };
+
+  const openVehicleModal = () => {
+    setVehicleDraft(form.registration || '');
+    setVehicleFound(Boolean(form.vehicleAdded && form.registration));
+    setVehicleModalOpen(true);
+  };
+
+  const openDriverModal = () => {
+    setDriverModalOpen(true);
+  };
+
+  const onSearchVehicle = () => {
+    const reg = vehicleDraft.replace(/\s+/g, '').toUpperCase();
+    if (reg.length < 6) {
+      Alert.alert(
+        'Vehicle number',
+        'Enter a valid vehicle registration number without spaces.',
+      );
+      setVehicleFound(false);
+      return;
+    }
+    setVehicleDraft(reg);
+    setVehicleFound(true);
+    Alert.alert('Vehicle found', `Details loaded for ${reg}.`);
+  };
+
+  const onAddVehicle = () => {
+    const reg = vehicleDraft.replace(/\s+/g, '').toUpperCase();
+    if (!vehicleFound || reg.length < 6) {
+      Alert.alert(
+        'Search vehicle',
+        "Please enter your vehicle number and click 'Search' first.",
+      );
+      return;
+    }
+    setForm(prev => ({
+      ...prev,
+      registration: reg,
+      vehicleAdded: true,
+      vehicleType: prev.vehicleType || 'Sedan',
+    }));
+    setVehicleModalOpen(false);
+  };
+
+  const onAddDriver = () => {
+    if (!form.driverFullName.trim()) {
+      Alert.alert('Driver name', 'Enter the driver full name.');
+      return;
+    }
+    if (!/^\d{10}$/.test(form.driverContact.replace(/\D/g, ''))) {
+      Alert.alert('Contact number', 'Enter a valid 10 digit contact number.');
+      return;
+    }
+    if (form.license.trim().length < 6) {
+      Alert.alert('License number', 'Enter a valid driver license number.');
+      return;
+    }
+    if (!form.driverAddress1.trim()) {
+      Alert.alert('Address', 'Enter address line 1.');
+      return;
+    }
+    if (!form.driverCity.trim()) {
+      Alert.alert('City', 'Enter the city.');
+      return;
+    }
+    setForm(prev => ({...prev, driverAdded: true}));
+    setDriverModalOpen(false);
+  };
+
+  const pickLicenseImage = side => {
+    const apply = file => {
+      setField(side === 'front' ? 'licenseFront' : 'licenseBack', file);
+    };
+    if (Platform.OS === 'ios') {
+      setDriverModalOpen(false);
+      setTimeout(() => {
+        pickImage(file => {
+          apply(file);
+          setDriverModalOpen(true);
+        });
+      }, 350);
+      return;
+    }
+    pickImage(apply);
   };
 
   const openOptions = (title, options, key) => {
@@ -705,19 +807,12 @@ const VerificationScreen = ({navigation, route}) => {
       return;
     }
 
-    if (!form.vehicleType) {
-      Alert.alert('Vehicle type', 'Select a vehicle type to continue.');
+    if (!form.vehicleAdded || form.registration.trim().length < 6) {
+      Alert.alert('Vehicle', 'Add and verify your vehicle to continue.');
       return;
     }
-    if (form.registration.trim().length < 4) {
-      Alert.alert(
-        'Registration number',
-        'Enter the vehicle registration number.',
-      );
-      return;
-    }
-    if (form.license.trim().length < 6) {
-      Alert.alert('Driver license', 'Enter the driver license number.');
+    if (!form.driverAdded) {
+      Alert.alert('Driver', 'Add and verify your driver to continue.');
       return;
     }
 
@@ -1022,75 +1117,30 @@ const VerificationScreen = ({navigation, route}) => {
                   <Ionicons name="car-outline" size={18} color="#5B7CFF" />
                 </View>
                 <View style={styles.cardCopy}>
-                  <Text style={styles.cardTitle}>Vehicle & Driver Details</Text>
+                  <Text style={styles.cardTitle}>
+                    Vehicle & Driver Verifications
+                  </Text>
                   <Text style={styles.cardSub}>
-                    Please provide your vehicle and driver details to complete
-                    your verification process.
+                    Upload your vehicle and driver details
                   </Text>
                 </View>
               </View>
 
-              <FieldLabel>Vehicle Type</FieldLabel>
-              <TextField
-                icon="car-outline"
-                value={form.vehicleType}
-                placeholder="Select vehicle type"
-                rightIcon="chevron-down"
-                onPress={() =>
-                  openOptions('Select vehicle type', VEHICLE_OPTIONS, 'vehicleType')
-                }
-              />
+              <View style={styles.vdList}>
+                <VerifyActionRow
+                  title="Vehicle"
+                  subtitle="Add and verify your vehicle"
+                  done={form.vehicleAdded}
+                  onAdd={openVehicleModal}
+                />
+                <VerifyActionRow
+                  title="Driver"
+                  subtitle="Add and verify your driver"
+                  done={form.driverAdded}
+                  onAdd={openDriverModal}
+                />
+              </View>
 
-              <FieldLabel>Vehicle Registration Number</FieldLabel>
-              <TextField
-                icon="document-text-outline"
-                value={form.registration}
-                onChangeText={value =>
-                  setField('registration', value.toUpperCase())
-                }
-                placeholder="Enter registration number"
-                autoCapitalize="characters"
-                onFocus={() => onFieldFocus(false)}
-              />
-
-              <FieldLabel>Driver License Number</FieldLabel>
-              <TextField
-                icon="card-outline"
-                value={form.license}
-                onChangeText={value => setField('license', value.toUpperCase())}
-                placeholder="Enter driver license number"
-                autoCapitalize="characters"
-                onFocus={() => onFieldFocus(true)}
-              />
-
-              <FieldLabel optional>Vehicle RC</FieldLabel>
-              <UploadZone
-                actionLabel="Upload RC Document"
-                file={form.rcDocument}
-                onPress={() => pickDocument(file => setField('rcDocument', file))}
-              />
-
-              <FieldLabel>Driver Profile Photo</FieldLabel>
-              <UploadZone
-                actionLabel="Upload Driver Photo"
-                file={form.driverPhoto}
-                onPress={() => pickImage(file => setField('driverPhoto', file))}
-              />
-
-              <FieldLabel optional>Additional Documents</FieldLabel>
-              <TextField
-                icon="document-outline"
-                value={form.extraDocumentType}
-                placeholder="Select document type"
-                rightIcon="chevron-down"
-                onPress={() =>
-                  openOptions(
-                    'Select document type',
-                    DOCUMENT_TYPES,
-                    'extraDocumentType',
-                  )
-                }
-              />
               <ContinueButton onPress={onContinue} />
             </View>
           ) : null}
@@ -1176,6 +1226,225 @@ const VerificationScreen = ({navigation, route}) => {
           </View>
         </View>
       </Modal>
+
+      <Modal
+        visible={vehicleModalOpen}
+        transparent
+        animationType="slide"
+        presentationStyle="overFullScreen"
+        onRequestClose={() => setVehicleModalOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.vdSheet,
+              {
+                minHeight: Math.round(windowHeight * 0.52),
+                paddingBottom: Math.max(insets.bottom, 16) + 8,
+              },
+            ]}>
+            <View style={styles.verifySheetHead}>
+              <Text style={styles.verifySheetTitle}>Add Vehicle</Text>
+              <TouchableOpacity
+                onPress={() => setVehicleModalOpen(false)}
+                hitSlop={{top: 8, right: 8, bottom: 8, left: 8}}
+                accessibilityRole="button"
+                accessibilityLabel="Close">
+                <Text style={styles.verifySheetClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.vdSheetLabel}>Vehicle Registration Number</Text>
+            <PlainField
+              value={vehicleDraft}
+              onChangeText={value => {
+                setVehicleFound(false);
+                setVehicleDraft(
+                  value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12),
+                );
+              }}
+              placeholder="UKXXPAXXXX"
+              autoCapitalize="characters"
+              maxLength={12}
+              right={
+                <TouchableOpacity
+                  style={styles.vdSearchBtn}
+                  onPress={onSearchVehicle}
+                  activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel="Search vehicle">
+                  <Text style={styles.vdSearchBtnText}>Search</Text>
+                </TouchableOpacity>
+              }
+            />
+            <Text style={styles.vdHelper}>
+              Please enter your vehicle number without space and click 'Search'
+            </Text>
+
+            <View style={styles.vdSheetSpacer} />
+            <PrimaryButton title="Add" onPress={onAddVehicle} darkText />
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={driverModalOpen}
+        transparent
+        animationType="slide"
+        presentationStyle="overFullScreen"
+        onRequestClose={() => setDriverModalOpen(false)}>
+        <View style={styles.modalOverlay}>
+          <View
+            style={[
+              styles.vdSheet,
+              {
+                maxHeight: Math.round(windowHeight * 0.92),
+                paddingBottom: Math.max(insets.bottom, 16) + 8,
+              },
+            ]}>
+            <View style={styles.verifySheetHead}>
+              <Text style={styles.verifySheetTitle}>Add Driver</Text>
+              <TouchableOpacity
+                onPress={() => setDriverModalOpen(false)}
+                hitSlop={{top: 8, right: 8, bottom: 8, left: 8}}
+                accessibilityRole="button"
+                accessibilityLabel="Close">
+                <Text style={styles.verifySheetClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.vdDriverScroll}
+              bounces={false}>
+              <TouchableOpacity
+                style={styles.driverPhotoWrap}
+                activeOpacity={0.85}
+                onPress={() => {
+                  if (Platform.OS === 'ios') {
+                    setDriverModalOpen(false);
+                    setTimeout(() => {
+                      pickImage(file => {
+                        setField('driverPhoto', file);
+                        setDriverModalOpen(true);
+                      });
+                    }, 350);
+                    return;
+                  }
+                  pickImage(file => setField('driverPhoto', file));
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Upload driver photo">
+                <View style={styles.driverPhotoOuter}>
+                  <View style={styles.driverPhotoInner}>
+                    {form.driverPhoto?.uri ? (
+                      <Image
+                        source={{uri: form.driverPhoto.uri}}
+                        style={styles.driverPhotoImage}
+                      />
+                    ) : (
+                      <Ionicons name="person" size={36} color={Colors.primary} />
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              <Text style={styles.vdSheetLabel}>Driver Full Name</Text>
+              <PlainField
+                value={form.driverFullName}
+                onChangeText={value => setField('driverFullName', value)}
+                placeholder="Driver Full Name"
+                autoCapitalize="words"
+              />
+
+              <Text style={styles.vdSheetLabel}>Contact Number</Text>
+              <PlainField
+                value={form.driverContact}
+                onChangeText={value =>
+                  setField(
+                    'driverContact',
+                    value.replace(/\D/g, '').slice(0, 10),
+                  )
+                }
+                placeholder="Contact Number"
+                keyboardType="number-pad"
+                maxLength={10}
+              />
+
+              <Text style={styles.vdSheetLabel}>License Number</Text>
+              <PlainField
+                value={form.license}
+                onChangeText={value =>
+                  setField(
+                    'license',
+                    value.toUpperCase().replace(/[^A-Z0-9]/g, ''),
+                  )
+                }
+                placeholder="License Number"
+                autoCapitalize="characters"
+              />
+
+              <Text style={styles.vdSheetLabel}>Address Line 1</Text>
+              <PlainField
+                value={form.driverAddress1}
+                onChangeText={value => setField('driverAddress1', value)}
+                placeholder="Address Line 1"
+              />
+
+              <Text style={styles.vdSheetLabel}>Address Line 2</Text>
+              <PlainField
+                value={form.driverAddress2}
+                onChangeText={value => setField('driverAddress2', value)}
+                placeholder="Address Line 2"
+              />
+
+              <Text style={styles.vdSheetLabel}>City</Text>
+              <PlainField
+                value={form.driverCity}
+                onChangeText={value => setField('driverCity', value)}
+                placeholder="City"
+                autoCapitalize="words"
+              />
+
+              <Text style={styles.vdSheetLabel}>Upload Driver License Images</Text>
+              <View style={styles.licenseUploadRow}>
+                {['front', 'back'].map(side => {
+                  const file =
+                    side === 'front' ? form.licenseFront : form.licenseBack;
+                  return (
+                    <View key={side} style={styles.licenseUploadCol}>
+                      <TouchableOpacity
+                        style={[
+                          styles.licenseUploadBox,
+                          file && styles.licenseUploadBoxOn,
+                        ]}
+                        activeOpacity={0.85}
+                        onPress={() => pickLicenseImage(side)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Upload license ${side}`}>
+                        {file?.uri ? (
+                          <Image
+                            source={{uri: file.uri}}
+                            style={styles.licenseUploadPreview}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <Ionicons name="add" size={28} color="#9AA3B2" />
+                        )}
+                      </TouchableOpacity>
+                      <Text style={styles.licenseUploadCaption}>
+                        {side === 'front' ? 'Front' : 'Back'}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
+            </ScrollView>
+
+            <PrimaryButton title="Add" onPress={onAddDriver} darkText />
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -1206,7 +1475,7 @@ const baseStyles = {
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: Typography.fontWeights.bold,
     color: INK,
   },
@@ -1448,38 +1717,167 @@ const baseStyles = {
     lineHeight: 16,
     color: MUTED,
   },
-  upload: {
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: '#C9D7EA',
-    borderRadius: 14,
-    backgroundColor: '#FBFCFE',
+  vdList: {
+    marginTop: 18,
+    gap: 12,
+  },
+  vdRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#E6E8EE',
+    borderRadius: 12,
+    backgroundColor: Colors.surface,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
   },
-  uploadOn: {
-    borderColor: Colors.primary,
-    backgroundColor: '#FFFCF3',
+  vdCopy: {
+    flex: 1,
+    paddingRight: 12,
   },
-  uploadTitle: {
-    marginTop: 8,
-    textAlign: 'center',
-    fontSize: 13,
-    lineHeight: 18,
+  vdTitle: {
+    fontSize: 15,
+    fontWeight: Typography.fontWeights.bold,
+    color: INK,
+    marginBottom: 2,
+  },
+  vdSub: {
+    fontSize: 12,
+    lineHeight: 16,
     color: MUTED,
   },
-  uploadStrong: {
+  vdAddBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    minWidth: 64,
+    alignItems: 'center',
+  },
+  vdAddBtnText: {
+    fontSize: 13,
     fontWeight: Typography.fontWeights.bold,
     color: INK,
   },
-  uploadHint: {
-    marginTop: 2,
-    textAlign: 'center',
+  vdSheet: {
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: Spacing.screenPadding,
+    paddingTop: 18,
+  },
+  vdDriverScroll: {
+    paddingBottom: 16,
+    flexGrow: 1,
+  },
+  vdSheetLabel: {
+    marginTop: 14,
+    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: Typography.fontWeights.bold,
+    color: INK,
+  },
+  plainInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E6E8EE',
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 12,
+    gap: 8,
+  },
+  plainInputValue: {
+    flex: 1,
+    fontSize: 14,
+    color: INK,
+    paddingVertical: 12,
+    padding: 0,
+    margin: 0,
+  },
+  vdSearchBtn: {
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  vdSearchBtnText: {
+    fontSize: 13,
+    fontWeight: Typography.fontWeights.bold,
+    color: INK,
+  },
+  vdHelper: {
+    marginTop: 8,
     fontSize: 12,
     lineHeight: 16,
-    color: '#A0A8B5',
+    color: MUTED,
+  },
+  vdSheetSpacer: {
+    flexGrow: 1,
+    minHeight: 120,
+  },
+  driverPhotoWrap: {
+    alignSelf: 'center',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  driverPhotoOuter: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    borderWidth: 1,
+    borderColor: '#E6E8EE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  driverPhotoInner: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  driverPhotoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  licenseUploadRow: {
+    flexDirection: 'row',
+    gap: 14,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  licenseUploadCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  licenseUploadBox: {
+    width: '100%',
+    aspectRatio: 1.35,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#C9D0DB',
+    borderRadius: 12,
+    backgroundColor: '#FAFBFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  licenseUploadBoxOn: {
+    borderStyle: 'solid',
+    borderColor: Colors.primary,
+  },
+  licenseUploadPreview: {
+    width: '100%',
+    height: '100%',
+  },
+  licenseUploadCaption: {
+    marginTop: 6,
+    fontSize: 12,
+    color: MUTED,
   },
   verifyBody: {
     paddingHorizontal: Spacing.screenPadding,
@@ -1612,21 +2010,16 @@ const baseStyles = {
     height: 50,
     borderRadius: 26,
     backgroundColor: Colors.primary,
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
   },
   continueText: {
     fontSize: 16,
+    lineHeight: 20,
     fontWeight: Typography.fontWeights.bold,
     color: INK,
-  },
-  continueArrow: {
-    fontSize: 18,
-    fontWeight: Typography.fontWeights.bold,
-    color: INK,
-    marginTop: -1,
+    textAlignVertical: 'center',
+    includeFontPadding: false,
   },
   footer: {
     paddingHorizontal: Spacing.screenPadding,

@@ -1,9 +1,11 @@
-import React, {useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Image,
   Linking,
+  RefreshControl,
   Share,
   StyleSheet,
   Text,
@@ -12,30 +14,17 @@ import {
   View,
 } from 'react-native';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
-import {
-  BookingDecisionModal,
-  MarketFilterSheet,
-  MyBookingCard,
-} from '../../components/booking';
+import {useIsFocused} from '@react-navigation/native';
+import {MarketFilterSheet, MyBookingCard} from '../../components/booking';
 import {EMPTY_FILTERS} from '../../components/booking/MarketFilterSheet';
 import BannerHeader from '../../components/common/BannerHeader';
 import Images from '../../constants/Images';
 import {ROUTES} from '../../constants/Routes';
-import {mockMyBookings} from '../../mockData';
+import {getMyBookings} from '../../services/bookingService';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
-const SAMPLE_PHONES = [
-  '9876543210',
-  '9123456780',
-  '9988776655',
-  '9170337201',
-];
-
-const getRandomPhone = () =>
-  SAMPLE_PHONES[Math.floor(Math.random() * SAMPLE_PHONES.length)];
-
-const openDialer = (phone = getRandomPhone()) => {
+const openDialer = (phone = '') => {
   const digits = String(phone).replace(/[^\d+]/g, '');
   if (!digits) {
     return;
@@ -80,28 +69,69 @@ const matchesTrip = (booking, trip) => {
 };
 
 /**
- * My Bookings — posted and received lists matching the bookings screenshot.
+ * My Bookings — posted and received lists from /bookings/mine.
  */
+
 const MyBookingsScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
+  const isFocused = useIsFocused();
   const [tab, setTab] = useState('posted');
   const [query, setQuery] = useState('');
-  const [bookingsList, setBookingsList] = useState(mockMyBookings);
+  const [bookingsList, setBookingsList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState(EMPTY_FILTERS);
   const [helpMenuOpen, setHelpMenuOpen] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
-  const [decision, setDecision] = useState(null);
+
+  const loadBookings = useCallback(
+    async ({silent = false} = {}) => {
+      if (!silent) {
+        setLoading(true);
+      }
+      setError('');
+
+      try {
+        const result = await getMyBookings({
+          view: tab,
+          page: 1,
+          limit: 20,
+        });
+        setBookingsList(result?.bookings || []);
+      } catch (err) {
+        setBookingsList([]);
+        setError(
+          err?.message || 'Failed to load bookings. Please try again.',
+        );
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [tab],
+  );
+
+  useEffect(() => {
+    if (!isFocused) {
+      return;
+    }
+    loadBookings();
+  }, [isFocused, loadBookings]);
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadBookings({silent: true});
+  };
 
   const bookings = useMemo(() => {
     const q = query.trim().toLowerCase();
     let list = bookingsList.filter(item => {
-      if (item.tab !== tab) {
-        return false;
-      }
       if (!q) {
         return true;
       }
+      
       const haystack = [
         item.id,
         item.code,
@@ -149,7 +179,7 @@ const MyBookingsScreen = ({navigation}) => {
     }
 
     return list;
-  }, [tab, query, bookingsList, appliedFilters]);
+  }, [query, bookingsList, appliedFilters]);
 
   const navigateRoot = (routeName, params) => {
     const parent = navigation.getParent?.();
@@ -175,26 +205,25 @@ const MyBookingsScreen = ({navigation}) => {
     });
   };
 
-  const updateBookingStatus = (item, status) => {
-    setBookingsList(prev =>
-      prev.map(booking =>
-        booking.id === item.id ? {...booking, status} : booking,
-      ),
-    );
+  const handleChat = item => {
+    navigateRoot(ROUTES.CHAT, {
+      chatId: item.chatId || `booking-${item.id}`,
+      contactName: item.name || 'Travel Partner',
+    });
   };
 
-  const handleAccept = item => {
-    updateBookingStatus(item, 'Accepted');
-    setDecision({variant: 'accept', booking: item});
-  };
-
-  const handleReject = item => {
-    updateBookingStatus(item, 'Rejected');
-    setDecision({variant: 'reject', booking: item});
+  const handleCall = item => {
+    if (!item.phone) {
+      Alert.alert('Call unavailable', 'Phone number is not available.');
+      return;
+    }
+    openDialer(item.phone);
   };
 
   const handleShare = async item => {
-    const amount = Number(item.amount).toLocaleString('en-IN');
+    const amount = Number(item.amount || item.totalAmount || 0).toLocaleString(
+      'en-IN',
+    );
     const message = [
       `Tajway Booking #${item.code || item.id}`,
       `${item.from} → ${item.to}`,
@@ -331,51 +360,81 @@ const MyBookingsScreen = ({navigation}) => {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={bookings}
-        keyExtractor={item => item.id}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.list,
-          bookings.length === 0 && styles.listEmpty,
-        ]}
-        ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyText}>No Records found</Text>
-          </View>
-        }
-        renderItem={({item}) => (
-          <MyBookingCard
-            bookingId={item.code || item.id}
-            dateTime={item.dateTime}
-            from={item.from}
-            fromState={item.fromState}
-            to={item.to}
-            toState={item.toState}
-            vehicle={item.vehicle}
-            amount={item.amount}
-            commission={item.commission}
-            tripType={item.tripType}
-            onPress={() => handleOpenDetail(item)}
-            onAccept={() => handleAccept(item)}
-            onReject={() => handleReject(item)}
-            onShare={() => handleShare(item)}
-          />
-        )}
-      />
+      {loading && !refreshing ? (
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={bookings}
+          keyExtractor={item => String(item.id)}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.list,
+            bookings.length === 0 && styles.listEmpty,
+          ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={Colors.primary}
+              colors={[Colors.primary]}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>
+                {error || 'No Records found'}
+              </Text>
+              {error ? (
+                <TouchableOpacity
+                  style={styles.retryBtn}
+                  activeOpacity={0.85}
+                  onPress={() => loadBookings()}>
+                  <Text style={styles.retryText}>Retry</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          }
+          renderItem={({item}) => (
+            <MyBookingCard
+              bookingId={item.code || item.id}
+              dateTime={item.dateTime}
+              from={item.from}
+              fromState={item.fromState}
+              to={item.to}
+              toState={item.toState}
+              vehicle={item.vehicle}
+              amount={item.amount}
+              totalAmount={item.totalAmount}
+              driverEarning={item.driverEarning}
+              commission={item.commission}
+              tripType={item.tripType}
+              name={item.name}
+              company={item.company}
+              rating={item.rating}
+              reviews={item.reviews}
+              avatarSource={
+                item.avatarUrl
+                  ? {uri: item.avatarUrl}
+                  : item.hasAvatar
+                    ? Images.partnerDeepesh
+                    : Images.profile
+              }
+              onPress={() => handleOpenDetail(item)}
+              onChat={() => handleChat(item)}
+              onCall={() => handleCall(item)}
+              onShare={() => handleShare(item)}
+            />
+          )}
+        />
+      )}
 
       <MarketFilterSheet
         visible={filterOpen}
         onClose={() => setFilterOpen(false)}
         initial={appliedFilters}
         onSave={setAppliedFilters}
-      />
-
-      <BookingDecisionModal
-        visible={Boolean(decision)}
-        variant={decision?.variant}
-        booking={decision?.booking}
-        onClose={() => setDecision(null)}
       />
     </View>
   );
@@ -559,10 +618,29 @@ const baseStyles = {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 80,
+    paddingHorizontal: 24,
   },
   emptyText: {
     fontSize: 15,
     color: Colors.textMuted,
+    textAlign: 'center',
+  },
+  retryBtn: {
+    marginTop: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+  },
+  retryText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.onPrimary,
+  },
+  loader: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 };
 
