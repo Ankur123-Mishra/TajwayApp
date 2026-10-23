@@ -324,6 +324,7 @@ const PostBookingScreen = ({navigation, route}) => {
 
     try {
       setLoading(true);
+      // API commented out — BookingService.createBooking uses local/static success.
       await BookingService.createBooking({
         tripType,
         vehicleType,

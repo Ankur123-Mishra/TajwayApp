@@ -1,7 +1,12 @@
-import {getWithToken, postWithToken} from '../api/common';
-import {ENDPOINTS} from '../api/endpoints';
+// import {getWithToken, postWithToken} from '../api/common';
+// import {ENDPOINTS} from '../api/endpoints';
 import {BOOKING_STATUS, STORAGE_KEYS} from '../constants/AppConstants';
-import {mockBookings} from '../mockData';
+import {
+  mockBookings,
+  mockFreeVehicles,
+  mockMarketBookings,
+  mockMyBookings,
+} from '../mockData';
 import {storage} from '../utils/storage';
 
 const delay = (ms = 400) => new Promise(resolve => setTimeout(resolve, ms));
@@ -368,47 +373,63 @@ export function mapFreeVehicleItem(item = {}) {
 
 /**
  * GET /bookings?listingType=new_booking&page=&limit=
+ * API commented out — returns static marketplace data.
  */
 export async function getMarketBookings({
   listingType = 'new_booking',
   page = 1,
   limit = 20,
 } = {}) {
-  const response = await getWithToken(ENDPOINTS.BOOKINGS, {
-    listingType,
-    page,
-    limit,
-  });
+  // --- Real API (commented out) ---
+  // const response = await getWithToken(ENDPOINTS.BOOKINGS, {
+  //   listingType,
+  //   page,
+  //   limit,
+  // });
+  // if (!response?.success) {
+  //   throw {
+  //     message:
+  //       response?.message || 'Failed to fetch bookings. Please try again.',
+  //     data: response,
+  //   };
+  // }
+  // const items = Array.isArray(response?.data?.items)
+  //   ? response.data.items
+  //   : Array.isArray(response?.data?.bookings)
+  //     ? response.data.bookings
+  //     : Array.isArray(response?.data)
+  //       ? response.data
+  //       : [];
+  // const mapped = items.map(
+  //   listingType === 'free_vehicle'
+  //     ? mapFreeVehicleItem
+  //     : mapMarketBookingItem,
+  // );
+  // return {
+  //   success: true,
+  //   message: response?.message || 'Bookings fetched successfully',
+  //   bookings: mapped,
+  //   vehicles: mapped,
+  //   meta: response?.data?.meta || null,
+  //   data: response?.data ?? null,
+  // };
 
-  if (!response?.success) {
-    throw {
-      message:
-        response?.message || 'Failed to fetch bookings. Please try again.',
-      data: response,
-    };
-  }
+  await delay();
+  void page;
+  void limit;
 
-  const items = Array.isArray(response?.data?.items)
-    ? response.data.items
-    : Array.isArray(response?.data?.bookings)
-      ? response.data.bookings
-      : Array.isArray(response?.data)
-        ? response.data
-        : [];
-
-  const mapped = items.map(
+  const mapped =
     listingType === 'free_vehicle'
-      ? mapFreeVehicleItem
-      : mapMarketBookingItem,
-  );
+      ? clone(mockFreeVehicles)
+      : clone(mockMarketBookings);
 
   return {
     success: true,
-    message: response?.message || 'Bookings fetched successfully',
+    message: 'Bookings fetched successfully',
     bookings: mapped,
     vehicles: mapped,
-    meta: response?.data?.meta || null,
-    data: response?.data ?? null,
+    meta: null,
+    data: {items: mapped},
   };
 }
 
@@ -510,101 +531,143 @@ export function mapMyBookingItem(item = {}, view = 'posted') {
 
 /**
  * GET /bookings/mine?view=posted|received&page=&limit=
+ * API commented out — returns static my-bookings data.
  */
 export async function getMyBookings({
   view = 'posted',
   page = 1,
   limit = 20,
 } = {}) {
-  const response = await getWithToken(ENDPOINTS.MY_BOOKINGS, {
-    view,
-    page,
-    limit,
-  });
+  // --- Real API (commented out) ---
+  // const response = await getWithToken(ENDPOINTS.MY_BOOKINGS, {
+  //   view,
+  //   page,
+  //   limit,
+  // });
+  // if (!response?.success) {
+  //   throw {
+  //     message:
+  //       response?.message || 'Failed to fetch my bookings. Please try again.',
+  //     data: response,
+  //   };
+  // }
+  // const items = Array.isArray(response?.data?.items)
+  //   ? response.data.items
+  //   : Array.isArray(response?.data?.bookings)
+  //     ? response.data.bookings
+  //     : Array.isArray(response?.data)
+  //       ? response.data
+  //       : [];
+  // const mapped = items.map(item => mapMyBookingItem(item, view));
+  // return {
+  //   success: true,
+  //   message: response?.message || 'My bookings fetched successfully',
+  //   bookings: mapped,
+  //   meta: response?.data?.meta || null,
+  //   data: response?.data ?? null,
+  // };
 
-  if (!response?.success) {
-    throw {
-      message:
-        response?.message || 'Failed to fetch my bookings. Please try again.',
-      data: response,
-    };
-  }
+  await delay();
+  void page;
+  void limit;
 
-  const items = Array.isArray(response?.data?.items)
-    ? response.data.items
-    : Array.isArray(response?.data?.bookings)
-      ? response.data.bookings
-      : Array.isArray(response?.data)
-        ? response.data
-        : [];
-
-  const mapped = items.map(item => mapMyBookingItem(item, view));
+  const mapped = clone(mockMyBookings).filter(
+    item => String(item.tab || 'posted') === String(view || 'posted'),
+  );
 
   return {
     success: true,
-    message: response?.message || 'My bookings fetched successfully',
+    message: 'My bookings fetched successfully',
     bookings: mapped,
-    meta: response?.data?.meta || null,
-    data: response?.data ?? null,
+    meta: null,
+    data: {items: mapped},
   };
 }
 
 /**
  * POST /bookings — create a new booking listing (one_way / round_trip).
+ * API commented out — local success with payload only.
  */
 
 export async function createBooking(form = {}) {
   const body = buildCreateBookingPayload(form);
 
-  const response = await postWithToken(ENDPOINTS.BOOKINGS, body);
+  // --- Real API (commented out) ---
+  // const response = await postWithToken(ENDPOINTS.BOOKINGS, body);
+  // if (!response?.success) {
+  //   throw {
+  //     message:
+  //       response?.message || 'Failed to create booking. Please try again.',
+  //     data: response,
+  //   };
+  // }
+  // return {
+  //   success: true,
+  //   message: response?.message || 'Booking posted successfully',
+  //   booking: response?.data?.booking || response?.data || null,
+  //   data: response?.data ?? null,
+  // };
 
-  if (!response?.success) {
-    throw {
-      message:
-        response?.message || 'Failed to create booking. Please try again.',
-      data: response,
-    };
-  }
+  await delay();
+  const booking = {
+    id: `BK-LOCAL-${Date.now()}`,
+    bookingCode: `BK${Date.now().toString().slice(-6)}`,
+    ...body,
+  };
 
   return {
     success: true,
-    message: response?.message || 'Booking posted successfully',
-    booking: response?.data?.booking || response?.data || null,
-    data: response?.data ?? null,
+    message: 'Booking posted successfully',
+    booking,
+    data: {booking},
   };
 }
 
 /**
  * POST /bookings — create a free vehicle listing.
+ * API commented out — local success with payload only.
  */
 
 export async function createFreeVehicle(form = {}) {
   const body = buildCreateFreeVehiclePayload(form);
-  console.log('[createFreeVehicle] request body:', body);
+  console.log('[createFreeVehicle] request body (static mode):', body);
 
-  try {
-    const response = await postWithToken(ENDPOINTS.BOOKINGS, body);
-    console.log('[createFreeVehicle] API response:', response);
+  // --- Real API (commented out) ---
+  // try {
+  //   const response = await postWithToken(ENDPOINTS.BOOKINGS, body);
+  //   console.log('[createFreeVehicle] API response:', response);
+  //   if (!response?.success) {
+  //     throw {
+  //       message:
+  //         response?.message ||
+  //         'Failed to post free vehicle. Please try again.',
+  //       data: response,
+  //     };
+  //   }
+  //   return {
+  //     success: true,
+  //     message: response?.message || 'Free vehicle posted successfully',
+  //     booking: response?.data?.booking || response?.data || null,
+  //     data: response?.data ?? null,
+  //   };
+  // } catch (error) {
+  //   console.log('[createFreeVehicle] API error:', error);
+  //   throw error;
+  // }
 
-    if (!response?.success) {
-      throw {
-        message:
-          response?.message ||
-          'Failed to post free vehicle. Please try again.',
-        data: response,
-      };
-    }
+  await delay();
+  const booking = {
+    id: `FV-LOCAL-${Date.now()}`,
+    bookingCode: `FV${Date.now().toString().slice(-6)}`,
+    ...body,
+  };
 
-    return {
-      success: true,
-      message: response?.message || 'Free vehicle posted successfully',
-      booking: response?.data?.booking || response?.data || null,
-      data: response?.data ?? null,
-    };
-  } catch (error) {
-    console.log('[createFreeVehicle] API error:', error);
-    throw error;
-  }
+  return {
+    success: true,
+    message: 'Free vehicle posted successfully',
+    booking,
+    data: {booking},
+  };
 }
 
 export async function getBookings(filters = {}) {

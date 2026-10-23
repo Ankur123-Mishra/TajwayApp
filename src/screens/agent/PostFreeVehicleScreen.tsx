@@ -328,6 +328,7 @@ const PostFreeVehicleScreen = ({navigation}) => {
 
     try {
       setLoading(true);
+      // API commented out — BookingService.createFreeVehicle uses local/static success.
       const result = await BookingService.createFreeVehicle({
         vehicleType,
         availableFrom: startValue,

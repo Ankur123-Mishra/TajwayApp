@@ -1,8 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {getWithToken, patchWithToken} from '../api/common';
-import {ENDPOINTS} from '../api/endpoints';
-import {STORAGE_KEYS} from '../constants/AppConstants';
+// import {getWithToken, patchWithToken} from '../api/common';
+// import {ENDPOINTS} from '../api/endpoints';
+import {STORAGE_KEYS, USER_ROLES} from '../constants/AppConstants';
+import {mockUsers} from '../mockData';
 import {isValidEmail, required} from '../utils/validation';
+
+const delay = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Maps API user payload into the shape used across the app.
@@ -68,35 +71,52 @@ export const isVerificationComplete = user => {
 
 export const UserService = {
   /**
-   * GET /user/me — current authenticated user profile.
+   * GET /user/me — API commented out (static / demo mode).
    */
   async getMe() {
-    const response = await getWithToken(ENDPOINTS.USER_ME);
+    // --- Real API (commented out) ---
+    // const response = await getWithToken(ENDPOINTS.USER_ME);
+    // if (!response?.success) {
+    //   throw {
+    //     message:
+    //       response?.message || 'Failed to fetch user. Please try again.',
+    //     data: response,
+    //   };
+    // }
+    // const apiUser = response?.data?.user || response?.data || {};
+    // const user = mapUser(apiUser);
+    // await persistUserInSession(user);
+    // return {
+    //   success: true,
+    //   message: response?.message || 'User fetched successfully',
+    //   user,
+    //   data: response?.data ?? null,
+    // };
 
-    if (!response?.success) {
-      throw {
-        message:
-          response?.message || 'Failed to fetch user. Please try again.',
-        data: response,
-      };
-    }
-
-    const apiUser = response?.data?.user || response?.data || {};
-    const user = mapUser(apiUser);
+    await delay();
+    const base = mockUsers.agent || {};
+    const user = mapUser({
+      ...base,
+      fullName: base.name,
+      role: base.role || USER_ROLES.AGENT,
+      companyName: base.company,
+      isVerifiedBadge: true,
+      verificationStatus: 'verified',
+      isOnboardingComplete: true,
+    });
     await persistUserInSession(user);
 
     return {
       success: true,
-      message: response?.message || 'User fetched successfully',
+      message: 'User fetched successfully',
       user,
-      data: response?.data ?? null,
+      data: {user},
     };
   },
 
   /**
    * PATCH /user/profile
-   * Body: { fullName, role, city, companyName, email }
-   * GST / Aadhaar are not sent here — handled later.
+   * API commented out — updates local session only.
    */
   async updateProfile({fullName, role, city, companyName, email}) {
     const trimmedName = String(fullName || '').trim();
@@ -128,33 +148,41 @@ export const UserService = {
       ...(trimmedEmail ? {email: trimmedEmail} : {email: ''}),
     };
 
-    const response = await patchWithToken(ENDPOINTS.UPDATE_PROFILE, body);
+    // --- Real API (commented out) ---
+    // const response = await patchWithToken(ENDPOINTS.UPDATE_PROFILE, body);
+    // if (!response?.success) {
+    //   throw {
+    //     message:
+    //       response?.message || 'Failed to update profile. Please try again.',
+    //     data: response,
+    //   };
+    // }
+    // const apiUser = response?.data?.user || response?.data || {};
+    // const user = mapUser({
+    //   ...apiUser,
+    //   fullName: apiUser.fullName || trimmedName,
+    //   role: apiUser.role || role,
+    //   city: apiUser.city || trimmedCity,
+    //   companyName: apiUser.companyName || trimmedCompany,
+    //   email: apiUser.email ?? trimmedEmail,
+    // });
+    // await persistUserInSession(user);
+    // return {
+    //   success: true,
+    //   message: response?.message || 'Profile updated successfully',
+    //   user,
+    //   data: response?.data ?? null,
+    // };
 
-    if (!response?.success) {
-      throw {
-        message:
-          response?.message || 'Failed to update profile. Please try again.',
-        data: response,
-      };
-    }
-
-    const apiUser = response?.data?.user || response?.data || {};
-    const user = mapUser({
-      ...apiUser,
-      fullName: apiUser.fullName || trimmedName,
-      role: apiUser.role || role,
-      city: apiUser.city || trimmedCity,
-      companyName: apiUser.companyName || trimmedCompany,
-      email: apiUser.email ?? trimmedEmail,
-    });
-
+    await delay();
+    const user = mapUser(body);
     await persistUserInSession(user);
 
     return {
       success: true,
-      message: response?.message || 'Profile updated successfully',
+      message: 'Profile updated successfully',
       user,
-      data: response?.data ?? null,
+      data: {user},
     };
   },
 };

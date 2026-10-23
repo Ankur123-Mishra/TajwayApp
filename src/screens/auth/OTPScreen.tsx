@@ -68,8 +68,10 @@ const OTPScreen = ({navigation, route}) => {
     try {
       setLoading(true);
       setInvalid(false);
+      // API commented out — local demo: any OTP logs the user in.
       const result = await AuthService.verifyOtp({mobile: phone, otp});
-      console.log('OTP verify result:', JSON.stringify(result, null, 2));
+      // --- Real verify-otp API was inside AuthService.verifyOtp (also commented) ---
+      console.log('OTP verify result (static):', JSON.stringify(result, null, 2));
 
       dispatch(
         loginSuccess({
@@ -110,6 +112,7 @@ const OTPScreen = ({navigation, route}) => {
 
     try {
       setResending(true);
+      // API commented out — local demo resend.
       await AuthService.sendOtp(phone);
       setOtp('');
       setInvalid(false);

@@ -20,7 +20,6 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import {useIsFocused} from '@react-navigation/native';
-import {useDispatch} from 'react-redux';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import FreeVehicleCard from '../../components/booking/FreeVehicleCard';
 import MarketBookingCard from '../../components/booking/MarketBookingCard';
@@ -37,12 +36,7 @@ import {STORAGE_KEYS} from '../../constants/AppConstants';
 import {ROUTES} from '../../constants/Routes';
 import {mockFreeVehicles, mockMarketBookings} from '../../mockData';
 import {Images} from '../../constants/Images';
-import {updateUser} from '../../redux/slices/authSlice';
-import {
-  getMarketBookings,
-  isVerificationComplete,
-  UserService,
-} from '../../services';
+// Static mode — market APIs / user profile fetch commented out
 import {Colors, Dimensions, Spacing} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 import {moderateScale} from '../../utils/responsive';
@@ -172,7 +166,6 @@ const ProgressRing = ({percent}) => {
 
 const MarketHomeScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
-  const dispatch = useDispatch();
   const {width: windowWidth, height: windowHeight} = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
@@ -312,98 +305,98 @@ const MarketHomeScreen = ({navigation}) => {
       return undefined;
     }
 
-    let cancelled = false;
+    // Static / demo mode — APIs commented out; use mock marketplace data.
+    // Keep isVerified=false so top banner + Your Profile UI still show.
+    setBookingsError('');
+    setMarketBookings(mockMarketBookings);
+    setFreeVehicles(mockFreeVehicles);
+    setBookingsLoading(false);
+    setVehiclesLoading(false);
+    setIsVerified(false);
 
-    const loadMarketListings = async () => {
-      setBookingsLoading(true);
-      setVehiclesLoading(true);
-      setBookingsError('');
+    // --- Real API load (commented out) ---
+    // let cancelled = false;
+    // const loadMarketListings = async () => {
+    //   setBookingsLoading(true);
+    //   setVehiclesLoading(true);
+    //   setBookingsError('');
+    //   try {
+    //     const meResult = await UserService.getMe();
+    //     if (cancelled || !mountedRef.current) {
+    //       return;
+    //     }
+    //     const user = meResult?.user || null;
+    //     if (user) {
+    //       dispatch(updateUser(user));
+    //     }
+    //     setIsVerified(isVerificationComplete(user));
+    //   } catch {
+    //     // Profile fetch is independent of bookings list.
+    //   }
+    //   if (cancelled || !mountedRef.current) {
+    //     return;
+    //   }
+    //   const loadBookings = async () => {
+    //     try {
+    //       const bookingResult = await getMarketBookings({
+    //         listingType: 'new_booking',
+    //         page: 1,
+    //         limit: 20,
+    //       });
+    //       if (cancelled || !mountedRef.current) {
+    //         return;
+    //       }
+    //       const apiBookings = bookingResult?.bookings || [];
+    //       setMarketBookings(
+    //         apiBookings.length > 0 ? apiBookings : mockMarketBookings,
+    //       );
+    //     } catch {
+    //       if (cancelled || !mountedRef.current) {
+    //         return;
+    //       }
+    //       setBookingsError('');
+    //       setMarketBookings(mockMarketBookings);
+    //     } finally {
+    //       if (!cancelled && mountedRef.current) {
+    //         setBookingsLoading(false);
+    //       }
+    //     }
+    //   };
+    //   const loadFreeVehicles = async () => {
+    //     try {
+    //       const vehicleResult = await getMarketBookings({
+    //         listingType: 'free_vehicle',
+    //         page: 1,
+    //         limit: 20,
+    //       });
+    //       if (cancelled || !mountedRef.current) {
+    //         return;
+    //       }
+    //       const apiVehicles =
+    //         vehicleResult?.vehicles || vehicleResult?.bookings || [];
+    //       setFreeVehicles(
+    //         apiVehicles.length > 0 ? apiVehicles : mockFreeVehicles,
+    //       );
+    //     } catch {
+    //       if (cancelled || !mountedRef.current) {
+    //         return;
+    //       }
+    //       setFreeVehicles(mockFreeVehicles);
+    //     } finally {
+    //       if (!cancelled && mountedRef.current) {
+    //         setVehiclesLoading(false);
+    //       }
+    //     }
+    //   };
+    //   await Promise.all([loadBookings(), loadFreeVehicles()]);
+    // };
+    // loadMarketListings();
+    // return () => {
+    //   cancelled = true;
+    // };
 
-      try {
-        const meResult = await UserService.getMe();
-        if (cancelled || !mountedRef.current) {
-          return;
-        }
-        const user = meResult?.user || null;
-        if (user) {
-          dispatch(updateUser(user));
-        }
-        setIsVerified(isVerificationComplete(user));
-      } catch {
-        // Profile fetch is independent of bookings list.
-      }
-
-      if (cancelled || !mountedRef.current) {
-        return;
-      }
-
-      const loadBookings = async () => {
-        try {
-          const bookingResult = await getMarketBookings({
-            listingType: 'new_booking',
-            page: 1,
-            limit: 20,
-          });
-          if (cancelled || !mountedRef.current) {
-            return;
-          }
-
-          const apiBookings = bookingResult?.bookings || [];
-          // Prefer live API data; keep static cards only when API has no items.
-          setMarketBookings(
-            apiBookings.length > 0 ? apiBookings : mockMarketBookings,
-          );
-        } catch {
-          if (cancelled || !mountedRef.current) {
-            return;
-          }
-          // On API failure, fall back to static marketplace bookings.
-          setBookingsError('');
-          setMarketBookings(mockMarketBookings);
-        } finally {
-          if (!cancelled && mountedRef.current) {
-            setBookingsLoading(false);
-          }
-        }
-      };
-
-      const loadFreeVehicles = async () => {
-        try {
-          const vehicleResult = await getMarketBookings({
-            listingType: 'free_vehicle',
-            page: 1,
-            limit: 20,
-          });
-          if (cancelled || !mountedRef.current) {
-            return;
-          }
-
-          const apiVehicles =
-            vehicleResult?.vehicles || vehicleResult?.bookings || [];
-          // Prefer live API data; keep static cards only when API has no items.
-          setFreeVehicles(
-            apiVehicles.length > 0 ? apiVehicles : mockFreeVehicles,
-          );
-        } catch {
-          if (cancelled || !mountedRef.current) {
-            return;
-          }
-          setFreeVehicles(mockFreeVehicles);
-        } finally {
-          if (!cancelled && mountedRef.current) {
-            setVehiclesLoading(false);
-          }
-        }
-      };
-
-      await Promise.all([loadBookings(), loadFreeVehicles()]);
-    };
-
-    loadMarketListings();
-    return () => {
-      cancelled = true;
-    };
-  }, [dispatch, isFocused]);
+    return undefined;
+  }, [isFocused]);
 
   useEffect(() => {
     if (isVerified || verifyDismissedRef.current) {

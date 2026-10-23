@@ -20,7 +20,8 @@ import {EMPTY_FILTERS} from '../../components/booking/MarketFilterSheet';
 import BannerHeader from '../../components/common/BannerHeader';
 import Images from '../../constants/Images';
 import {ROUTES} from '../../constants/Routes';
-import {getMyBookings} from '../../services/bookingService';
+// import {getMyBookings} from '../../services/bookingService'; // API commented out
+import {mockMyBookings} from '../../mockData';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
@@ -69,7 +70,7 @@ const matchesTrip = (booking, trip) => {
 };
 
 /**
- * My Bookings — posted and received lists from /bookings/mine.
+ * My Bookings — static mock lists (API /bookings/mine commented out).
  */
 
 const MyBookingsScreen = ({navigation}) => {
@@ -93,22 +94,32 @@ const MyBookingsScreen = ({navigation}) => {
       }
       setError('');
 
-      try {
-        const result = await getMyBookings({
-          view: tab,
-          page: 1,
-          limit: 20,
-        });
-        setBookingsList(result?.bookings || []);
-      } catch (err) {
-        setBookingsList([]);
-        setError(
-          err?.message || 'Failed to load bookings. Please try again.',
-        );
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
-      }
+      // Static / demo mode
+      setBookingsList(
+        mockMyBookings.filter(
+          item => String(item.tab || 'posted') === String(tab || 'posted'),
+        ),
+      );
+      setLoading(false);
+      setRefreshing(false);
+
+      // --- Real API (commented out) ---
+      // try {
+      //   const result = await getMyBookings({
+      //     view: tab,
+      //     page: 1,
+      //     limit: 20,
+      //   });
+      //   setBookingsList(result?.bookings || []);
+      // } catch (err) {
+      //   setBookingsList([]);
+      //   setError(
+      //     err?.message || 'Failed to load bookings. Please try again.',
+      //   );
+      // } finally {
+      //   setLoading(false);
+      //   setRefreshing(false);
+      // }
     },
     [tab],
   );

@@ -42,7 +42,9 @@ const PhoneLoginScreen = ({navigation, route}) => {
 
     try {
       setLoading(true);
+      // API commented out — local demo: any 10-digit number continues to OTP.
       await AuthService.sendOtp(digits);
+      // --- Real send-otp API was inside AuthService.sendOtp (also commented) ---
       dispatch(setPhone(digits));
       navigation.navigate(ROUTES.OTP, {phone: digits, mode});
     } catch (error) {
