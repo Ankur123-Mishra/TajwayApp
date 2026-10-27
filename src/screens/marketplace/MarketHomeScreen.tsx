@@ -1123,6 +1123,7 @@ const MarketHomeScreen = ({navigation}) => {
                       }
                       onPress={() =>
                         navigation.navigate(ROUTES.MARKET_BOOKING_DETAIL, {
+                          bookingId: id,
                           booking: {id, hasAvatar, ...booking},
                         })
                       }

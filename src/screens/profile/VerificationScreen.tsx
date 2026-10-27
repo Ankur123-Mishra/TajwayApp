@@ -401,6 +401,7 @@ const VerificationScreen = ({navigation, route}) => {
   if (keyboardHeight === 0) {
     fullHeightRef.current = windowHeight;
   }
+  
   // Android adjustResize already shrinks the window; only add leftover inset.
   const alreadyResized = Math.max(0, fullHeightRef.current - windowHeight);
   const keyboardInset = Math.max(0, keyboardHeight - alreadyResized);

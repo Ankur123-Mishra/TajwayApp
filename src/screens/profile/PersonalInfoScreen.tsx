@@ -24,6 +24,14 @@ import {setRole as setAuthRole, updateUser} from '../../redux/slices/authSlice';
 import {UserService} from '../../services';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useAuth, useResponsiveStyles} from '../../hooks';
+import {
+  COMPANY_NAME_MAX,
+  EMAIL_MAX,
+  FULL_NAME_MAX,
+  validateCompanyName,
+  validateFullName,
+  validateOptionalEmail,
+} from '../../utils/validation';
 
 const EMPTY_GST_DOCS = [null, null, null];
 
@@ -63,6 +71,12 @@ const PersonalInfoScreen = ({navigation, route}) => {
     user?.profileImage || null,
   );
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({
+    fullName: null,
+    city: null,
+    company: null,
+    email: null,
+  });
 
   const [gstVisible, setGstVisible] = useState(false);
   const [gstDocs, setGstDocs] = useState(EMPTY_GST_DOCS);
@@ -81,7 +95,26 @@ const PersonalInfoScreen = ({navigation, route}) => {
     });
   }, [navigation, route?.params?.aadhaarVerified]);
 
+  const clearError = field => {
+    setErrors(prev => (prev[field] ? {...prev, [field]: null} : prev));
+  };
+
+  const validateForm = () => {
+    const nextErrors = {
+      fullName: validateFullName(fullName),
+      city: city?.trim() ? null : 'Please select a city',
+      company: validateCompanyName(company),
+      email: validateOptionalEmail(email),
+    };
+    setErrors(nextErrors);
+    return !Object.values(nextErrors).some(Boolean);
+  };
+
   const onUpdate = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       setLoading(true);
       const result = await UserService.updateProfile({
@@ -256,8 +289,13 @@ const PersonalInfoScreen = ({navigation, route}) => {
         <Field
           label="Full Name"
           value={fullName}
-          onChangeText={setFullName}
+          onChangeText={text => {
+            setFullName(text);
+            clearError('fullName');
+          }}
           placeholder="Enter full name"
+          maxLength={FULL_NAME_MAX}
+          error={errors.fullName}
         />
         <Field
           label="Enter city name"
@@ -266,20 +304,31 @@ const PersonalInfoScreen = ({navigation, route}) => {
           rightIcon="location-outline"
           editable={false}
           onPress={() => setCityModalVisible(true)}
+          error={errors.city}
         />
         <Field
           label="Company Name"
           value={company}
-          onChangeText={setCompany}
+          onChangeText={text => {
+            setCompany(text);
+            clearError('company');
+          }}
           placeholder="Enter your company name"
+          maxLength={COMPANY_NAME_MAX}
+          error={errors.company}
         />
         <Field
           label="Email (Optional)"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={text => {
+            setEmail(text);
+            clearError('email');
+          }}
           placeholder="Enter valid email address"
           keyboardType="email-address"
           autoCapitalize="none"
+          maxLength={EMAIL_MAX}
+          error={errors.email}
         />
 
         <Text style={styles.label}>I am a</Text>
@@ -418,7 +467,10 @@ const PersonalInfoScreen = ({navigation, route}) => {
         visible={cityModalVisible}
         selected={city}
         onClose={() => setCityModalVisible(false)}
-        onDone={setCity}
+        onDone={selectedCity => {
+          setCity(selectedCity);
+          clearError('city');
+        }}
       />
     </View>
   );
@@ -432,35 +484,39 @@ const Field = ({
   rightIcon,
   keyboardType,
   autoCapitalize,
+  maxLength,
   editable = true,
   onPress,
+  error,
 }) => {
   const styles = useResponsiveStyles(baseStyles);
   return (
-  <View style={styles.field}>
-    <Text style={styles.label}>{label}</Text>
-    <TouchableOpacity
-      style={styles.inputWrap}
-      activeOpacity={onPress ? 0.85 : 1}
-      onPress={onPress}
-      disabled={!onPress}>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={Colors.textPlaceholder}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        editable={editable && !onPress}
-        pointerEvents={onPress ? 'none' : 'auto'}
-        style={styles.input}
-      />
-      {rightIcon ? (
-        <Ionicons name={rightIcon} size={18} color="#8B93A1" />
-      ) : null}
-    </TouchableOpacity>
-  </View>
-);
+    <View style={styles.field}>
+      <Text style={styles.label}>{label}</Text>
+      <TouchableOpacity
+        style={[styles.inputWrap, error ? styles.inputWrapError : null]}
+        activeOpacity={onPress ? 0.85 : 1}
+        onPress={onPress}
+        disabled={!onPress}>
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={Colors.textPlaceholder}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          maxLength={maxLength}
+          editable={editable && !onPress}
+          pointerEvents={onPress ? 'none' : 'auto'}
+          style={styles.input}
+        />
+        {rightIcon ? (
+          <Ionicons name={rightIcon} size={18} color="#8B93A1" />
+        ) : null}
+      </TouchableOpacity>
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+    </View>
+  );
 };
 
 const baseStyles = {
@@ -526,11 +582,20 @@ const baseStyles = {
     height: 48,
     paddingHorizontal: 14,
   },
+  inputWrapError: {
+    borderColor: Colors.error,
+  },
   input: {
     flex: 1,
     fontSize: 15,
     color: Colors.textPrimary,
     padding: 0,
+  },
+  errorText: {
+    fontSize: 12,
+    color: Colors.error,
+    marginTop: 6,
+    fontWeight: Typography.fontWeights.medium,
   },
   roleRow: {
     flexDirection: 'row',

@@ -509,8 +509,112 @@ export function mapMyBookingItem(item = {}, view = 'posted') {
 }
 
 /**
+ * Maps GET /bookings/:id payload into MarketBookingDetailScreen props.
+ */
+export function mapBookingDetailItem(item = {}) {
+  if (item.listingType === 'free_vehicle') {
+    const free = mapFreeVehicleItem(item);
+    return {
+      id: free.id,
+      bookingCode: free.bookingCode,
+      when: free.availableFromDate,
+      time: free.availableFromTime,
+      duration: undefined,
+      from: free.location,
+      to: free.currentLocationOnly ? free.location : 'Any Location',
+      pickupFrom: free.location,
+      dropTo: free.currentLocationOnly ? free.location : 'Any Location',
+      tripType: 'One Way',
+      vehicle: free.vehicleName,
+      notes: free.otherDetails,
+      extras: free.otherDetails,
+      bookingType: 'Free Vehicle',
+      totalAmount: null,
+      driverEarning: null,
+      commission: null,
+      reviews: 0,
+      rating: 0,
+      name: free.name,
+      company: free.company,
+      phone: free.phone,
+      hasAvatar: free.hasAvatar,
+      avatarUrl: free.avatarUrl,
+      partnerRole: item.postedBy?.role || '',
+      status: item.status || '',
+      listingType: item.listingType,
+      allowCalls: false,
+      raw: item,
+    };
+  }
+
+  const mapped = mapMarketBookingItem(item);
+  const pricing = item.pricing || {};
+  const bookingAmount = Number(pricing.bookingAmount) || 0;
+  const commission = Number(pricing.commissionAmount) || 0;
+  const isQuote =
+    pricing.pricingMode === 'quote_best_price' || pricing.showAmount === false;
+  const driverEarning = isQuote
+    ? null
+    : Math.max(bookingAmount - commission, 0);
+
+  return {
+    ...mapped,
+    totalAmount: isQuote ? null : bookingAmount,
+    commission: isQuote ? null : commission,
+    driverEarning,
+    partnerRole: item.postedBy?.role || '',
+    status: item.status || '',
+    listingType: item.listingType || 'new_booking',
+    otherDetails: item.otherDetails || '',
+  };
+}
+
+/**
+ * GET /bookings/:id — fetch a single booking for Trip Details.
+ */
+export async function getBookingDetails(bookingId) {
+  const id = String(bookingId || '').trim();
+  if (!id) {
+    throw {message: 'Booking id is required'};
+  }
+
+  const response = await getWithToken(ENDPOINTS.BOOKING_DETAIL(id));
+
+  if (!response?.success) {
+    throw {
+      message:
+        response?.message ||
+        'Failed to fetch booking details. Please try again.',
+      data: response,
+    };
+  }
+
+  const booking =
+    response?.data?.booking ||
+    response?.data?.item ||
+    response?.data ||
+    null;
+
+  if (!booking || typeof booking !== 'object') {
+    throw {
+      message: 'Booking not found',
+      data: response,
+    };
+  }
+
+  return {
+    success: true,
+    message: response?.message || 'Booking fetched successfully',
+    booking: mapBookingDetailItem(booking),
+    raw: booking,
+    data: response?.data ?? null,
+  };
+}
+
+/**
  * GET /bookings/mine?view=posted|received&page=&limit=
  */
+
 export async function getMyBookings({
   view = 'posted',
   page = 1,
@@ -674,8 +778,10 @@ export const BookingService = {
   buildCreateBookingPayload,
   buildCreateFreeVehiclePayload,
   getMarketBookings,
+  getBookingDetails,
   getMyBookings,
   mapMarketBookingItem,
+  mapBookingDetailItem,
   mapMyBookingItem,
   mapFreeVehicleItem,
   getBookings,

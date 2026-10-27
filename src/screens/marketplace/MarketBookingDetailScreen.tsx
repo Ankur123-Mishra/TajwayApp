@@ -1,10 +1,18 @@
-import React from 'react';
-import {Image, ScrollView, Text, TouchableOpacity, View} from 'react-native';
+import React, {useCallback, useEffect, useState} from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {Ionicons} from '@react-native-vector-icons/ionicons';
 import BannerHeader from '../../components/common/BannerHeader';
 import {ROUTES} from '../../constants/Routes';
 import {Images} from '../../constants/Images';
+import {getBookingDetails} from '../../services/bookingService';
 import {Colors, Spacing, Typography} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
@@ -44,12 +52,42 @@ const RouteDash = () => {
 
 /**
  * Market booking detail — Trip Details layout from the product screenshot.
+ * Loads live data from GET /bookings/:id when bookingId is provided.
  */
 
 const MarketBookingDetailScreen = ({navigation, route}) => {
   const styles = useResponsiveStyles(baseStyles);
   const insets = useSafeAreaInsets();
-  const booking = route?.params?.booking || {};
+  const paramBooking = route?.params?.booking || {};
+  const bookingId =
+    route?.params?.bookingId || paramBooking.id || paramBooking.bookingId || '';
+
+  const [booking, setBooking] = useState(paramBooking);
+  const [loading, setLoading] = useState(Boolean(bookingId));
+  const [error, setError] = useState('');
+
+  const loadDetails = useCallback(async () => {
+    if (!bookingId) {
+      setLoading(false);
+      setError('');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const result = await getBookingDetails(bookingId);
+      setBooking(result.booking || {});
+    } catch (err) {
+      setError(err?.message || 'Failed to load booking details.');
+    } finally {
+      setLoading(false);
+    }
+  }, [bookingId]);
+
+  useEffect(() => {
+    loadDetails();
+  }, [loadDetails]);
 
   const {
     when = 'Today',
@@ -71,6 +109,7 @@ const MarketBookingDetailScreen = ({navigation, route}) => {
     rating = 5,
     name = 'Travel Partner',
     hasAvatar = false,
+    partnerRole,
   } = booking;
 
   const hasQuote = totalAmount == null || totalAmount === '';
@@ -78,11 +117,16 @@ const MarketBookingDetailScreen = ({navigation, route}) => {
   const dropValue = dropTo || to;
   const extraText = extras || notes;
   const schedule = duration ? `${when}, ${time} · ${duration}` : `${when}, ${time}`;
-  const ratingLabel = Number(rating).toFixed(1);
+  const ratingLabel = Number(rating || 0).toFixed(1);
+  const roleLabel = /agent/i.test(String(partnerRole || ''))
+    ? 'Agent'
+    : /driver/i.test(String(partnerRole || ''))
+      ? 'Driver'
+      : 'Travel Partner';
 
   const handleChat = () => {
     navigation.navigate(ROUTES.CHAT, {
-      chatId: booking.chatId || `booking-${booking.id || 'market'}`,
+      chatId: booking.chatId || `booking-${booking.id || bookingId || 'market'}`,
       contactName: booking.name,
       booking,
       fromMarket: true,
@@ -99,160 +143,210 @@ const MarketBookingDetailScreen = ({navigation, route}) => {
     <View style={styles.container}>
       <BannerHeader title="Trip Details" onBack={() => navigation.goBack()} />
 
-      <ScrollView
-        contentContainerStyle={[
-          styles.scroll,
-          {paddingBottom: insets.bottom + 28},
-        ]}
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.card}>
-          <View style={styles.vehicleRow}>
-            <View style={styles.carWrap}>
-              <View style={styles.carHalo} />
-              <Image
-                source={Images.carImage}
-                style={styles.carImage}
-                resizeMode="contain"
-              />
-            </View>
-            <View style={styles.vehicleCopy}>
-              <Text style={styles.vehicleName} numberOfLines={2}>
-                {vehicle}
-              </Text>
-              <View style={styles.tripPill}>
-                <Text style={styles.tripPillText}>{tripBadge(tripType)}</Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.scheduleBar}>
-            <Ionicons name="calendar-outline" size={18} color={GOLD} />
-            <Text style={styles.scheduleText} numberOfLines={1}>
-              {schedule}
-            </Text>
-            <Ionicons name="time-outline" size={18} color={GOLD} />
-          </View>
+      {loading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Loading trip details...</Text>
         </View>
-
-        <View style={styles.card}>
-          <View style={styles.stopBlock}>
-            <View style={styles.stopRail}>
-              <View style={styles.pickupRing}>
-                <View style={styles.pickupDot} />
+      ) : error ? (
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryBtn}
+            activeOpacity={0.85}
+            onPress={loadDetails}
+            accessibilityRole="button"
+            accessibilityLabel="Retry">
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={[
+            styles.scroll,
+            {paddingBottom: insets.bottom + 28},
+          ]}
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.card}>
+            <View style={styles.vehicleRow}>
+              <View style={styles.carWrap}>
+                <View style={styles.carHalo} />
+                <Image
+                  source={Images.carImage}
+                  style={styles.carImage}
+                  resizeMode="contain"
+                />
               </View>
-              {dropValue ? <RouteDash /> : null}
+              <View style={styles.vehicleCopy}>
+                <Text style={styles.vehicleName} numberOfLines={2}>
+                  {vehicle}
+                </Text>
+                <View style={styles.tripPill}>
+                  <Text style={styles.tripPillText}>{tripBadge(tripType)}</Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.stopCopy}>
-              <Text style={styles.pickupLabel}>PICKUP</Text>
-              <Text style={styles.stopAddress}>{pickupValue}</Text>
+
+            <View style={styles.scheduleBar}>
+              <Ionicons name="calendar-outline" size={18} color={GOLD} />
+              <Text style={styles.scheduleText} numberOfLines={1}>
+                {schedule}
+              </Text>
+              <Ionicons name="time-outline" size={18} color={GOLD} />
             </View>
           </View>
 
-          {dropValue ? (
+          <View style={styles.card}>
             <View style={styles.stopBlock}>
               <View style={styles.stopRail}>
-                <Ionicons name="location" size={22} color={RED} />
+                <View style={styles.pickupRing}>
+                  <View style={styles.pickupDot} />
+                </View>
+                {dropValue ? <RouteDash /> : null}
               </View>
               <View style={styles.stopCopy}>
-                <Text style={styles.dropLabel}>DROP</Text>
-                <Text style={styles.stopAddress}>{dropValue}</Text>
+                <Text style={styles.pickupLabel}>PICKUP</Text>
+                <Text style={styles.stopAddress}>{pickupValue}</Text>
+              </View>
+            </View>
+
+            {dropValue ? (
+              <View style={styles.stopBlock}>
+                <View style={styles.stopRail}>
+                  <Ionicons name="location" size={22} color={RED} />
+                </View>
+                <View style={styles.stopCopy}>
+                  <Text style={styles.dropLabel}>DROP</Text>
+                  <Text style={styles.stopAddress}>{dropValue}</Text>
+                </View>
+              </View>
+            ) : null}
+          </View>
+
+          {extraText ? (
+            <View style={[styles.card, styles.rowCard]}>
+              <View style={styles.iconTile}>
+                <Ionicons name="document-text-outline" size={22} color={GOLD} />
+              </View>
+              <View style={styles.rowCopy}>
+                <Text style={styles.rowTitle}>Extra Requirement</Text>
+                <Text style={styles.rowBody}>{extraText}</Text>
               </View>
             </View>
           ) : null}
-        </View>
 
-        {extraText ? (
-          <View style={[styles.card, styles.rowCard]}>
+          <View style={[styles.card, styles.typeCard]}>
             <View style={styles.iconTile}>
-              <Ionicons name="document-text-outline" size={22} color={GOLD} />
+              <Ionicons name="pricetag" size={20} color={GOLD} />
             </View>
-            <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>Extra Requirement</Text>
-              <Text style={styles.rowBody}>{extraText}</Text>
+            <Text style={styles.typeTitle}>Booking Type</Text>
+            <View style={styles.typePill}>
+              <Text style={styles.typePillText}>{bookingType}</Text>
             </View>
           </View>
-        ) : null}
 
-        <View style={[styles.card, styles.typeCard]}>
-          <View style={styles.iconTile}>
-            <Ionicons name="pricetag" size={20} color={GOLD} />
-          </View>
-          <Text style={styles.typeTitle}>Booking Type</Text>
-          <View style={styles.typePill}>
-            <Text style={styles.typePillText}>{bookingType}</Text>
-          </View>
-        </View>
-
-        <View style={styles.amountCard}>
-          {hasQuote ? (
-            <View style={styles.quoteBlock}>
-              <Text style={styles.quoteText}>Quote Best Price</Text>
-              <Text style={styles.quoteHint}>Total Amount</Text>
-            </View>
-          ) : (
-            amounts.map(item => (
-              <View key={item.key} style={styles.amountCol}>
-                {item.icon === 'percent' ? (
-                  <View style={styles.percentBadge}>
-                    <Text style={styles.percentMark}>%</Text>
-                  </View>
-                ) : (
-                  <Ionicons name={item.icon} size={22} color={GOLD} />
-                )}
-                <Text style={styles.amountLabel}>{item.label}</Text>
-                <Text style={styles.amountValue}>{formatInr(item.value)}</Text>
+          <View style={styles.amountCard}>
+            {hasQuote ? (
+              <View style={styles.quoteBlock}>
+                <Text style={styles.quoteText}>Quote Best Price</Text>
+                <Text style={styles.quoteHint}>Total Amount</Text>
               </View>
-            ))
-          )}
-        </View>
-
-        <View style={[styles.card, styles.driverCard]}>
-          <View style={styles.avatarWrap}>
-            {hasAvatar ? (
-              <Image
-                source={Images.partnerDeepesh}
-                style={styles.avatar}
-                resizeMode="cover"
-              />
             ) : (
-              <View style={styles.avatarFallback}>
-                <Text style={styles.avatarText}>{initialsOf(name)}</Text>
-              </View>
+              amounts.map(item => (
+                <View key={item.key} style={styles.amountCol}>
+                  {item.icon === 'percent' ? (
+                    <View style={styles.percentBadge}>
+                      <Text style={styles.percentMark}>%</Text>
+                    </View>
+                  ) : (
+                    <Ionicons name={item.icon} size={22} color={GOLD} />
+                  )}
+                  <Text style={styles.amountLabel}>{item.label}</Text>
+                  <Text style={styles.amountValue}>{formatInr(item.value)}</Text>
+                </View>
+              ))
             )}
-            <View style={styles.onlineDot} />
           </View>
 
-          <View style={styles.driverCopy}>
-            <Text style={styles.driverName} numberOfLines={1}>
-              {name}
-            </Text>
-            <Text style={styles.driverRole}>Driver</Text>
-            <View style={styles.ratingRow}>
-              <Text style={styles.ratingStar}>★</Text>
-              <Text style={styles.ratingValue}>{ratingLabel}</Text>
-              <Text style={styles.ratingCount}>({reviews} reviews)</Text>
+          <View style={[styles.card, styles.driverCard]}>
+            <View style={styles.avatarWrap}>
+              {hasAvatar ? (
+                <Image
+                  source={Images.partnerDeepesh}
+                  style={styles.avatar}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarText}>{initialsOf(name)}</Text>
+                </View>
+              )}
+              <View style={styles.onlineDot} />
             </View>
-          </View>
 
-          <TouchableOpacity
-            style={styles.chatBtn}
-            activeOpacity={0.85}
-            onPress={handleChat}
-            accessibilityRole="button"
-            accessibilityLabel="Chat">
-            <Ionicons name="chatbubble-ellipses" size={16} color={NAVY} />
-            <Text style={styles.chatBtnText}>Chat</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            <View style={styles.driverCopy}>
+              <Text style={styles.driverName} numberOfLines={1}>
+                {name}
+              </Text>
+              <Text style={styles.driverRole}>{roleLabel}</Text>
+              <View style={styles.ratingRow}>
+                <Text style={styles.ratingStar}>★</Text>
+                <Text style={styles.ratingValue}>{ratingLabel}</Text>
+                <Text style={styles.ratingCount}>({reviews} reviews)</Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.chatBtn}
+              activeOpacity={0.85}
+              onPress={handleChat}
+              accessibilityRole="button"
+              accessibilityLabel="Chat">
+              <Ionicons name="chatbubble-ellipses" size={16} color={NAVY} />
+              <Text style={styles.chatBtnText}>Chat</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      )}
     </View>
   );
 };
-
+ 
 const baseStyles = {
   container: {
     flex: 1,
     backgroundColor: Colors.surface,
+  },
+  centered: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.xl || 24,
+    gap: 12,
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: MUTED,
+    fontWeight: Typography.fontWeights.medium,
+  },
+  errorText: {
+    fontSize: 15,
+    color: RED,
+    textAlign: 'center',
+    fontWeight: Typography.fontWeights.medium,
+  },
+  retryBtn: {
+    marginTop: 4,
+    backgroundColor: Colors.primary,
+    borderRadius: 22,
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+  },
+  retryBtnText: {
+    fontSize: 14,
+    color: NAVY,
+    fontWeight: Typography.fontWeights.bold,
   },
   scroll: {
     paddingHorizontal: Spacing.base,

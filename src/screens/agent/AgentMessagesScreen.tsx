@@ -57,6 +57,7 @@ const matchesTrip = (booking, trip) => {
 /**
  * Chats tab — Posted / Received list with search and filters.
  */
+
 const AgentMessagesScreen = ({navigation}) => {
   const styles = useResponsiveStyles(baseStyles);
   const [tab, setTab] = useState('posted');
@@ -271,10 +272,7 @@ const AgentMessagesScreen = ({navigation}) => {
             contactName={item.contactName}
             lastMessage={item.lastMessage}
             lastMessageAt={item.lastMessageAt}
-            from={item.booking?.from}
-            to={item.booking?.to}
-            amount={item.booking?.amount}
-            status={item.booking?.status}
+            // status={item.booking?.status}
             onPress={() => openChat(item)}
           />
         )}

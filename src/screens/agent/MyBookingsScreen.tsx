@@ -32,26 +32,6 @@ const openDialer = (phone = '') => {
   Linking.openURL(`tel:${digits}`).catch(() => {});
 };
 
-const toDetailBooking = item => {
-  const raw = String(item.dateTime || '');
-  const [datePart, timePart] = raw.split('@');
-  const pickup = [item.from, item.fromState].filter(Boolean).join(', ');
-  const drop = [item.to, item.toState].filter(Boolean).join(', ');
-
-  return {
-    ...item,
-    when: (datePart || '').trim() || item.when,
-    time: (timePart || '').trim() || item.time,
-    pickupFrom: pickup || item.from,
-    dropTo: drop || item.to,
-    extras: item.pricingNote || item.extras,
-    totalAmount: item.amount ?? item.totalAmount,
-    commission: item.commission,
-    bookingType:
-      item.tab === 'received' ? 'Received Booking' : 'Posted Booking',
-  };
-};
-
 const matchesTrip = (booking, trip) => {
   const value = String(booking.tripType || '')
     .toLowerCase()
@@ -201,7 +181,8 @@ const MyBookingsScreen = ({navigation}) => {
 
   const handleOpenDetail = item => {
     navigateRoot(ROUTES.MARKET_BOOKING_DETAIL, {
-      booking: toDetailBooking(item),
+      bookingId: item.id,
+      booking: item,
     });
   };
 
@@ -396,6 +377,7 @@ const MyBookingsScreen = ({navigation}) => {
               ) : null}
             </View>
           }
+          
           renderItem={({item}) => (
             <MyBookingCard
               bookingId={item.code || item.id}

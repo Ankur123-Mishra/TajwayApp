@@ -5,18 +5,16 @@ import Images from '../../constants/Images';
 import {Colors} from '../../theme';
 import {useResponsiveStyles} from '../../hooks';
 
-const STATUS_STYLES = {
-  Ended: {bg: '#E1F5E3', color: '#489053'},
-  Assigned: {bg: '#E7F0FF', color: '#3B7DFF'},
-  Pending: {bg: '#FFF6D6', color: '#C4922A'},
-};
+// const STATUS_STYLES = {
+//   Ended: {bg: '#E1F5E3', color: '#489053'},
+//   Assigned: {bg: '#E7F0FF', color: '#3B7DFF'},
+//   Pending: {bg: '#FFF6D6', color: '#C4922A'},
+// };
 
 const FRAME_COLOR = '#F6D04F';
 const FRAME_RADIUS = 20;
 const EDGE = 1.5;
 const LEFT_EDGE = 4;
-
-const formatAmount = value => Number(value || 0).toLocaleString('en-IN');
 
 /**
  * Chat list card — yellow frame with a thicker left edge and a white inner card.
@@ -26,20 +24,17 @@ const ChatListCard = ({
   avatarSource,
   lastMessage,
   lastMessageAt,
-  from,
-  to,
-  amount,
-  status,
+  // status,
   onPress,
 }) => {
   const styles = useResponsiveStyles(baseStyles);
   const preview = String(lastMessage || '')
     .replace(/\n/g, ' ')
     .trim();
-  const statusStyle = STATUS_STYLES[status] || {
-    bg: '#F3F4F6',
-    color: '#6B7280',
-  };
+  // const statusStyle = STATUS_STYLES[status] || {
+  //   bg: '#F3F4F6',
+  //   color: '#6B7280',
+  // };
 
   return (
     <TouchableOpacity
@@ -71,39 +66,21 @@ const ChatListCard = ({
           </View>
         </View>
 
-        <View style={styles.metaRow}>
-          <View style={styles.routeWrap}>
-            <Ionicons name="location" size={16} color={FRAME_COLOR} />
-            <Text style={styles.route} numberOfLines={1}>
-              {from} <Text style={styles.routeArrow}>→ </Text>
-              <Text style={styles.routeTo}>{to}</Text>
-            </Text>
+        {/* {status ? (
+          <View style={styles.metaRow}>
+            <View
+              style={[styles.statusPill, {backgroundColor: statusStyle.bg}]}>
+              <Ionicons
+                name="checkmark-circle"
+                size={14}
+                color={statusStyle.color}
+              />
+              <Text style={[styles.statusText, {color: statusStyle.color}]}>
+                {status}
+              </Text>
+            </View>
           </View>
-          <View style={styles.metaRight}>
-            {amount != null ? (
-              <Text style={styles.amount}>₹{formatAmount(amount)}</Text>
-            ) : null}
-            {status ? (
-              <>
-                <View style={styles.divider} />
-                <View
-                  style={[
-                    styles.statusPill,
-                    {backgroundColor: statusStyle.bg},
-                  ]}>
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={14}
-                    color={statusStyle.color}
-                  />
-                  <Text style={[styles.statusText, {color: statusStyle.color}]}>
-                    {status}
-                  </Text>
-                </View>
-              </>
-            ) : null}
-          </View>
-        </View>
+        ) : null} */}
       </View>
     </TouchableOpacity>
   );
@@ -172,63 +149,24 @@ const baseStyles = {
     fontSize: 14,
     color: '#6B7280',
   },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 14,
-    gap: 8,
-  },
-  routeWrap: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    minWidth: 0,
-  },
-  route: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#3A3A3A',
-  },
-  routeArrow: {
-    fontSize: 14,
-    color: '#B0B6BE',
-    fontWeight: '600',
-  },
-  routeTo: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#1A1A1A',
-  },
-  metaRight: {
-    flexShrink: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  amount: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#1A1A1A',
-  },
-  divider: {
-    width: 1,
-    height: 18,
-    backgroundColor: '#E5E7EB',
-  },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderRadius: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  statusText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
+  // metaRow: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   justifyContent: 'flex-end',
+  //   marginTop: 14,
+  // },
+  // statusPill: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   gap: 4,
+  //   borderRadius: 16,
+  //   paddingHorizontal: 10,
+  //   paddingVertical: 5,
+  // },
+  // statusText: {
+  //   fontSize: 13,
+  //   fontWeight: '700',
+  // },
 };
 
 export default ChatListCard;

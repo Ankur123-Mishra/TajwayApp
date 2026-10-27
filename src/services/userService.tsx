@@ -2,11 +2,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {getWithToken, patchWithToken} from '../api/common';
 import {ENDPOINTS} from '../api/endpoints';
 import {STORAGE_KEYS} from '../constants/AppConstants';
-import {isValidEmail, required} from '../utils/validation';
+import {
+  required,
+  validateCompanyName,
+  validateFullName,
+  validateOptionalEmail,
+} from '../utils/validation';
 
 /**
  * Maps API user payload into the shape used across the app.
  */
+
 const mapUser = user => {
   if (!user) {
     return null;
@@ -24,6 +30,7 @@ const mapUser = user => {
 /**
  * Merges updated user into the stored auth session.
  */
+
 const persistUserInSession = async user => {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_SESSION);
@@ -48,6 +55,7 @@ const persistUserInSession = async user => {
 /**
  * Returns true when the user has finished partner verification.
  */
+
 export const isVerificationComplete = user => {
   if (!user) {
     return false;
@@ -98,26 +106,30 @@ export const UserService = {
    * Body: { fullName, role, city, companyName, email }
    * GST / Aadhaar are not sent here — handled later.
    */
+  
   async updateProfile({fullName, role, city, companyName, email}) {
     const trimmedName = String(fullName || '').trim();
     const trimmedCity = String(city || '').trim();
     const trimmedCompany = String(companyName || '').trim();
     const trimmedEmail = String(email || '').trim();
 
-    if (!required(trimmedName)) {
-      throw {message: 'Please enter your full name'};
+    const nameError = validateFullName(trimmedName);
+    if (nameError) {
+      throw {message: nameError};
     }
     if (!required(trimmedCity)) {
       throw {message: 'Please select a city'};
     }
-    if (!required(trimmedCompany)) {
-      throw {message: 'Please enter your company name'};
+    const companyError = validateCompanyName(trimmedCompany);
+    if (companyError) {
+      throw {message: companyError};
     }
     if (!required(role)) {
       throw {message: 'Please select a role'};
     }
-    if (trimmedEmail && !isValidEmail(trimmedEmail)) {
-      throw {message: 'Please enter a valid email address'};
+    const emailError = validateOptionalEmail(trimmedEmail);
+    if (emailError) {
+      throw {message: emailError};
     }
 
     const body = {

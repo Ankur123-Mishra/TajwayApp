@@ -262,6 +262,7 @@ const PostFreeVehicleScreen = ({navigation}) => {
     if (event.type === 'dismissed' || !selectedDate) {
       return;
     }
+    
     const merged = mergeDateKeepTime(getFieldValue(activeField), selectedDate);
     setPendingDate(merged);
     setTimeout(() => setShowTimePicker(true), 50);

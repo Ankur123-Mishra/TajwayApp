@@ -4,7 +4,7 @@
  */
 
 export const API_BASE_URL =
-  'https://d1ff-110-235-232-181.ngrok-free.app/api/v1/app';
+  'https://tajway.techninza.in/api/v1/app';
 
 export const ENDPOINTS = {
   // Auth
@@ -21,4 +21,6 @@ export const ENDPOINTS = {
   // Bookings
   BOOKINGS: '/bookings',
   MY_BOOKINGS: '/bookings/mine',
+  /** GET /bookings/:id — single booking details */
+  BOOKING_DETAIL: id => `/bookings/${id}`,
 };
